@@ -1,65 +1,70 @@
 # financial-dolim-solution
 
-Workbook-driven multi-lender vehicle finance quote platform.
+엑셀 워크북 기반의 멀티 금융사 자동차 금융 견적 플랫폼입니다.
 
-This project is building a web-based calculator platform for automotive finance products such as:
+이 프로젝트는 자동차 금융 상품을 웹에서 계산할 수 있도록 만드는 것을 목표로 합니다.
 
-1. operating lease
-2. financial lease
-3. installment / auto loan
+지원 대상 상품:
 
-The platform is designed so that finance companies can send an updated Excel workbook every month, and the system can ingest that workbook, normalize the data, activate a new version, and use it for quote calculation on the web.
+1. 운용리스
+2. 금융리스
+3. 할부 / 오토론
 
-## Current focus
+핵심 방향은 매월 금융사에서 전달하는 엑셀 견적 파일을 업로드하면, 그 파일 안의 데이터를 정규화해 반영하고, 웹에서 최신 기준으로 견적 계산이 가능하도록 만드는 것입니다.
 
-The first lender target is **MG Capital**.
+## 현재 진행 기준
 
-The current implementation includes:
+현재 첫 번째 대상 금융사는 **MG캐피탈** 입니다.
 
-1. project scaffold for Bun + Hono + Cloudflare Pages Functions
-2. initial Drizzle schema design for versioned workbook imports
-3. lender adapter registry and MG Capital adapter
-4. workbook parsing for:
-   - vehicle catalog rows
-   - residual matrix rows
-   - brand-level base rate policies
-5. import preview API and import persistence service
-6. planning documents for scaling to multiple finance companies
+지금까지 구현된 범위:
 
-## Tech stack
+1. `Bun + Hono + Cloudflare Pages Functions` 기반 프로젝트 스캐폴드
+2. 월별 워크북 버전 관리를 위한 `Drizzle` 스키마 초안
+3. 금융사 확장을 위한 lender adapter 구조
+4. MG캐피탈 워크북 파서
+   - 차량 데이터 파싱
+   - 잔가 매트릭스 파싱
+   - 브랜드별 기본 요율 정책 파싱
+5. 업로드 미리보기 API
+6. 업로드 데이터를 DB에 저장하는 import persistence 서비스
+7. 향후 여러 금융사를 붙이기 위한 planning 문서 세트
 
-### Runtime and API
+## 기술 스택
+
+### Runtime / API
 
 1. `Bun`
 2. `Hono`
 3. `Cloudflare Pages Functions`
 
-### Database and data access
+### Database / BaaS
 
 1. `Supabase`
 2. `PostgreSQL 17+`
 3. `Drizzle ORM`
 
-### Frontend and UI
+### Frontend / UI
 
 1. `shadcn/ui`
-2. shared lender/product quote UI planned on top of the same API
+2. 공통 quote UI 위에 금융사/상품별 정책을 얹는 구조
 
-### Workbook and validation
+### Workbook / Validation
 
 1. `xlsx`
-2. typed validation with `zod`
+2. `zod`
 
-## Why Drizzle over Prisma
+## 왜 Prisma가 아니라 Drizzle인가
 
-This project prefers **Drizzle** because it fits the intended stack better:
+이 프로젝트에서는 **Drizzle**을 기본 ORM으로 선택했습니다.
 
-1. lighter for Bun and serverless environments
-2. SQL-first and easier to control for finance-oriented domain logic
-3. better fit for versioned workbook imports and explicit schema ownership
-4. more practical than Prisma for Cloudflare-oriented runtime constraints
+이유:
 
-## Project structure
+1. `Bun` 및 서버리스 환경과의 궁합이 더 가볍고 단순합니다.
+2. SQL 중심으로 제어하기 좋아서 금융 계산 도메인에 더 잘 맞습니다.
+3. 월별 엑셀 업로드 버전 관리와 정규화 테이블 구조를 명확하게 다루기 좋습니다.
+4. `Cloudflare Pages Functions` 기반 런타임에서 Prisma보다 운영 부담이 적습니다.
+
+## 프로젝트 구조
 
 ```text
 functions/
@@ -73,104 +78,107 @@ src/
 docs/
 ```
 
-## Key files
+## 주요 파일
 
 1. `src/app.ts`
-   - Hono app entry
-   - health endpoint
-   - lender list endpoint
-   - workbook preview import endpoint
-   - workbook persistence import endpoint
+   - Hono 앱 진입점
+   - 헬스체크
+   - 금융사 목록 API
+   - 업로드 미리보기 API
+   - 업로드 저장 API
 
 2. `src/domain/lenders/mg-capital/workbook-parser.ts`
-   - parses MG workbook data into normalized preview output
+   - MG캐피탈 워크북을 파싱해 정규화 가능한 구조로 변환합니다.
 
 3. `src/db/schema.ts`
-   - initial database schema for lenders, imports, vehicle programs, residual matrices, rate policies, and quote snapshots
+   - 금융사, 상품, 워크북 import, 차량 프로그램, 잔가 매트릭스, 브랜드 요율 정책, quote snapshot 테이블 정의가 들어 있습니다.
 
 4. `src/domain/imports/import-service.ts`
-   - persists parsed lender workbook data into the database when `DATABASE_URL` is configured
+   - 파싱된 워크북 데이터를 DB에 저장하는 서비스입니다.
+   - `DATABASE_URL`이 없으면 preview 전용 모드처럼 동작합니다.
 
 5. `docs/platform-blueprint.md`
-   - platform architecture for future multi-lender expansion
+   - 멀티 금융사 구조로 확장하기 위한 전체 아키텍처 기준 문서입니다.
 
 6. `docs/lender-onboarding-playbook.md`
-   - repeatable process for onboarding additional finance companies
+   - 새로운 금융사를 추가할 때 따를 온보딩 절차 문서입니다.
 
-## API endpoints
+## API 엔드포인트
 
 ### `GET /`
 
-Basic service metadata.
+기본 서비스 메타 정보 반환
 
 ### `GET /health`
 
-Health check endpoint.
+헬스체크 엔드포인트
 
 ### `GET /api/lenders`
 
-Returns currently registered lender adapters.
+현재 등록된 금융사 adapter 목록 반환
 
 ### `POST /api/imports/preview`
 
-Accepts a workbook file upload and returns parsed preview data.
+엑셀 워크북 파일을 업로드하면 파싱 결과를 미리보기로 반환합니다.
 
-Expected request:
+요청 형식:
 
-- multipart form-data
-- field name: `file`
+1. `multipart/form-data`
+2. 필드명: `file`
 
 ### `POST /api/imports`
 
-Accepts a workbook file upload, parses it, and persists the version when `DATABASE_URL` is configured.
+엑셀 워크북 파일을 업로드하면 파싱 후 저장까지 진행합니다.
 
-Expected request:
+`DATABASE_URL`이 설정되어 있으면 실제 DB에 저장하고, 없으면 저장은 건너뛰고 파싱 결과만 반환합니다.
 
-- multipart form-data
-- field name: `file`
-- optional field: `activate=true|false`
+요청 형식:
 
-## Local development
+1. `multipart/form-data`
+2. 필드명: `file`
+3. 선택 필드: `activate=true|false`
 
-Install dependencies:
+## 로컬 개발
+
+의존성 설치:
 
 ```bash
 bun install
 ```
 
-Run typecheck:
+타입 체크:
 
 ```bash
 bun run typecheck
 ```
 
-Run local Pages dev server:
+로컬 개발 서버 실행:
 
 ```bash
 bun run dev
 ```
 
-## Environment variables
+## 환경 변수
 
-### Required for preview-only mode
+### Preview 전용 모드
 
 1. `APP_ENV`
 
-### Required for persistence mode
+### DB 저장 모드
 
 1. `DATABASE_URL`
 
-## Environment notes
+## 운영 메모
 
-The long-term production target is:
+장기 운영 목표:
 
-1. deploy API on Cloudflare Pages Functions
-2. persist business data in Supabase PostgreSQL
-3. use versioned lender workbook imports as the monthly update mechanism
+1. API는 `Cloudflare Pages Functions`에 배포
+2. 비즈니스 데이터는 `Supabase PostgreSQL`에 저장
+3. 월별 금융사 엑셀 업로드를 기준으로 활성 버전 관리
 
-For production DB connectivity from Cloudflare, plan for a supported secure connection path such as Hyperdrive in front of Supabase Postgres.
+Cloudflare에서 Supabase Postgres로 운영 연결할 때는 `Hyperdrive` 같은 안정적인 연결 경로를 고려하는 것이 좋습니다.
 
-## Planning docs
+## Planning 문서
 
 1. [Project Planning Docs](./docs/README.md)
 2. [Platform Blueprint](./docs/platform-blueprint.md)
@@ -178,10 +186,10 @@ For production DB connectivity from Cloudflare, plan for a supported secure conn
 4. [Implementation Roadmap](./docs/implementation-roadmap.md)
 5. [MG Capital Implementation Plan](./docs/mg-capital-implementation-plan.md)
 
-## Next implementation steps
+## 다음 구현 단계
 
-1. add Drizzle migrations for the expanded multi-lender schema
-2. connect `POST /api/imports` to real Supabase persistence with runtime env wiring
-3. implement the first MG operating lease calculator
-4. add fixture-based parity tests against workbook results
-5. build admin upload and activation UI
+1. 확장된 멀티 금융사 스키마 기준으로 마이그레이션 정리
+2. `POST /api/imports`를 실제 Supabase 저장과 연결
+3. MG캐피탈 `운용리스` 계산 엔진 1차 구현
+4. 엑셀 결과와 비교하는 fixture 기반 검증 추가
+5. 관리자용 업로드 / 활성화 UI 구현
