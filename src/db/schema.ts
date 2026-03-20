@@ -17,15 +17,46 @@ export const quoteProductType = pgEnum("quote_product_type", [
   "installment_loan",
 ]);
 
+export const workbookImportStatus = pgEnum("workbook_import_status", [
+  "previewed",
+  "validated",
+  "activated",
+]);
+
+export const lenders = pgTable("lenders", {
+  code: text("code").primaryKey(),
+  displayName: text("display_name").notNull(),
+  isEnabled: boolean("is_enabled").default(true).notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+});
+
+export const lenderProducts = pgTable(
+  "lender_products",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    lenderCode: text("lender_code")
+      .references(() => lenders.code, { onDelete: "cascade" })
+      .notNull(),
+    productType: quoteProductType("product_type").notNull(),
+    isEnabled: boolean("is_enabled").default(true).notNull(),
+  },
+  (table) => ({
+    lenderProductUnique: uniqueIndex("lender_products_unique").on(table.lenderCode, table.productType),
+  }),
+);
+
 export const workbookImports = pgTable("workbook_imports", {
   id: uuid("id").defaultRandom().primaryKey(),
-  lenderCode: text("lender_code").notNull(),
+  lenderCode: text("lender_code")
+    .references(() => lenders.code, { onDelete: "restrict" })
+    .notNull(),
   lenderName: text("lender_name").notNull(),
   versionLabel: text("version_label").notNull(),
   sourceFileName: text("source_file_name").notNull(),
   fileChecksum: text("file_checksum"),
   importedAt: timestamp("imported_at", { withTimezone: true }).defaultNow().notNull(),
   isActive: boolean("is_active").default(false).notNull(),
+  status: workbookImportStatus("status").default("previewed").notNull(),
   meta: jsonb("meta").$type<Record<string, unknown>>().notNull().default({}),
 });
 

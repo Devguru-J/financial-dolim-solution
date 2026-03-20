@@ -2,7 +2,8 @@ import { Hono } from "hono";
 import { zValidator } from "@hono/zod-validator";
 import { z } from "zod";
 
-import { parseMgWorkbook } from "@/lib/excel/mg-workbook";
+import { persistWorkbookImport } from "@/domain/imports/import-service";
+import { getLenderAdapter } from "@/domain/imports/lender-registry";
 
 type Bindings = Env;
 
@@ -28,6 +29,19 @@ app.get("/health", (c) => {
   });
 });
 
+app.get("/api/lenders", (c) => {
+  return c.json({
+    ok: true,
+    lenders: [
+      {
+        lenderCode: "mg-capital",
+        lenderName: "MG Capital",
+        status: "active-development",
+      },
+    ],
+  });
+});
+
 app.post("/api/imports/preview", zValidator("query", previewQuerySchema), async (c) => {
   const formData = await c.req.formData();
   const workbookFile = formData.get("file");
@@ -43,13 +57,52 @@ app.post("/api/imports/preview", zValidator("query", previewQuerySchema), async 
   }
 
   const arrayBuffer = await workbookFile.arrayBuffer();
-  const workbook = parseMgWorkbook(arrayBuffer, {
-    lenderCode: c.req.valid("query").lenderCode,
+  const lenderCode = c.req.valid("query").lenderCode;
+  const adapter = getLenderAdapter(lenderCode);
+  const workbook = adapter.parseWorkbook(arrayBuffer, {
+    lenderCode,
     fileName: workbookFile.name,
   });
 
   return c.json({
     ok: true,
     workbook,
+  });
+});
+
+app.post("/api/imports", zValidator("query", previewQuerySchema), async (c) => {
+  const formData = await c.req.formData();
+  const workbookFile = formData.get("file");
+  const activateValue = formData.get("activate");
+
+  if (!(workbookFile instanceof File)) {
+    return c.json(
+      {
+        ok: false,
+        error: "Expected multipart field `file`.",
+      },
+      400,
+    );
+  }
+
+  const lenderCode = c.req.valid("query").lenderCode;
+  const adapter = getLenderAdapter(lenderCode);
+  const arrayBuffer = await workbookFile.arrayBuffer();
+  const workbook = adapter.parseWorkbook(arrayBuffer, {
+    lenderCode,
+    fileName: workbookFile.name,
+  });
+
+  const importResult = await persistWorkbookImport({
+    databaseUrl: c.env.DATABASE_URL,
+    workbook,
+    fileBuffer: arrayBuffer,
+    activate: String(activateValue ?? "true").toLowerCase() !== "false",
+  });
+
+  return c.json({
+    ok: true,
+    workbook,
+    import: importResult,
   });
 });

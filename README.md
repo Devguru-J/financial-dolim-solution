@@ -18,11 +18,13 @@ The current implementation includes:
 
 1. project scaffold for Bun + Hono + Cloudflare Pages Functions
 2. initial Drizzle schema design for versioned workbook imports
-3. workbook parsing for:
+3. lender adapter registry and MG Capital adapter
+4. workbook parsing for:
    - vehicle catalog rows
    - residual matrix rows
    - brand-level base rate policies
-4. planning documents for scaling to multiple finance companies
+5. import preview API and import persistence service
+6. planning documents for scaling to multiple finance companies
 
 ## Tech stack
 
@@ -64,8 +66,10 @@ functions/
   api/
 src/
   db/
+  domain/
+    imports/
+    lenders/
   lib/
-    excel/
 docs/
 ```
 
@@ -74,18 +78,23 @@ docs/
 1. `src/app.ts`
    - Hono app entry
    - health endpoint
+   - lender list endpoint
    - workbook preview import endpoint
+   - workbook persistence import endpoint
 
-2. `src/lib/excel/mg-workbook.ts`
+2. `src/domain/lenders/mg-capital/workbook-parser.ts`
    - parses MG workbook data into normalized preview output
 
 3. `src/db/schema.ts`
-   - initial database schema for imports, vehicle programs, residual matrices, rate policies, and quote snapshots
+   - initial database schema for lenders, imports, vehicle programs, residual matrices, rate policies, and quote snapshots
 
-4. `docs/platform-blueprint.md`
+4. `src/domain/imports/import-service.ts`
+   - persists parsed lender workbook data into the database when `DATABASE_URL` is configured
+
+5. `docs/platform-blueprint.md`
    - platform architecture for future multi-lender expansion
 
-5. `docs/lender-onboarding-playbook.md`
+6. `docs/lender-onboarding-playbook.md`
    - repeatable process for onboarding additional finance companies
 
 ## API endpoints
@@ -98,6 +107,10 @@ Basic service metadata.
 
 Health check endpoint.
 
+### `GET /api/lenders`
+
+Returns currently registered lender adapters.
+
 ### `POST /api/imports/preview`
 
 Accepts a workbook file upload and returns parsed preview data.
@@ -106,6 +119,16 @@ Expected request:
 
 - multipart form-data
 - field name: `file`
+
+### `POST /api/imports`
+
+Accepts a workbook file upload, parses it, and persists the version when `DATABASE_URL` is configured.
+
+Expected request:
+
+- multipart form-data
+- field name: `file`
+- optional field: `activate=true|false`
 
 ## Local development
 
@@ -127,6 +150,16 @@ Run local Pages dev server:
 bun run dev
 ```
 
+## Environment variables
+
+### Required for preview-only mode
+
+1. `APP_ENV`
+
+### Required for persistence mode
+
+1. `DATABASE_URL`
+
 ## Environment notes
 
 The long-term production target is:
@@ -147,8 +180,8 @@ For production DB connectivity from Cloudflare, plan for a supported secure conn
 
 ## Next implementation steps
 
-1. persist workbook imports into Supabase
-2. finish lender adapter boundaries
+1. add Drizzle migrations for the expanded multi-lender schema
+2. connect `POST /api/imports` to real Supabase persistence with runtime env wiring
 3. implement the first MG operating lease calculator
 4. add fixture-based parity tests against workbook results
 5. build admin upload and activation UI

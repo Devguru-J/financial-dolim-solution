@@ -1,55 +1,12 @@
 import * as XLSX from "xlsx";
 
-export type MgWorkbookParseOptions = {
-  lenderCode: string;
-  fileName: string;
-};
-
-type VehicleProgram = {
-  brand: string;
-  modelName: string;
-  engineDisplacementCc: number | null;
-  vehicleClass: string | null;
-  vehiclePrice: number;
-  residuals: Partial<Record<12 | 24 | 36 | 48 | 60, number>>;
-  highResidualAllowed: boolean;
-  hybridAllowed: boolean;
-  residualPromotionCode: string | null;
-  snkResidualBand: string | null;
-};
-
-type ResidualMatrixRow = {
-  matrixGroup: string;
-  gradeCode: string;
-  leaseTermMonths: number;
-  residualRate: number;
-};
-
-type BrandRatePolicy = {
-  brand: string;
-  productType: "operating_lease" | "financial_lease" | "installment_loan";
-  ownershipType: "company" | "customer";
-  baseIrrRate: number;
-};
-
-type WorkbookPreview = {
-  lenderCode: string;
-  lenderName: string;
-  sourceFileName: string;
-  detectedVersionLabel: string;
-  sheetNames: string[];
-  analysis: {
-    hasVehicleDb: boolean;
-    hasResidualMap: boolean;
-    hasBrandRatePolicies: boolean;
-    vehicleProgramCount: number;
-    residualMatrixRowCount: number;
-    brandRatePolicyCount: number;
-  };
-  vehiclePrograms: VehicleProgram[];
-  residualMatrixRows: ResidualMatrixRow[];
-  brandRatePolicies: BrandRatePolicy[];
-};
+import type {
+  WorkbookBrandRatePolicy,
+  WorkbookPreview,
+  WorkbookResidualMatrixRow,
+  WorkbookVehicleProgram,
+} from "@/domain/imports/types";
+import type { ParseWorkbookOptions } from "@/domain/imports/lender-adapter";
 
 const REQUIRED_SHEETS = ["차량DB", "잔가map", "견적관리자용"] as const;
 
@@ -81,6 +38,7 @@ function asNumber(value: unknown): number | null {
     if (!normalized) {
       return null;
     }
+
     const parsed = Number(normalized);
     return Number.isFinite(parsed) ? parsed : null;
   }
@@ -97,8 +55,8 @@ function asText(value: unknown): string | null {
   return text ? text : null;
 }
 
-function parseVehiclePrograms(rows: unknown[][]): VehicleProgram[] {
-  const parsedRows: Array<VehicleProgram | null> = rows.slice(5).map((row) => {
+function parseVehiclePrograms(rows: unknown[][]): WorkbookVehicleProgram[] {
+  const parsedRows: Array<WorkbookVehicleProgram | null> = rows.slice(5).map((row) => {
     const brand = asText(row[4]);
     const modelName = asText(row[5]);
     const vehiclePrice = asNumber(row[8]);
@@ -127,10 +85,10 @@ function parseVehiclePrograms(rows: unknown[][]): VehicleProgram[] {
     };
   });
 
-  return parsedRows.filter((row): row is VehicleProgram => row !== null);
+  return parsedRows.filter((row): row is WorkbookVehicleProgram => row !== null);
 }
 
-function parseResidualMatrix(rows: unknown[][]): ResidualMatrixRow[] {
+function parseResidualMatrix(rows: unknown[][]): WorkbookResidualMatrixRow[] {
   const sections: Array<{ title: string; headerRowIndex: number; valueRowStartIndex: number }> = [];
 
   rows.forEach((row, index) => {
@@ -144,7 +102,7 @@ function parseResidualMatrix(rows: unknown[][]): ResidualMatrixRow[] {
     }
   });
 
-  const matrixRows: ResidualMatrixRow[] = [];
+  const matrixRows: WorkbookResidualMatrixRow[] = [];
 
   for (const section of sections) {
     const headerRow = rows[section.headerRowIndex] ?? [];
@@ -176,12 +134,12 @@ function parseResidualMatrix(rows: unknown[][]): ResidualMatrixRow[] {
   return matrixRows;
 }
 
-function parseBrandRatePolicies(sheet: XLSX.WorkSheet | undefined): BrandRatePolicy[] {
+function parseBrandRatePolicies(sheet: XLSX.WorkSheet | undefined): WorkbookBrandRatePolicy[] {
   if (!sheet) {
     return [];
   }
 
-  const policies: BrandRatePolicy[] = [];
+  const policies: WorkbookBrandRatePolicy[] = [];
 
   for (let excelRow = 9; excelRow <= 33; excelRow += 1) {
     const brand = asText(readCell(sheet, `E${excelRow}`));
@@ -190,8 +148,8 @@ function parseBrandRatePolicies(sheet: XLSX.WorkSheet | undefined): BrandRatePol
     }
 
     const rateMappings: Array<{
-      productType: BrandRatePolicy["productType"];
-      ownershipType: BrandRatePolicy["ownershipType"];
+      productType: WorkbookBrandRatePolicy["productType"];
+      ownershipType: WorkbookBrandRatePolicy["ownershipType"];
       rate: number | null;
     }> = [
       { productType: "operating_lease", ownershipType: "company", rate: asNumber(readCell(sheet, `F${excelRow}`)) },
@@ -218,10 +176,7 @@ function parseBrandRatePolicies(sheet: XLSX.WorkSheet | undefined): BrandRatePol
   return policies;
 }
 
-export function parseMgWorkbook(
-  input: ArrayBuffer,
-  options: MgWorkbookParseOptions,
-): WorkbookPreview {
+export function parseMgWorkbook(input: ArrayBuffer, options: ParseWorkbookOptions): WorkbookPreview {
   const workbook = XLSX.read(input, {
     type: "array",
     cellFormula: true,
