@@ -3,6 +3,7 @@ import { zValidator } from "@hono/zod-validator";
 import { z } from "zod";
 
 import { persistWorkbookImport } from "@/domain/imports/import-service";
+import { listWorkbookImports } from "@/domain/imports/import-queries";
 import { getLenderAdapter } from "@/domain/imports/lender-registry";
 
 type Bindings = Env;
@@ -39,6 +40,19 @@ app.get("/api/lenders", (c) => {
         status: "active-development",
       },
     ],
+  });
+});
+
+app.get("/api/imports", zValidator("query", previewQuerySchema), async (c) => {
+  const lenderCode = c.req.valid("query").lenderCode;
+  const result = await listWorkbookImports({
+    databaseUrl: c.env.DATABASE_URL,
+    lenderCode,
+  });
+
+  return c.json({
+    ok: true,
+    ...result,
   });
 });
 
