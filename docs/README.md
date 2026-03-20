@@ -35,8 +35,10 @@ As of 2026-03-20, the project already has:
 5. workbook import preview API
 6. workbook import persistence service
 7. import listing API
-8. Drizzle migration files for the current schema
-9. Korean README and planning docs for handoff continuity
+8. verified Supabase connection and Drizzle migration flow
+9. first MG Capital `operating_lease` quote calculation API backed by active workbook data
+10. Drizzle migration files for the current schema
+11. Korean README and planning docs for handoff continuity
 
 ## How to use these docs
 

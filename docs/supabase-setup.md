@@ -37,10 +37,17 @@ APP_ENV=development
 DATABASE_URL=postgresql://postgres:[YOUR_PASSWORD]@[YOUR_SUPABASE_HOST]:5432/postgres
 ```
 
+가장 빠른 시작:
+
+```bash
+cp .dev.vars.example .dev.vars
+```
+
 참고:
 
 1. 예시 파일은 `.dev.vars.example`, `.env.example`에 포함되어 있습니다.
 2. 실제 비밀번호가 들어간 파일은 git에 올리지 않습니다.
+3. 루트의 Drizzle 스크립트는 `.dev.vars`를 자동으로 읽도록 설정되어 있습니다.
 
 ## 3. 마이그레이션 준비
 
@@ -65,6 +72,9 @@ DATABASE_URL=postgresql://postgres:[YOUR_PASSWORD]@[YOUR_SUPABASE_HOST]:5432/pos
 ```bash
 bun run db:push
 ```
+
+이 프로젝트에서는 Supabase session pooler 환경에서 `drizzle-kit push`의 introspection
+오차를 피하기 위해 `db:push`를 `generate + migrate` 래퍼로 사용합니다.
 
 또는 migration 기반으로 진행하려면:
 

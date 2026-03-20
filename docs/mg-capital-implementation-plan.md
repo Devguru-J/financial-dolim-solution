@@ -147,6 +147,9 @@ Already implemented:
 4. import persistence service with DB-aware fallback behavior
 5. import listing endpoint
 6. Drizzle schema and generated migration for current import model
+7. verified Supabase connection and migration flow
+8. verified MG workbook import persistence end to end
+9. first `운용리스` quote calculation service and API
 
 Verified findings from the provided MG workbook:
 
@@ -154,16 +157,17 @@ Verified findings from the provided MG workbook:
 2. `residualMatrixRows`: 365 rows parsed
 3. `brandRatePolicies`: 125 rows parsed
 
-Current behavior without DB connection:
+Current verified behavior with DB connection:
 
-1. `POST /api/imports` still parses correctly
-2. persistence returns `persisted: false`
-3. persistence mode returns `skipped`
+1. `POST /api/imports` persists and activates a workbook version in Supabase
+2. `GET /api/imports` returns stored import history
+3. `POST /api/quotes/calculate` returns a workbook-backed MG `operating_lease` quote
+4. first calculator version resolves vehicle price, residual rate, base IRR, and monthly payment
 
 ## 8. Immediate next build slice
 
-1. connect real Supabase `DATABASE_URL`
-2. run schema push or migration
-3. verify MG workbook import persistence end to end
-4. implement first `운용리스` quote calculation service
-5. add fixture-based validation using workbook scenarios
+1. add fixture-based validation using workbook scenarios
+2. model taxes, registration, and extra fee rules from the workbook
+3. capture scattered exception logic from hidden quote sheets
+4. reflect residual promotion code behavior where applicable
+5. start `금융리스` implementation

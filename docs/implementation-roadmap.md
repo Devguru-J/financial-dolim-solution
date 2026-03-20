@@ -19,6 +19,8 @@ Already done:
 9. Drizzle schema and generated migration files
 10. repository root normalized to `financial-dolim-solution`
 11. Supabase setup guide and env example files
+12. verified Supabase connection, migration, and workbook import on a real project
+13. first MG `operating_lease` quote API backed by active workbook data
 
 ## Current operational note
 
@@ -27,16 +29,16 @@ Right now the project is in a good handoff state.
 What is ready:
 
 1. preview parsing without DB
-2. DB persistence code path when `DATABASE_URL` is configured
-3. import listing when `DATABASE_URL` is configured
+2. DB persistence and import listing with verified Supabase connectivity
+3. active workbook-backed MG `operating_lease` calculation
 4. documentation for continuing in a fresh thread
 
 What is not done yet:
 
-1. real Supabase connection has not been verified in this repo yet
-2. MG quote calculation engine is not implemented yet
+1. fixture-based parity tests are not implemented yet
+2. taxes, fees, and workbook exception rules are not fully modeled in the calculator
 3. admin UI is not implemented yet
-4. fixture-based parity tests are not implemented yet
+4. `financial_lease` and `installment_loan` are not implemented yet
 
 ## Phase 1. Import foundation
 
@@ -46,7 +48,7 @@ Make workbook import reliable and versioned.
 
 Status:
 
-Mostly implemented in code, pending real DB verification.
+Implemented and verified against a real Supabase project.
 
 Completed:
 
@@ -59,10 +61,8 @@ Completed:
 
 Remaining:
 
-1. verify against a real Supabase project
-2. confirm migration/push flow on Supabase
-3. add duplicate import handling policy beyond checksum generation
-4. add active-version switching validation tests
+1. add duplicate import handling policy beyond checksum generation
+2. add active-version switching validation tests
 
 Deliverable:
 
@@ -74,17 +74,27 @@ Target:
 
 Get full MG quote parity for at least one product first.
 
-Tasks:
+Status:
 
-1. map canonical quote input shape
-2. implement `운용리스` calculation service
-3. add fixture tests against workbook scenarios
-4. expose `POST /api/quotes/calculate`
-5. return canonical quote output shape
+Initial vertical slice implemented.
+
+Completed:
+
+1. canonical quote input and output shape for the first MG slice
+2. `운용리스` calculation service using active workbook import data
+3. `POST /api/quotes/calculate`
+4. workbook-backed calculation verification using the local MG sample workbook
+
+Remaining:
+
+1. add fixture tests against workbook scenarios
+2. model taxes, registration, and extra fee rules
+3. capture workbook exception logic and residual promotion behavior
+4. tighten parity against saved Excel outputs
 
 Deliverable:
 
-One product works end to end with workbook-backed data.
+One product works end to end with workbook-backed data, with parity hardening still pending.
 
 ## Phase 3. MG product completion
 
@@ -190,11 +200,11 @@ Safe monthly production workflow.
 
 If work resumes in a fresh thread, do this in order:
 
-1. connect the real Supabase `DATABASE_URL`
-2. run Drizzle schema push or migration on Supabase
-3. verify `GET /api/imports` and `POST /api/imports`
-4. start MG `운용리스` calculation engine
-5. add fixture-based validation against the workbook
+1. add fixture-based validation against workbook scenarios for `operating_lease`
+2. model taxes, fees, and workbook exception rules in the MG calculator
+3. verify more quote cases through `POST /api/quotes/calculate`
+4. start `financial_lease`
+5. build the minimum admin UI for upload and activation
 
 ## Future lender readiness checklist
 

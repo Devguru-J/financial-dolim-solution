@@ -27,7 +27,8 @@
    - 브랜드별 기본 요율 정책 파싱
 5. 업로드 미리보기 API
 6. 업로드 데이터를 DB에 저장하는 import persistence 서비스
-7. 향후 여러 금융사를 붙이기 위한 planning 문서 세트
+7. MG캐피탈 `운용리스` 1차 계산 API
+8. 향후 여러 금융사를 붙이기 위한 planning 문서 세트
 
 ## 기술 스택
 
@@ -145,6 +146,33 @@ docs/
 2. 필드명: `file`
 3. 선택 필드: `activate=true|false`
 
+### `POST /api/quotes/calculate`
+
+현재는 `MG Capital`의 `operating_lease`만 지원합니다.
+
+요청 예시:
+
+```json
+{
+  "lenderCode": "mg-capital",
+  "productType": "operating_lease",
+  "brand": "AUDI",
+  "modelName": "A3 40 TFSI Premium",
+  "ownershipType": "company",
+  "leaseTermMonths": 36,
+  "upfrontPayment": 0
+}
+```
+
+현재 계산 결과에는 차량가, 잔가율, 브랜드 기본 IRR, 월 납입금이 포함됩니다.
+
+아직 미반영된 항목:
+
+1. 취득세/등록세
+2. 부대비용
+3. workbook의 산재한 예외 규칙
+4. residual promotion code 세부 반영
+
 ## 로컬 개발
 
 의존성 설치:
@@ -165,6 +193,23 @@ bun run typecheck
 bun run dev
 ```
 
+DB 스키마 반영:
+
+```bash
+bun run db:push
+```
+
+이 프로젝트의 `db:push`는 Supabase pooler 환경에서도 안정적으로 동작하도록
+`generate + migrate` 순서로 실행됩니다.
+
+또는 migration 적용:
+
+```bash
+bun run db:migrate
+```
+
+위 Drizzle 스크립트들은 루트의 `.dev.vars`를 자동으로 읽도록 맞춰져 있습니다.
+
 ## 환경 변수
 
 ### Preview 전용 모드
@@ -179,6 +224,12 @@ bun run dev
 
 1. `.env.example`
 2. `.dev.vars.example`
+
+빠른 시작:
+
+```bash
+cp .dev.vars.example .dev.vars
+```
 
 ## 운영 메모
 

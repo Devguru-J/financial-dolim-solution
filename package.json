@@ -7,9 +7,9 @@
     "dev": "wrangler pages dev . --compatibility-date=2026-03-17",
     "typecheck": "tsc --noEmit",
     "check": "bun run typecheck",
-    "db:generate": "drizzle-kit generate",
-    "db:migrate": "drizzle-kit migrate",
-    "db:push": "drizzle-kit push"
+    "db:generate": "bun --env-file=.dev.vars ./node_modules/drizzle-kit/bin.cjs generate",
+    "db:migrate": "bun --env-file=.dev.vars ./node_modules/drizzle-kit/bin.cjs migrate",
+    "db:push": "bun --env-file=.dev.vars scripts/db-push.ts"
   },
   "dependencies": {
     "@hono/zod-validator": "^0.7.2",

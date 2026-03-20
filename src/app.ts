@@ -5,11 +5,25 @@ import { z } from "zod";
 import { persistWorkbookImport } from "@/domain/imports/import-service";
 import { listWorkbookImports } from "@/domain/imports/import-queries";
 import { getLenderAdapter } from "@/domain/imports/lender-registry";
+import { calculateMgOperatingLeaseQuote } from "@/domain/lenders/mg-capital/operating-lease-service";
 
 type Bindings = Env;
 
 const previewQuerySchema = z.object({
   lenderCode: z.string().min(1).default("mg-capital"),
+});
+
+const calculateQuoteSchema = z.object({
+  lenderCode: z.string().min(1).default("mg-capital"),
+  productType: z.literal("operating_lease").default("operating_lease"),
+  brand: z.string().min(1),
+  modelName: z.string().min(1),
+  ownershipType: z.enum(["company", "customer"]),
+  leaseTermMonths: z.union([z.literal(12), z.literal(24), z.literal(36), z.literal(48), z.literal(60)]),
+  upfrontPayment: z.number().min(0).default(0),
+  annualIrrRateOverride: z.number().positive().optional(),
+  residualRateOverride: z.number().positive().optional(),
+  residualMatrixGroup: z.string().min(1).optional(),
 });
 
 export const app = new Hono<{ Bindings: Bindings }>();
@@ -119,4 +133,28 @@ app.post("/api/imports", zValidator("query", previewQuerySchema), async (c) => {
     workbook,
     import: importResult,
   });
+});
+
+app.post("/api/quotes/calculate", zValidator("json", calculateQuoteSchema), async (c) => {
+  const input = c.req.valid("json");
+
+  try {
+    const quote = await calculateMgOperatingLeaseQuote({
+      databaseUrl: c.env.DATABASE_URL,
+      input,
+    });
+
+    return c.json({
+      ok: true,
+      quote,
+    });
+  } catch (error) {
+    return c.json(
+      {
+        ok: false,
+        error: error instanceof Error ? error.message : "Failed to calculate quote.",
+      },
+      400,
+    );
+  }
 });
