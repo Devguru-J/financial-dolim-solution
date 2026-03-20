@@ -14,13 +14,34 @@ These documents are the long-term planning baseline for the lease calculator pla
 
 3. [Implementation Roadmap](./implementation-roadmap.md)
    - staged execution plan from current scaffold to production
+   - includes current implementation status and immediate priorities
 
 4. [MG Capital Implementation Plan](./mg-capital-implementation-plan.md)
    - lender-specific analysis for the first implementation target
+   - includes workbook findings and current MG implementation coverage
+
+5. [Supabase Setup](./supabase-setup.md)
+   - how to connect the project to Supabase PostgreSQL
+   - local env setup, migration flow, and import verification steps
+
+## Current project status summary
+
+As of 2026-03-20, the project already has:
+
+1. repository root normalized to `financial-dolim-solution`
+2. Bun + Hono + Drizzle + Cloudflare Pages scaffold in the repository root
+3. MG Capital workbook parser for vehicle rows, residual matrices, and base rate policies
+4. lender adapter structure for future multi-lender expansion
+5. workbook import preview API
+6. workbook import persistence service
+7. import listing API
+8. Drizzle migration files for the current schema
+9. Korean README and planning docs for handoff continuity
 
 ## How to use these docs
 
 1. Read `Platform Blueprint` before changing architecture.
 2. Use `Lender Onboarding Playbook` whenever a new monthly workbook or a new lender is added.
 3. Use `Implementation Roadmap` to decide what to build next.
-4. Keep lender-specific discoveries in a dedicated `<lender>-implementation-plan.md` file.
+4. Use `Supabase Setup` when connecting a real Supabase project.
+5. Keep lender-specific discoveries in a dedicated `<lender>-implementation-plan.md` file.

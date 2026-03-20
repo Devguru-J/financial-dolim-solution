@@ -86,25 +86,31 @@ Recommended split:
 
 ### API
 
-1. `POST /api/imports/preview`
+1. `GET /api/lenders`
+   - list supported lender adapters
+2. `GET /api/imports`
+   - list stored import versions when DB is connected
+3. `POST /api/imports/preview`
    - upload workbook
    - parse workbook
    - return normalized preview counts and sample rows
-2. `POST /api/imports`
+4. `POST /api/imports`
    - persist a new monthly version
    - optionally mark as active
-3. `POST /api/quotes/calculate`
+5. `POST /api/quotes/calculate`
    - run domain calculator against active workbook version
-4. `GET /api/catalog/models`
+6. `GET /api/catalog/models`
    - serve brand/model data for selectors
 
 ### DB core tables
 
-1. `workbook_imports`
-2. `vehicle_programs`
-3. `residual_matrix_rows`
-4. `brand_rate_policies`
-5. `quote_snapshots`
+1. `lenders`
+2. `lender_products`
+3. `workbook_imports`
+4. `vehicle_programs`
+5. `residual_matrix_rows`
+6. `brand_rate_policies`
+7. `quote_snapshots`
 
 ## 5. Migration strategy from Excel formulas to code
 
@@ -131,18 +137,33 @@ Implementation order:
 2. Certain workbook formulas reference dealer-specific cases and caps embedded in scattered cells
 3. Exact parity requires a scenario test set from the lender workbook
 
-## 7. What was started in this scaffold
+## 7. Current implementation status
 
-1. Bun + Hono + Drizzle + Cloudflare Pages project skeleton
-2. Initial workbook preview endpoint
-3. Initial parser for:
-   - `차량DB`
-   - `잔가map`
-4. Initial Postgres schema draft for versioned imports and quote snapshots
+Already implemented:
+
+1. MG workbook parser for vehicle programs, residual matrix rows, and base brand rate policies
+2. lender adapter registration structure
+3. import preview endpoint
+4. import persistence service with DB-aware fallback behavior
+5. import listing endpoint
+6. Drizzle schema and generated migration for current import model
+
+Verified findings from the provided MG workbook:
+
+1. `vehiclePrograms`: 638 rows parsed
+2. `residualMatrixRows`: 365 rows parsed
+3. `brandRatePolicies`: 125 rows parsed
+
+Current behavior without DB connection:
+
+1. `POST /api/imports` still parses correctly
+2. persistence returns `persisted: false`
+3. persistence mode returns `skipped`
 
 ## 8. Immediate next build slice
 
-1. Persist import previews into Supabase
-2. Parse `견적관리자용` into brand policy tables
-3. Implement first `운용리스` quote calculation service
-4. Build a small admin upload page and quote test page
+1. connect real Supabase `DATABASE_URL`
+2. run schema push or migration
+3. verify MG workbook import persistence end to end
+4. implement first `운용리스` quote calculation service
+5. add fixture-based validation using workbook scenarios

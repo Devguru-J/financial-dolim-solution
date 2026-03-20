@@ -10,7 +10,33 @@ Already done:
 
 1. basic Bun + Hono + Drizzle + Cloudflare scaffold
 2. initial MG workbook analysis
-3. initial parser for `차량DB`, `잔가map`, and base brand rate rows
+3. MG parser for `차량DB`, `잔가map`, and base brand rate rows
+4. lender adapter registry and MG Capital adapter structure
+5. `POST /api/imports/preview`
+6. `POST /api/imports`
+7. `GET /api/imports`
+8. import persistence service with `DATABASE_URL`-aware behavior
+9. Drizzle schema and generated migration files
+10. repository root normalized to `financial-dolim-solution`
+11. Supabase setup guide and env example files
+
+## Current operational note
+
+Right now the project is in a good handoff state.
+
+What is ready:
+
+1. preview parsing without DB
+2. DB persistence code path when `DATABASE_URL` is configured
+3. import listing when `DATABASE_URL` is configured
+4. documentation for continuing in a fresh thread
+
+What is not done yet:
+
+1. real Supabase connection has not been verified in this repo yet
+2. MG quote calculation engine is not implemented yet
+3. admin UI is not implemented yet
+4. fixture-based parity tests are not implemented yet
 
 ## Phase 1. Import foundation
 
@@ -18,14 +44,25 @@ Target:
 
 Make workbook import reliable and versioned.
 
-Tasks:
+Status:
+
+Mostly implemented in code, pending real DB verification.
+
+Completed:
 
 1. add `lenders` and `lender_products` tables
 2. finish `POST /api/imports/preview`
 3. implement `POST /api/imports`
-4. store raw import metadata and normalized rows
-5. add import status tracking such as previewed, validated, activated
-6. add checksum-based duplicate detection
+4. store normalized import metadata and rows
+5. add import status values such as previewed, validated, activated
+6. add checksum generation in persistence service
+
+Remaining:
+
+1. verify against a real Supabase project
+2. confirm migration/push flow on Supabase
+3. add duplicate import handling policy beyond checksum generation
+4. add active-version switching validation tests
 
 Deliverable:
 
@@ -78,7 +115,8 @@ Tasks:
 2. import preview table
 3. import anomaly summary
 4. activate/deactivate version flow
-5. quote comparison tool for debug
+5. import history view
+6. quote comparison tool for debug
 
 Deliverable:
 
@@ -108,13 +146,22 @@ Target:
 
 Make adding lenders systematic.
 
-Tasks:
+Status:
 
-1. define lender adapter contract in code
-2. move MG code under `domain/quote/lenders/mg-capital`
-3. create reusable import pipeline service
-4. create reusable validation fixture runner
-5. document lender adapter template
+Started.
+
+Completed:
+
+1. lender adapter contract introduced in code
+2. MG parser moved under lender-specific domain path
+3. reusable import persistence path introduced
+4. onboarding and blueprint docs created
+
+Remaining:
+
+1. create reusable validation fixture runner
+2. define quote-calculator adapter contract
+3. add second lender using the same structure
 
 Deliverable:
 
@@ -139,17 +186,15 @@ Deliverable:
 
 Safe monthly production workflow.
 
-## Roadmap priorities
+## Immediate next priority
 
-If we need a strict build order, use this order:
+If work resumes in a fresh thread, do this in order:
 
-1. finish import persistence
-2. finish MG operating lease calculator
-3. add fixture tests
-4. build admin upload and activation flow
-5. complete remaining MG products
-6. extract lender adapter abstraction
-7. onboard second lender
+1. connect the real Supabase `DATABASE_URL`
+2. run Drizzle schema push or migration on Supabase
+3. verify `GET /api/imports` and `POST /api/imports`
+4. start MG `운용리스` calculation engine
+5. add fixture-based validation against the workbook
 
 ## Future lender readiness checklist
 
