@@ -150,6 +150,10 @@ Already implemented:
 7. verified Supabase connection and migration flow
 8. verified MG workbook import persistence end to end
 9. first `운용리스` quote calculation service and API
+10. fixture-based parity runner with workbook-backed scenarios
+11. hidden residual candidate summary for `에스앤케이`, `APS`, and `차봇`
+12. `selectedResidualRateOverride` / `residualAmountOverride` path for exact workbook parity
+13. local `/playground` page for manual quote testing
 
 Verified findings from the provided MG workbook:
 
@@ -162,12 +166,22 @@ Current verified behavior with DB connection:
 1. `POST /api/imports` persists and activates a workbook version in Supabase
 2. `GET /api/imports` returns stored import history
 3. `POST /api/quotes/calculate` returns a workbook-backed MG `operating_lease` quote
-4. first calculator version resolves vehicle price, residual rate, base IRR, and monthly payment
+4. current calculator resolves vehicle price, residual candidates, applied residual, base IRR, and monthly payment
+5. `/playground` lets us test quote inputs, inspect hidden residual candidates, and re-run with final selected residual input
+
+Important current conclusion:
+
+1. workbook cell `BK27` behaves like a user-selected final residual input rather than a purely derived value
+2. because of that, exact parity should be modeled as:
+   - engine computes candidate residual summaries
+   - UI or API consumer confirms final residual selection
+   - request passes `selectedResidualRateOverride` or `residualAmountOverride`
+3. this is more accurate than forcing a fully automatic guess
 
 ## 8. Immediate next build slice
 
 1. add fixture-based validation using workbook scenarios
-2. model taxes, registration, and extra fee rules from the workbook
-3. capture scattered exception logic from hidden quote sheets
-4. reflect residual promotion code behavior where applicable
+2. wire `candidateSummary` and `selectionGuide` into a real quote UI
+3. model taxes, registration, and extra fee rules from the workbook
+4. capture scattered exception logic from hidden quote sheets
 5. start `금융리스` implementation

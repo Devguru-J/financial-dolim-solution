@@ -7,10 +7,16 @@ export type WorkbookVehicleProgram = {
   vehicleClass: string | null;
   vehiclePrice: number;
   residuals: Partial<Record<12 | 24 | 36 | 48 | 60, number>>;
+  snkResiduals: Partial<Record<12 | 24 | 36 | 48 | 60, number>>;
+  apsResidualBand: string | null;
+  apsResiduals: Partial<Record<12 | 24 | 36 | 48 | 60, number>>;
+  chatbotResiduals: Partial<Record<12 | 24 | 36 | 48 | 60, number>>;
   highResidualAllowed: boolean;
   hybridAllowed: boolean;
   residualPromotionCode: string | null;
   snkResidualBand: string | null;
+  apsPromotionRate: number | null;
+  snkPromotionRate: number | null;
 };
 
 export type WorkbookResidualMatrixRow = {

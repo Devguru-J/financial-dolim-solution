@@ -31,11 +31,14 @@ What is ready:
 1. preview parsing without DB
 2. DB persistence and import listing with verified Supabase connectivity
 3. active workbook-backed MG `operating_lease` calculation
-4. documentation for continuing in a fresh thread
+4. fixture-based Excel parity validation for multiple MG `operating_lease` scenarios
+5. residual candidate summary and final residual override path for workbook parity
+6. local `/playground` test page for quote iteration
+7. documentation for continuing in a fresh thread
 
 What is not done yet:
 
-1. fixture-based parity tests are not implemented yet
+1. final `BK27` user choice is not auto-derived because it behaves like a workbook-selected input
 2. taxes, fees, and workbook exception rules are not fully modeled in the calculator
 3. admin UI is not implemented yet
 4. `financial_lease` and `installment_loan` are not implemented yet
@@ -76,7 +79,7 @@ Get full MG quote parity for at least one product first.
 
 Status:
 
-Initial vertical slice implemented.
+Advanced parity-hardening in progress.
 
 Completed:
 
@@ -84,17 +87,21 @@ Completed:
 2. `운용리스` calculation service using active workbook import data
 3. `POST /api/quotes/calculate`
 4. workbook-backed calculation verification using the local MG sample workbook
+5. fixture bank for company/customer, upfront/deposit, mixed, and promo cases
+6. hidden residual candidate summary for `에스앤케이`, `APS`, and `차봇`
+7. final residual selection path through `selectedResidualRateOverride`
+8. local `/playground` page for manual quote testing
 
 Remaining:
 
-1. add fixture tests against workbook scenarios
-2. model taxes, registration, and extra fee rules
-3. capture workbook exception logic and residual promotion behavior
-4. tighten parity against saved Excel outputs
+1. model taxes, registration, and extra fee rules
+2. capture remaining workbook exception logic outside current residual flow
+3. build UI flow that lets users confirm workbook-style final residual selection
+4. tighten parity against more saved Excel outputs if new edge cases appear
 
 Deliverable:
 
-One product works end to end with workbook-backed data, with parity hardening still pending.
+One product works end to end with workbook-backed data and practical Excel parity, with a final residual-selection confirmation step.
 
 ## Phase 3. MG product completion
 
@@ -127,6 +134,7 @@ Tasks:
 4. activate/deactivate version flow
 5. import history view
 6. quote comparison tool for debug
+7. residual candidate picker wired to `selectedResidualRateOverride`
 
 Deliverable:
 
@@ -200,8 +208,8 @@ Safe monthly production workflow.
 
 If work resumes in a fresh thread, do this in order:
 
-1. add fixture-based validation against workbook scenarios for `operating_lease`
-2. model taxes, fees, and workbook exception rules in the MG calculator
+1. connect `residual.selectionGuide` and `candidateSummary` to a real quote UI
+2. model taxes, fees, and remaining workbook exception rules in the MG calculator
 3. verify more quote cases through `POST /api/quotes/calculate`
 4. start `financial_lease`
 5. build the minimum admin UI for upload and activation

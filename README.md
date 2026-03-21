@@ -160,18 +160,27 @@ docs/
   "modelName": "A3 40 TFSI Premium",
   "ownershipType": "company",
   "leaseTermMonths": 36,
+  "annualMileageKm": 20000,
   "upfrontPayment": 0
 }
 ```
 
-현재 계산 결과에는 차량가, 잔가율, 브랜드 기본 IRR, 월 납입금이 포함됩니다.
+현재 계산 결과에는 차량가, 실제 적용 잔가율, 브랜드 기본 IRR, 월 납입금과 hidden residual candidate summary가 포함됩니다.
+
+엑셀의 최종 선택 잔가율(`BK27`)은 workbook에서 수동 선택값처럼 동작하므로,
+정확히 맞추고 싶다면
+`selectedResidualRateOverride` 또는 `residualAmountOverride`를 함께 넘기면 됩니다.
+
+`residual.selectionGuide.requiresUserConfirmation`가 `true`이면
+프론트나 API 소비 레이어에서 최종 잔가율 선택을 한 번 더 받아서
+`selectedResidualRateOverride`로 재호출하는 흐름을 권장합니다.
 
 아직 미반영된 항목:
 
 1. 취득세/등록세
 2. 부대비용
 3. workbook의 산재한 예외 규칙
-4. residual promotion code 세부 반영
+4. BK27 최종 선택 잔가율 자동화
 
 ## 로컬 개발
 

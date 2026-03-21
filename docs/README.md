@@ -38,7 +38,9 @@ As of 2026-03-20, the project already has:
 8. verified Supabase connection and Drizzle migration flow
 9. first MG Capital `operating_lease` quote calculation API backed by active workbook data
 10. Drizzle migration files for the current schema
-11. Korean README and planning docs for handoff continuity
+11. fixture-based Excel parity tests and hidden residual candidate tracing
+12. `/playground` page for local quote testing and residual selection verification
+13. Korean README and planning docs for handoff continuity
 
 ## How to use these docs
 
@@ -47,3 +49,4 @@ As of 2026-03-20, the project already has:
 3. Use `Implementation Roadmap` to decide what to build next.
 4. Use `Supabase Setup` when connecting a real Supabase project.
 5. Keep lender-specific discoveries in a dedicated `<lender>-implementation-plan.md` file.
+6. For current MG work, treat `candidateSummary` and `selectionGuide` as the bridge to the future quote UI.

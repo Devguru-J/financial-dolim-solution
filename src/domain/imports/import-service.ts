@@ -104,6 +104,12 @@ export async function persistWorkbookImport(params: {
             snkResidualBand: program.snkResidualBand,
             rawRow: {
               residuals: program.residuals,
+              snkResiduals: program.snkResiduals,
+              apsResidualBand: program.apsResidualBand,
+              apsResiduals: program.apsResiduals,
+              chatbotResiduals: program.chatbotResiduals,
+              apsPromotionRate: program.apsPromotionRate,
+              snkPromotionRate: program.snkPromotionRate,
             },
           })),
         );
