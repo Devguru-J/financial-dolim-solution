@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>AutoFinance Ops - Institutional Terminal</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "primary-fixed-dim": "#b7c8de",
+              "primary-container": "#1a2b3c",
+              "on-secondary": "#ffffff",
+              "primary-fixed": "#d2e4fb",
+              "secondary-fixed-dim": "#b7c8e1",
+              "surface-container": "#eceef0",
+              "on-primary-container": "#8192a7",
+              "on-surface-variant": "#44474c",
+              "on-tertiary": "#ffffff",
+              "error": "#ba1a1a",
+              "secondary-container": "#d0e1fb",
+              "on-error-container": "#93000a",
+              "on-surface": "#191c1e",
+              "tertiary-container": "#00311f",
+              "on-secondary-container": "#54647a",
+              "on-primary-fixed-variant": "#38485a",
+              "surface": "#f7f9fb",
+              "on-secondary-fixed-variant": "#38485d",
+              "on-tertiary-fixed-variant": "#005236",
+              "surface-container-high": "#e6e8ea",
+              "primary": "#041627",
+              "surface-variant": "#e0e3e5",
+              "surface-container-lowest": "#ffffff",
+              "inverse-primary": "#b7c8de",
+              "inverse-on-surface": "#eff1f3",
+              "tertiary-fixed-dim": "#4edea3",
+              "error-container": "#ffdad6",
+              "on-primary": "#ffffff",
+              "on-tertiary-container": "#00a572",
+              "on-primary-fixed": "#0b1d2d",
+              "surface-container-highest": "#e0e3e5",
+              "secondary-fixed": "#d3e4fe",
+              "on-tertiary-fixed": "#002113",
+              "on-error": "#ffffff",
+              "outline-variant": "#c4c6cd",
+              "outline": "#74777d",
+              "tertiary-fixed": "#6ffbbe",
+              "secondary": "#505f76",
+              "tertiary": "#001a0f",
+              "on-secondary-fixed": "#0b1c30",
+              "background": "#f7f9fb",
+              "on-background": "#191c1e",
+              "surface-tint": "#4f6073",
+              "surface-dim": "#d8dadc",
+              "surface-container-low": "#f2f4f6",
+              "inverse-surface": "#2d3133",
+              "surface-bright": "#f7f9fb"
+            },
+            fontFamily: {
+              "headline": ["Manrope"],
+              "body": ["Inter"],
+              "label": ["Inter"]
+            },
+            borderRadius: {"DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem"},
+          },
+        },
+      }
+    </script>
+<style>
+      .material-symbols-outlined {
+        font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+      }
+      .tabular-nums { font-variant-numeric: tabular-nums; }
+      body { font-family: 'Inter', sans-serif; }
+      h1, h2, h3 { font-family: 'Manrope', sans-serif; }
+    </style>
+</head>
+<body class="bg-surface text-on-surface">
+<!-- Screen 2: Main Dashboard (Representative Shell Implementation) -->
+<!-- Logic: SideNav and TopAppBar are visible here as it's a top-level destination -->
+<div class="flex min-h-screen">
+<!-- SideNavBar -->
+<aside class="fixed left-0 top-0 h-full flex flex-col pt-4 z-40 bg-slate-900 dark:bg-black w-64 border-r-0">
+<div class="px-6 mb-8">
+<h1 class="text-white font-black tracking-widest uppercase text-lg">PRECISION LEDGER</h1>
+<p class="text-on-primary-container text-[0.65rem] font-bold uppercase tracking-tighter">Institutional Terminal</p>
+</div>
+<nav class="flex-1 space-y-1 font-manrope text-[0.8125rem] font-semibold">
+<!-- Active Tab: Dashboard -->
+<a class="flex items-center bg-tertiary-fixed/10 text-tertiary-fixed border-l-4 border-tertiary-fixed px-4 py-3 transition-all" href="#">
+<span class="material-symbols-outlined mr-3" data-icon="dashboard">dashboard</span>
+                    Dashboard
+                </a>
+<a class="flex items-center text-slate-400 px-4 py-3 hover:text-slate-100 transition-all hover:bg-slate-800/50" href="#">
+<span class="material-symbols-outlined mr-3" data-icon="account_balance">account_balance</span>
+                    Lenders
+                </a>
+<a class="flex items-center text-slate-400 px-4 py-3 hover:text-slate-100 transition-all hover:bg-slate-800/50" href="#">
+<span class="material-symbols-outlined mr-3" data-icon="upload_file">upload_file</span>
+                    Imports
+                </a>
+<a class="flex items-center text-slate-400 px-4 py-3 hover:text-slate-100 transition-all hover:bg-slate-800/50" href="#">
+<span class="material-symbols-outlined mr-3" data-icon="calculate">calculate</span>
+                    Quotes
+                </a>
+<a class="flex items-center text-slate-400 px-4 py-3 hover:text-slate-100 transition-all hover:bg-slate-800/50" href="#">
+<span class="material-symbols-outlined mr-3" data-icon="compare_arrows">compare_arrows</span>
+                    Comparisons
+                </a>
+<a class="flex items-center text-slate-400 px-4 py-3 hover:text-slate-100 transition-all hover:bg-slate-800/50" href="#">
+<span class="material-symbols-outlined mr-3" data-icon="camera_roll">camera_roll</span>
+                    Snapshots
+                </a>
+<a class="flex items-center text-slate-400 px-4 py-3 hover:text-slate-100 transition-all hover:bg-slate-800/50" href="#">
+<span class="material-symbols-outlined mr-3" data-icon="bug_report">bug_report</span>
+                    Debug
+                </a>
+<a class="flex items-center text-slate-400 px-4 py-3 hover:text-slate-100 transition-all hover:bg-slate-800/50" href="#">
+<span class="material-symbols-outlined mr-3" data-icon="settings_applications">settings_applications</span>
+                    System
+                </a>
+</nav>
+<div class="p-4 bg-slate-800/50 mt-auto">
+<div class="flex items-center gap-3">
+<img class="w-8 h-8 rounded-full border border-slate-700" data-alt="Professional user profile headshot avatar" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAl9ETBy5tJGpzYwVUX6GdT9a9d5VV7ybVyGhX4sxHW0S5IMAwoK_djhrvKCZTH6PjaWkhWAWMm1EE0N2u2i4Zr4GyzD8qv6RzSmg303d52RdiNhAupQ34lWbn_2aMjC3B8duF2219xhohReOtd7Bn9aaqj1DhfBrVkOM8SmYtZb9R7SZniGQoK8bfuiVEPrNy3yo5zKYsS4rc2ewrDfyUd52I2uMEQil_6Vcoa6qIraWuPUqekUB_1YavEnTC6VQCrFt4s-1Jc_Jqp"/>
+<div class="overflow-hidden">
+<p class="text-white text-xs font-bold truncate">Admin Session</p>
+<p class="text-slate-500 text-[10px] truncate">v2.4.1-stable</p>
+</div>
+</div>
+</div>
+</aside>
+<!-- Main Content Area -->
+<main class="flex-1 ml-64 min-h-screen">
+<!-- TopAppBar -->
+<header class="flex justify-between items-center w-full px-6 h-12 z-50 bg-slate-900 dark:bg-slate-950 sticky top-0 font-manrope text-sm font-medium tracking-tight">
+<div class="flex items-center gap-6">
+<span class="text-lg font-bold text-white tracking-tighter">AutoFinance Ops</span>
+<nav class="flex gap-4">
+<span class="text-tertiary-fixed border-b-2 border-tertiary-fixed pb-1 cursor-default">Lender: Shinhan Card</span>
+<span class="text-slate-400 hover:text-slate-200 cursor-pointer transition-colors">v2.4.1-stable</span>
+</nav>
+</div>
+<div class="flex items-center gap-4">
+<button class="text-slate-400 hover:bg-slate-800 p-1.5 transition-colors scale-95 duration-150">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+</button>
+<button class="text-slate-400 hover:bg-slate-800 p-1.5 transition-colors scale-95 duration-150">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+</button>
+</div>
+</header>
+<div class="p-8 space-y-8">
+<!-- Dashboard Header -->
+<div class="flex justify-between items-end">
+<div>
+<h2 class="text-2xl font-extrabold tracking-tight text-primary">System Dashboard</h2>
+<p class="text-on-surface-variant text-sm">Real-time institutional ledger overview</p>
+</div>
+<!-- Quick Actions Bar -->
+<div class="flex gap-2">
+<button class="bg-primary text-on-primary px-4 py-2 rounded-lg text-xs font-bold flex items-center gap-2 hover:bg-primary-container transition-colors shadow-sm">
+<span class="material-symbols-outlined text-sm" data-icon="calculate">calculate</span>
+                            Calculate New Quote
+                        </button>
+<button class="bg-surface-container-high text-on-surface px-4 py-2 rounded-lg text-xs font-bold flex items-center gap-2 hover:bg-surface-container-highest transition-colors">
+<span class="material-symbols-outlined text-sm" data-icon="upload_file">upload_file</span>
+                            Upload Workbook
+                        </button>
+<button class="bg-surface-container-high text-on-surface px-4 py-2 rounded-lg text-xs font-bold flex items-center gap-2 hover:bg-surface-container-highest transition-colors">
+<span class="material-symbols-outlined text-sm" data-icon="analytics">analytics</span>
+                            Scan for Anomalies
+                        </button>
+</div>
+</div>
+<!-- Bento Grid Metrics -->
+<div class="grid grid-cols-12 gap-4">
+<!-- Metric Card: Primary Total -->
+<div class="col-span-12 md:col-span-4 bg-gradient-to-br from-primary to-primary-container p-6 rounded-xl text-white shadow-lg relative overflow-hidden">
+<div class="relative z-10">
+<p class="text-on-primary-container text-xs font-bold uppercase tracking-widest mb-1">Active Lenders</p>
+<h3 class="text-4xl font-black tabular-nums">14</h3>
+<div class="mt-4 flex items-center gap-2 text-tertiary-fixed">
+<span class="material-symbols-outlined text-sm" data-icon="trending_up">trending_up</span>
+<span class="text-xs font-bold">+2 in last 30 days</span>
+</div>
+</div>
+<span class="material-symbols-outlined absolute -right-4 -bottom-4 text-white/10 text-9xl pointer-events-none" data-icon="account_balance">account_balance</span>
+</div>
+<!-- Metric Card: Status -->
+<div class="col-span-12 md:col-span-4 bg-surface-container-low p-6 rounded-xl border border-outline-variant/20">
+<p class="text-on-surface-variant text-xs font-bold uppercase tracking-widest mb-1">Active Workbook Version</p>
+<h3 class="text-xl font-bold text-primary">MG Capital - June 2026</h3>
+<p class="text-on-surface-variant text-xs mt-1">Hash: 8f2d1e...92a</p>
+<div class="mt-6 flex items-center gap-2">
+<span class="inline-block w-2 h-2 rounded-full bg-tertiary-fixed"></span>
+<span class="text-xs font-semibold text-on-tertiary-fixed-variant">System Synchronized</span>
+</div>
+</div>
+<!-- Metric Card: Calculation Load -->
+<div class="col-span-12 md:col-span-4 bg-surface-container-low p-6 rounded-xl border border-outline-variant/20">
+<p class="text-on-surface-variant text-xs font-bold uppercase tracking-widest mb-1">Calculation Requests (24h)</p>
+<h3 class="text-4xl font-black text-primary tabular-nums">4,812</h3>
+<div class="mt-4 h-1 w-full bg-surface-container-highest rounded-full overflow-hidden">
+<div class="h-full bg-primary w-[72%]"></div>
+</div>
+<p class="text-[10px] text-on-surface-variant mt-2 font-medium">72% of total capacity allocated</p>
+</div>
+<!-- Large Table Area: Recent Activity -->
+<div class="col-span-12 lg:col-span-8 bg-surface-container-lowest rounded-xl border border-outline-variant/20 overflow-hidden shadow-sm">
+<div class="px-6 py-4 border-b border-surface-container-high flex justify-between items-center">
+<h3 class="font-bold text-primary">Recent Operations Feed</h3>
+<button class="text-primary text-xs font-bold hover:underline">View All Logs</button>
+</div>
+<div class="overflow-x-auto">
+<table class="w-full text-left text-sm">
+<thead class="bg-surface-container-high text-on-surface-variant text-[0.7rem] uppercase tracking-tighter">
+<tr>
+<th class="px-6 py-3 font-bold">Operation</th>
+<th class="px-6 py-3 font-bold">Entity</th>
+<th class="px-6 py-3 font-bold">Status</th>
+<th class="px-6 py-3 font-bold">Timestamp</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-surface-container">
+<tr class="hover:bg-surface-container-low transition-colors">
+<td class="px-6 py-4 font-semibold text-primary">Policy Delta Applied</td>
+<td class="px-6 py-4">MG Capital</td>
+<td class="px-6 py-4">
+<span class="px-2 py-0.5 rounded bg-tertiary-fixed/20 text-on-tertiary-fixed-variant text-[10px] font-bold">SUCCESS</span>
+</td>
+<td class="px-6 py-4 text-on-surface-variant text-xs tabular-nums">2024.05.22 14:22:01</td>
+</tr>
+<tr class="hover:bg-surface-container-low transition-colors">
+<td class="px-6 py-4 font-semibold text-primary">Residual Matrix Import</td>
+<td class="px-6 py-4">Shinhan Card</td>
+<td class="px-6 py-4">
+<span class="px-2 py-0.5 rounded bg-on-secondary-container/10 text-on-secondary-container text-[10px] font-bold">PENDING</span>
+</td>
+<td class="px-6 py-4 text-on-surface-variant text-xs tabular-nums">2024.05.22 13:45:12</td>
+</tr>
+<tr class="hover:bg-surface-container-low transition-colors">
+<td class="px-6 py-4 font-semibold text-primary">Anomaly Detection Scan</td>
+<td class="px-6 py-4">Global Ledger</td>
+<td class="px-6 py-4">
+<span class="px-2 py-0.5 rounded bg-error-container text-on-error-container text-[10px] font-bold">WARNING</span>
+</td>
+<td class="px-6 py-4 text-on-surface-variant text-xs tabular-nums">2024.05.22 12:00:00</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<!-- Sidebar Content: Import Status -->
+<div class="col-span-12 lg:col-span-4 space-y-4">
+<div class="bg-white p-6 rounded-xl border border-outline-variant/20 shadow-sm">
+<div class="flex items-center justify-between mb-4">
+<h3 class="font-bold text-primary">Import Status</h3>
+<span class="material-symbols-outlined text-on-surface-variant" data-icon="refresh">refresh</span>
+</div>
+<div class="space-y-4">
+<div class="flex items-start gap-3">
+<div class="w-8 h-8 rounded bg-surface-container-high flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-primary text-lg" data-icon="description">description</span>
+</div>
+<div class="flex-1">
+<div class="flex justify-between items-center mb-1">
+<p class="text-xs font-bold text-primary">Workbook_V5_Final.xlsx</p>
+<p class="text-[10px] font-bold text-tertiary-fixed-dim">95%</p>
+</div>
+<div class="h-1.5 w-full bg-surface-container-high rounded-full overflow-hidden">
+<div class="h-full bg-tertiary-fixed w-[95%]"></div>
+</div>
+</div>
+</div>
+<div class="p-3 bg-error-container/20 border border-error/10 rounded-lg">
+<div class="flex items-center gap-2 text-on-error-container mb-1">
+<span class="material-symbols-outlined text-sm" data-icon="warning">warning</span>
+<p class="text-[10px] font-bold">2 Mismatches Detected</p>
+</div>
+<p class="text-[9px] text-on-error-container/80">Lender: Shinhan - Column 'Residual_A' contains non-numeric values in row 482.</p>
+</div>
+</div>
+</div>
+<div class="bg-primary p-6 rounded-xl text-white relative overflow-hidden">
+<h3 class="font-bold mb-2">System Health</h3>
+<div class="flex items-baseline gap-1">
+<span class="text-3xl font-black tabular-nums">99.98</span>
+<span class="text-xs text-on-primary-container">%</span>
+</div>
+<p class="text-[10px] text-on-primary-container mt-1">Uptime SLA Compliance</p>
+<!-- Visual Decoration -->
+<div class="absolute right-0 bottom-0 opacity-10">
+<svg height="60" viewbox="0 0 100 60" width="100">
+<path d="M0 50 Q 25 20, 50 40 T 100 10" fill="none" stroke="white" stroke-width="4"></path>
+</svg>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+</div>
+<!-- Screen 3: Lenders List (Floating Layer Concept) -->
+<div class="hidden fixed inset-0 z-[60] bg-primary/20 backdrop-blur-sm flex items-center justify-center p-8">
+<div class="bg-surface w-full max-w-6xl h-[819px] rounded-xl shadow-2xl flex flex-col overflow-hidden border border-outline-variant/30">
+<!-- Header -->
+<div class="bg-surface-container-lowest px-8 py-6 flex justify-between items-center border-b border-surface-container">
+<div>
+<h2 class="text-xl font-extrabold text-primary">Financial Institutions</h2>
+<p class="text-on-surface-variant text-xs">Manage active lender profiles and data feeds</p>
+</div>
+<div class="flex items-center gap-4">
+<div class="flex bg-surface-container rounded-lg p-1 border border-outline-variant/10">
+<input class="bg-transparent border-none text-xs focus:ring-0 w-48" placeholder="Search lenders..." type="text"/>
+<button class="bg-primary text-white p-1 rounded">
+<span class="material-symbols-outlined text-sm" data-icon="search">search</span>
+</button>
+</div>
+<button class="text-primary hover:bg-surface-container p-2 rounded-lg">
+<span class="material-symbols-outlined" data-icon="close">close</span>
+</button>
+</div>
+</div>
+<!-- Filters -->
+<div class="px-8 py-4 bg-surface-container-low flex gap-4 border-b border-surface-container">
+<select class="bg-surface-container-lowest border-outline-variant/30 text-[0.7rem] font-bold rounded px-3 py-1.5 focus:ring-primary focus:border-primary">
+<option>Status: All</option>
+<option>Active</option>
+<option>Development</option>
+</select>
+<select class="bg-surface-container-lowest border-outline-variant/30 text-[0.7rem] font-bold rounded px-3 py-1.5 focus:ring-primary focus:border-primary">
+<option>Product: Leasing</option>
+<option>Product: Finance Lease</option>
+</select>
+</div>
+<!-- Table -->
+<div class="flex-1 overflow-auto bg-surface-container-lowest">
+<table class="w-full text-left border-collapse">
+<thead class="sticky top-0 bg-surface-container-highest z-10 text-[0.7rem] font-bold text-on-surface-variant uppercase tracking-tighter">
+<tr>
+<th class="px-8 py-4">Lender Name</th>
+<th class="px-8 py-4">Status</th>
+<th class="px-8 py-4">Supported Products</th>
+<th class="px-8 py-4">Version</th>
+<th class="px-8 py-4">Last Sync</th>
+<th class="px-8 py-4"></th>
+</tr>
+</thead>
+<tbody class="divide-y divide-surface-container">
+<tr class="hover:bg-surface-container-low transition-colors group">
+<td class="px-8 py-4">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded bg-primary-container text-white flex items-center justify-center text-xs font-black">MG</div>
+<span class="font-bold text-primary">MG Capital</span>
+</div>
+</td>
+<td class="px-8 py-4">
+<span class="px-2 py-1 rounded-full bg-tertiary-fixed/20 text-on-tertiary-fixed-variant text-[10px] font-bold">ACTIVE</span>
+</td>
+<td class="px-8 py-4">
+<div class="flex gap-1">
+<span class="bg-surface-container px-2 py-0.5 rounded text-[9px] font-medium">Lease</span>
+<span class="bg-surface-container px-2 py-0.5 rounded text-[9px] font-medium">Installment</span>
+</div>
+</td>
+<td class="px-8 py-4 text-xs font-medium tabular-nums">V2.6.4</td>
+<td class="px-8 py-4 text-[10px] text-on-surface-variant tabular-nums">2024.05.21 09:00</td>
+<td class="px-8 py-4 text-right">
+<button class="opacity-0 group-hover:opacity-100 bg-primary text-white text-[10px] font-bold px-3 py-1.5 rounded transition-all">Details</button>
+</td>
+</tr>
+<!-- Repeat rows as needed -->
+<tr class="hover:bg-surface-container-low transition-colors group">
+<td class="px-8 py-4">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded bg-slate-400 text-white flex items-center justify-center text-xs font-black">SH</div>
+<span class="font-bold text-primary">Shinhan Card</span>
+</div>
+</td>
+<td class="px-8 py-4">
+<span class="px-2 py-1 rounded-full bg-secondary-container text-on-secondary-container text-[10px] font-bold uppercase">Development</span>
+</td>
+<td class="px-8 py-4">
+<div class="flex gap-1">
+<span class="bg-surface-container px-2 py-0.5 rounded text-[9px] font-medium">Finance Lease</span>
+</div>
+</td>
+<td class="px-8 py-4 text-xs font-medium tabular-nums">V1.0.1-RC</td>
+<td class="px-8 py-4 text-[10px] text-on-surface-variant tabular-nums">2024.05.22 13:15</td>
+<td class="px-8 py-4 text-right">
+<button class="opacity-0 group-hover:opacity-100 bg-primary text-white text-[10px] font-bold px-3 py-1.5 rounded transition-all">Details</button>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+<!-- Login Screen Placeholder Overlay (Toggle visibility as needed) -->
+<div class="hidden fixed inset-0 z-[100] bg-primary flex items-center justify-center overflow-hidden">
+<!-- Abstract Background Decoration -->
+<div class="absolute inset-0 opacity-20 pointer-events-none">
+<div class="absolute top-0 right-0 w-[800px] h-[800px] bg-gradient-to-bl from-tertiary-fixed/30 to-transparent rounded-full blur-[120px] -mr-96 -mt-96"></div>
+<div class="absolute bottom-0 left-0 w-[600px] h-[600px] bg-gradient-to-tr from-primary-fixed-dim/20 to-transparent rounded-full blur-[100px] -ml-48 -mb-48"></div>
+</div>
+<div class="relative z-10 w-full max-w-md p-6">
+<div class="bg-white rounded-xl shadow-2xl p-10 space-y-8">
+<div class="text-center">
+<h1 class="text-2xl font-black tracking-widest text-primary uppercase">AUTOFINANCE OPS</h1>
+<p class="text-on-surface-variant text-xs mt-1 font-bold">Precision Ledger Access</p>
+</div>
+<form class="space-y-6">
+<div class="space-y-2">
+<label class="text-[0.7rem] font-black uppercase tracking-widest text-on-surface-variant">Institutional ID / Email</label>
+<input class="w-full bg-surface-container-high border-none rounded-lg px-4 py-3 text-sm focus:ring-2 focus:ring-primary transition-all" placeholder="name@organization.com" type="email"/>
+</div>
+<div class="space-y-2">
+<div class="flex justify-between items-center">
+<label class="text-[0.7rem] font-black uppercase tracking-widest text-on-surface-variant">Password</label>
+<a class="text-[0.7rem] font-bold text-on-secondary-container hover:underline" href="#">Forgot?</a>
+</div>
+<input class="w-full bg-surface-container-high border-none rounded-lg px-4 py-3 text-sm focus:ring-2 focus:ring-primary transition-all" placeholder="••••••••" type="password"/>
+</div>
+<div class="flex items-center gap-2">
+<input class="w-4 h-4 text-primary bg-surface-container-high border-none rounded focus:ring-primary" id="remember" type="checkbox"/>
+<label class="text-xs font-semibold text-on-surface-variant" for="remember">Remember me on this terminal</label>
+</div>
+<button class="w-full bg-primary text-on-primary font-bold py-4 rounded-lg shadow-lg hover:bg-primary-container transition-colors tracking-wide uppercase text-sm" type="button">
+                        Access Ledger
+                    </button>
+</form>
+<div class="pt-4 text-center">
+<p class="text-[10px] text-on-surface-variant font-medium">Internal System. Unauthorized access is strictly monitored.</p>
+</div>
+</div>
+<footer class="mt-8 text-center">
+<p class="text-on-primary-container text-[10px] font-bold tracking-widest uppercase">AutoFinance Ops v2.4.1-stable</p>
+</footer>
+</div>
+</div>
+</body></html>

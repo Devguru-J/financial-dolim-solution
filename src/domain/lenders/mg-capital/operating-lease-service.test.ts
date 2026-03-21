@@ -4,6 +4,7 @@ import { readdirSync, readFileSync } from "node:fs";
 import {
   calculateMgOperatingLeaseQuoteFromResolvedInput,
   resolveMgOperatingLeaseResidualRate,
+  resolveWorkbookDisplayedAnnualRate,
   summarizeMgResidualCandidates,
 } from "@/domain/lenders/mg-capital/operating-lease-service";
 
@@ -384,4 +385,126 @@ test("MG quote exposes residual selection guide when workbook-style confirmation
   });
 
   expect(quote.residual.selectionGuide?.requiresUserConfirmation).toBe(true);
+});
+
+test("MG displayed annual rate uses workbook parity heuristic for AUDI company 60-month path", () => {
+  const resolved = resolveWorkbookDisplayedAnnualRate({
+    input: {
+      lenderCode: "mg-capital",
+      productType: "operating_lease",
+      brand: "AUDI",
+      modelName: "A3 40 TFSI Premium",
+      ownershipType: "company",
+      leaseTermMonths: 60,
+      upfrontPayment: 0,
+    },
+    baseIrrRateRaw: 0.047,
+  });
+
+  expect(resolved.source).toBe("workbook-heuristic");
+  expect(resolved.displayedAnnualRateRaw).toBe(0.05018);
+});
+
+test("MG AG/CM fee rates affect financed cost and monthly payment", () => {
+  const quoteWithoutFees = calculateMgOperatingLeaseQuoteFromResolvedInput({
+    workbookImport: {
+      id: "fixture-workbook-import",
+      versionLabel: "복사본 ★MG캐피탈_수입견적_26.03월_외부용_2603_vol1_잠금해제",
+    },
+    input: {
+      lenderCode: "mg-capital",
+      productType: "operating_lease",
+      brand: "AUDI",
+      modelName: "A3 40 TFSI Premium",
+      ownershipType: "company",
+      leaseTermMonths: 36,
+      annualMileageKm: 20000,
+      upfrontPayment: 0,
+      quotedVehiclePrice: 46400000,
+      discountAmount: 0,
+      annualIrrRateOverride: 0.047,
+      annualEffectiveRateOverride: 0.04699540291,
+      paymentRateOverride: 0.04709,
+      selectedResidualRateOverride: 0.45,
+      acquisitionTaxRateOverride: 0.07,
+      publicBondCost: 0,
+      stampDuty: 10000,
+      agFeeRate: 0,
+      cmFeeRate: 0,
+    },
+    vehicle: {
+      brand: "AUDI",
+      modelName: "A3 40 TFSI Premium",
+      vehiclePrice: "46400000",
+      vehicleClass: "승용일반",
+      engineDisplacementCc: 1984,
+      highResidualAllowed: true,
+      hybridAllowed: false,
+      residualPromotionCode: "0",
+      snkResidualBand: "P",
+      term12Residual: null,
+      term24Residual: null,
+      term36Residual: null,
+      term48Residual: null,
+      term60Residual: null,
+      rawRow: null,
+    },
+    displayedAnnualRateRaw: 0.047,
+    residualRateRaw: 0.45,
+    residualSource: "override",
+    resolvedMatrixGroup: null,
+  });
+
+  const quoteWithFees = calculateMgOperatingLeaseQuoteFromResolvedInput({
+    workbookImport: {
+      id: "fixture-workbook-import",
+      versionLabel: "복사본 ★MG캐피탈_수입견적_26.03월_외부용_2603_vol1_잠금해제",
+    },
+    input: {
+      lenderCode: "mg-capital",
+      productType: "operating_lease",
+      brand: "AUDI",
+      modelName: "A3 40 TFSI Premium",
+      ownershipType: "company",
+      leaseTermMonths: 36,
+      annualMileageKm: 20000,
+      upfrontPayment: 0,
+      quotedVehiclePrice: 46400000,
+      discountAmount: 0,
+      annualIrrRateOverride: 0.047,
+      annualEffectiveRateOverride: 0.04699540291,
+      paymentRateOverride: 0.04709,
+      selectedResidualRateOverride: 0.45,
+      acquisitionTaxRateOverride: 0.07,
+      publicBondCost: 0,
+      stampDuty: 10000,
+      agFeeRate: 0.01,
+      cmFeeRate: 0.005,
+    },
+    vehicle: {
+      brand: "AUDI",
+      modelName: "A3 40 TFSI Premium",
+      vehiclePrice: "46400000",
+      vehicleClass: "승용일반",
+      engineDisplacementCc: 1984,
+      highResidualAllowed: true,
+      hybridAllowed: false,
+      residualPromotionCode: "0",
+      snkResidualBand: "P",
+      term12Residual: null,
+      term24Residual: null,
+      term36Residual: null,
+      term48Residual: null,
+      term60Residual: null,
+      rawRow: null,
+    },
+    displayedAnnualRateRaw: 0.047,
+    residualRateRaw: 0.45,
+    residualSource: "override",
+    resolvedMatrixGroup: null,
+  });
+
+  expect(quoteWithoutFees.feesAndTaxes.extraFees).toBe(0);
+  expect(quoteWithFees.feesAndTaxes.extraFees > 0).toBe(true);
+  expect(quoteWithFees.monthlyPayment > quoteWithoutFees.monthlyPayment).toBe(true);
 });

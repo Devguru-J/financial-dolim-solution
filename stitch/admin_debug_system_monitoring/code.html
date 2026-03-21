@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>AutoFinance Ops - Administrative Terminal</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+      display: inline-block;
+      line-height: 1;
+      font-size: 20px;
+    }
+    .tabular-nums {
+      font-variant-numeric: tabular-nums;
+    }
+    /* Custom scrollbar for high-density feel */
+    ::-webkit-scrollbar { width: 4px; height: 4px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 2px; }
+  </style>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "primary-fixed-dim": "#b7c8de",
+            "primary-container": "#1a2b3c",
+            "on-secondary": "#ffffff",
+            "primary-fixed": "#d2e4fb",
+            "secondary-fixed-dim": "#b7c8e1",
+            "surface-container": "#eceef0",
+            "on-primary-container": "#8192a7",
+            "on-surface-variant": "#44474c",
+            "on-tertiary": "#ffffff",
+            "error": "#ba1a1a",
+            "secondary-container": "#d0e1fb",
+            "on-error-container": "#93000a",
+            "on-surface": "#191c1e",
+            "tertiary-container": "#00311f",
+            "on-secondary-container": "#54647a",
+            "on-primary-fixed-variant": "#38485a",
+            "surface": "#f7f9fb",
+            "on-secondary-fixed-variant": "#38485d",
+            "on-tertiary-fixed-variant": "#005236",
+            "surface-container-high": "#e6e8ea",
+            "primary": "#041627",
+            "surface-variant": "#e0e3e5",
+            "surface-container-lowest": "#ffffff",
+            "inverse-primary": "#b7c8de",
+            "inverse-on-surface": "#eff1f3",
+            "tertiary-fixed-dim": "#4edea3",
+            "error-container": "#ffdad6",
+            "on-primary": "#ffffff",
+            "on-tertiary-container": "#00a572",
+            "on-primary-fixed": "#0b1d2d",
+            "surface-container-highest": "#e0e3e5",
+            "secondary-fixed": "#d3e4fe",
+            "on-tertiary-fixed": "#002113",
+            "on-error": "#ffffff",
+            "outline-variant": "#c4c6cd",
+            "outline": "#74777d",
+            "tertiary-fixed": "#6ffbbe",
+            "secondary": "#505f76",
+            "tertiary": "#001a0f",
+            "on-secondary-fixed": "#0b1c30",
+            "background": "#f7f9fb",
+            "on-background": "#191c1e",
+            "surface-tint": "#4f6073",
+            "surface-dim": "#d8dadc",
+            "surface-container-low": "#f2f4f6",
+            "inverse-surface": "#2d3133",
+            "surface-bright": "#f7f9fb"
+          },
+          fontFamily: {
+            "headline": ["Manrope"],
+            "body": ["Inter"],
+            "label": ["Inter"]
+          },
+          borderRadius: {"DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem"},
+        },
+      },
+    }
+  </script>
+</head>
+<body class="bg-surface font-body text-on-surface">
+<!-- Side Navigation Bar -->
+<aside class="fixed left-0 top-0 h-full flex flex-col pt-4 z-40 bg-slate-900 dark:bg-black font-manrope text-[0.8125rem] font-semibold docked left-0 w-64 border-r-0 flat">
+<div class="px-6 mb-8">
+<h1 class="text-white font-black tracking-widest uppercase">Precision Ledger</h1>
+<p class="text-on-primary-container text-[10px] tracking-widest">INSTITUTIONAL TERMINAL</p>
+</div>
+<nav class="flex-1 space-y-1">
+<a class="text-slate-400 px-4 py-3 hover:text-slate-100 flex items-center gap-3 hover:bg-slate-800/50 transition-all" href="#">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+        Dashboard
+      </a>
+<a class="text-slate-400 px-4 py-3 hover:text-slate-100 flex items-center gap-3 hover:bg-slate-800/50 transition-all" href="#">
+<span class="material-symbols-outlined" data-icon="account_balance">account_balance</span>
+        Lenders
+      </a>
+<a class="text-slate-400 px-4 py-3 hover:text-slate-100 flex items-center gap-3 hover:bg-slate-800/50 transition-all" href="#">
+<span class="material-symbols-outlined" data-icon="upload_file">upload_file</span>
+        Imports
+      </a>
+<a class="text-slate-400 px-4 py-3 hover:text-slate-100 flex items-center gap-3 hover:bg-slate-800/50 transition-all" href="#">
+<span class="material-symbols-outlined" data-icon="calculate">calculate</span>
+        Quotes
+      </a>
+<!-- Active Tab: Snapshots (Screen 13 Context) -->
+<a class="bg-emerald-500/10 text-emerald-400 border-l-4 border-emerald-400 px-4 py-3 flex items-center gap-3 transition-all" href="#">
+<span class="material-symbols-outlined" data-icon="camera_roll">camera_roll</span>
+        Snapshots
+      </a>
+<a class="text-slate-400 px-4 py-3 hover:text-slate-100 flex items-center gap-3 hover:bg-slate-800/50 transition-all" href="#">
+<span class="material-symbols-outlined" data-icon="compare_arrows">compare_arrows</span>
+        Comparisons
+      </a>
+<a class="text-slate-400 px-4 py-3 hover:text-slate-100 flex items-center gap-3 hover:bg-slate-800/50 transition-all" href="#">
+<span class="material-symbols-outlined" data-icon="bug_report">bug_report</span>
+        Debug
+      </a>
+<a class="text-slate-400 px-4 py-3 hover:text-slate-100 flex items-center gap-3 hover:bg-slate-800/50 transition-all" href="#">
+<span class="material-symbols-outlined" data-icon="settings_applications">settings_applications</span>
+        System
+      </a>
+</nav>
+<div class="mt-auto p-4 bg-slate-800/50">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-lg bg-emerald-500/20 flex items-center justify-center text-emerald-400">
+<span class="material-symbols-outlined">shield_person</span>
+</div>
+<div>
+<p class="text-white text-xs font-bold">Admin Terminal</p>
+<p class="text-slate-500 text-[10px]">v2.4.1-STABLE</p>
+</div>
+</div>
+</div>
+</aside>
+<!-- Top App Bar -->
+<header class="fixed top-0 right-0 left-64 h-12 z-50 flex justify-between items-center px-6 bg-slate-900 dark:bg-slate-950 font-manrope text-sm font-medium tracking-tight border-b-0 flat no shadows">
+<div class="flex items-center gap-6">
+<div class="text-emerald-400 flex items-center gap-2">
+<span class="material-symbols-outlined" data-icon="terminal">terminal</span>
+<span class="font-bold text-white tracking-tighter text-lg">AutoFinance Ops</span>
+</div>
+<div class="flex gap-4">
+<span class="text-on-primary-container">Lender: Shinhan Card</span>
+<span class="px-2 py-0.5 rounded bg-slate-800 text-[10px] text-emerald-400 border border-emerald-500/30">v2.4.1-stable</span>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<button class="text-slate-400 hover:text-slate-200 transition-colors">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+</button>
+<button class="text-slate-400 hover:text-slate-200 transition-colors">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+</button>
+<div class="w-8 h-8 rounded-full overflow-hidden border border-slate-700">
+<img class="w-full h-full object-cover" data-alt="User profile avatar of admin operator" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAc1n4rChGXkUAfBvL_GVLm_KpMRbPFWfNI9Q1BNSDCeiEc0g59YS4-U9wZZ72Lf5uFfUkap0qMSEOIE4Ezjdw2ATSB8RZnfRnlqUpLu5DeKVwpMzzNG098rtQmBlwsSevcjxlDys0txJ6YRjK654gVRFioHttYawVvTv1yRPdDczZg7pEVY_xiCEgCPHj5-gmi2_xXxiqArHrHk4HoDWDIL3hoqkIOWNSTfM-51cX7AuFVYvjDPc9Tf6NiU8r0mqwOElo0DxJAs6wg"/>
+</div>
+</div>
+</header>
+<!-- Main Content Area -->
+<main class="pl-64 pt-12 min-h-screen">
+<!-- SECTION 13: Saved Quotes / Snapshots -->
+<section class="p-6">
+<div class="flex justify-between items-end mb-6">
+<div>
+<h2 class="text-2xl font-headline font-extrabold tracking-tight text-primary leading-none">Quote Snapshots</h2>
+<p class="text-on-surface-variant text-sm mt-1">Audit-ready historical calculations and saved portfolio quotes.</p>
+</div>
+<div class="flex gap-2">
+<button class="px-4 py-2 bg-primary text-white font-bold text-xs flex items-center gap-2 hover:opacity-90 transition-opacity">
+<span class="material-symbols-outlined text-[18px]" data-icon="export_notes">export_notes</span>
+            EXPORT RECAP
+          </button>
+</div>
+</div>
+<!-- Filters Panel -->
+<div class="bg-surface-container-low p-4 mb-6 flex flex-wrap gap-4 items-center rounded-lg shadow-sm">
+<div class="flex-1 min-w-[200px]">
+<label class="text-[10px] font-bold text-on-surface-variant uppercase mb-1 block">Search Customer / ID</label>
+<div class="relative">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline text-[18px]" data-icon="search">search</span>
+<input class="w-full bg-surface-container-lowest border-none text-sm py-2 pl-10 pr-4 ring-1 ring-outline-variant/30 focus:ring-primary" placeholder="e.g. Kim Hyung-sik or Q-8829" type="text"/>
+</div>
+</div>
+<div class="w-40">
+<label class="text-[10px] font-bold text-on-surface-variant uppercase mb-1 block">Brand</label>
+<select class="w-full bg-surface-container-lowest border-none text-sm py-2 ring-1 ring-outline-variant/30 focus:ring-primary">
+<option>All Brands</option>
+<option>Genesis</option>
+<option>Hyundai</option>
+<option>Kia</option>
+</select>
+</div>
+<div class="w-44">
+<label class="text-[10px] font-bold text-on-surface-variant uppercase mb-1 block">Lender</label>
+<select class="w-full bg-surface-container-lowest border-none text-sm py-2 ring-1 ring-outline-variant/30 focus:ring-primary">
+<option>All Lenders</option>
+<option>Shinhan Card</option>
+<option>Woori Financial</option>
+</select>
+</div>
+<div class="w-48">
+<label class="text-[10px] font-bold text-on-surface-variant uppercase mb-1 block">Date Range</label>
+<div class="relative">
+<span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-outline text-[18px]" data-icon="calendar_today">calendar_today</span>
+<input class="w-full bg-surface-container-lowest border-none text-sm py-2 px-4 ring-1 ring-outline-variant/30 focus:ring-primary" placeholder="2023.10.01 - 2023.11.01" type="text"/>
+</div>
+</div>
+</div>
+<!-- Table -->
+<div class="bg-surface-container-lowest rounded overflow-hidden shadow-sm border border-surface-container">
+<table class="w-full text-left text-[13px] border-collapse">
+<thead>
+<tr class="bg-surface-container-highest text-on-surface-variant font-bold uppercase text-[11px] tracking-wider">
+<th class="px-4 py-3">Snapshot ID</th>
+<th class="px-4 py-3">Customer</th>
+<th class="px-4 py-3">Vehicle Details</th>
+<th class="px-4 py-3">Lender &amp; Product</th>
+<th class="px-4 py-3 text-right">Base Amount</th>
+<th class="px-4 py-3 text-center">Status</th>
+<th class="px-4 py-3 text-right">Created At</th>
+<th class="px-4 py-3 text-right">Actions</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-surface-container">
+<tr class="hover:bg-surface-container-low transition-colors group">
+<td class="px-4 py-4 font-mono font-medium text-primary">#SN-99201</td>
+<td class="px-4 py-4">
+<div class="font-bold">Park Jun-seo</div>
+<div class="text-[11px] text-on-surface-variant">ID: 882931-1***</div>
+</td>
+<td class="px-4 py-4">
+<div class="text-primary font-medium">Genesis G80 (2024)</div>
+<div class="text-[11px] text-on-surface-variant">AWD 3.5T Sport</div>
+</td>
+<td class="px-4 py-4">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-blue-500"></span>
+<span class="font-medium">Shinhan Lease</span>
+</div>
+<div class="text-[11px] text-on-surface-variant italic">Standard Operating</div>
+</td>
+<td class="px-4 py-4 text-right tabular-nums font-bold text-primary">₩84,200,000</td>
+<td class="px-4 py-4 text-center">
+<span class="px-2 py-0.5 rounded-full bg-tertiary-fixed text-on-tertiary-fixed text-[10px] font-bold uppercase">Active</span>
+</td>
+<td class="px-4 py-4 text-right tabular-nums text-on-surface-variant">2023.11.14 09:42</td>
+<td class="px-4 py-4 text-right">
+<div class="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+<button class="p-1 hover:bg-primary hover:text-white transition-colors rounded" title="Recalculate">
+<span class="material-symbols-outlined text-[18px]" data-icon="refresh">refresh</span>
+</button>
+<button class="p-1 hover:bg-primary hover:text-white transition-colors rounded" title="Compare">
+<span class="material-symbols-outlined text-[18px]" data-icon="compare">compare</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Repeat row with variant -->
+<tr class="hover:bg-surface-container-low transition-colors group bg-surface-container-low/30">
+<td class="px-4 py-4 font-mono font-medium text-primary">#SN-99188</td>
+<td class="px-4 py-4">
+<div class="font-bold">Lee Min-ho</div>
+<div class="text-[11px] text-on-surface-variant">ID: 751120-1***</div>
+</td>
+<td class="px-4 py-4">
+<div class="text-primary font-medium">Hyundai Ioniq 6</div>
+<div class="text-[11px] text-on-surface-variant">Long Range Exclusive</div>
+</td>
+<td class="px-4 py-4">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-amber-500"></span>
+<span class="font-medium">Woori Financial</span>
+</div>
+<div class="text-[11px] text-on-surface-variant italic">Promo Installment</div>
+</td>
+<td class="px-4 py-4 text-right tabular-nums font-bold text-primary">₩52,100,000</td>
+<td class="px-4 py-4 text-center">
+<span class="px-2 py-0.5 rounded-full bg-secondary-container text-on-secondary-container text-[10px] font-bold uppercase">Expired</span>
+</td>
+<td class="px-4 py-4 text-right tabular-nums text-on-surface-variant">2023.11.12 14:15</td>
+<td class="px-4 py-4 text-right">
+<div class="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+<button class="p-1 hover:bg-primary hover:text-white transition-colors rounded" title="Recalculate">
+<span class="material-symbols-outlined text-[18px]" data-icon="refresh">refresh</span>
+</button>
+<button class="p-1 hover:bg-primary hover:text-white transition-colors rounded" title="Compare">
+<span class="material-symbols-outlined text-[18px]" data-icon="compare">compare</span>
+</button>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<!-- SECTION 14: Policy Debug Screen -->
+<section class="p-6 mt-10 border-t border-outline-variant/20">
+<div class="flex justify-between items-center mb-6">
+<div>
+<h2 class="text-2xl font-headline font-extrabold tracking-tight text-primary leading-none">Logic Debugger</h2>
+<p class="text-on-surface-variant text-sm mt-1">Live trace of residual value matrices and workbook logic derivation.</p>
+</div>
+<div class="flex gap-2">
+<div class="px-3 py-1 bg-primary text-emerald-400 text-[10px] font-bold rounded flex items-center gap-2">
+<span class="material-symbols-outlined text-[14px]" data-icon="bolt">bolt</span>
+            TRACING ACTIVE: SESSION_ID_9921
+          </div>
+</div>
+</div>
+<div class="grid grid-cols-12 gap-6">
+<!-- Trace Breakdown -->
+<div class="col-span-8 space-y-6">
+<div class="bg-primary-container text-on-primary-container p-5 rounded-lg">
+<h3 class="text-white text-xs font-bold uppercase tracking-widest mb-4 flex items-center gap-2">
+<span class="material-symbols-outlined text-[16px]" data-icon="schema">schema</span>
+              Residual Calculation Trace
+            </h3>
+<div class="space-y-4">
+<div class="flex justify-between items-center border-b border-slate-700 pb-2">
+<span class="text-[11px]">Primary Input Brand Code</span>
+<span class="font-mono text-emerald-400 text-sm">GNS-80-24</span>
+</div>
+<div class="flex justify-between items-center border-b border-slate-700 pb-2">
+<span class="text-[11px]">Matrix Mapping Group</span>
+<span class="font-mono text-emerald-400 text-sm">GRP_LUXURY_SEDAN_04</span>
+</div>
+<div class="flex justify-between items-center border-b border-slate-700 pb-2">
+<span class="text-[11px]">Residual Base Rate (36m)</span>
+<span class="font-mono text-emerald-400 text-sm">54.2%</span>
+</div>
+<div class="flex justify-between items-center border-b border-slate-700 pb-2">
+<span class="text-[11px]">Risk Modifier Applied</span>
+<span class="font-mono text-emerald-400 text-sm">-0.5% (High Mileage Tier)</span>
+</div>
+<div class="flex justify-between items-center">
+<span class="text-xs font-bold text-white">Final Derived Residual</span>
+<span class="font-mono text-emerald-400 text-lg font-bold">53.7%</span>
+</div>
+</div>
+</div>
+<div class="bg-surface-container-low rounded-lg p-5 border border-surface-container">
+<h3 class="text-on-surface font-bold text-xs uppercase tracking-widest mb-4 flex items-center gap-2">
+<span class="material-symbols-outlined text-[16px]" data-icon="visibility_off">visibility_off</span>
+              Hidden Workbook Warnings
+            </h3>
+<div class="space-y-3">
+<div class="bg-error-container/30 border-l-4 border-error p-3 flex gap-3">
+<span class="material-symbols-outlined text-error" data-icon="warning">warning</span>
+<div>
+<p class="text-xs font-bold text-on-error-container">CIRCULAR_REF_DETECTION</p>
+<p class="text-[11px] text-on-surface-variant">Cell Sheet1!Z99 contains a self-referencing formula. Ignored by parser.</p>
+</div>
+</div>
+<div class="bg-secondary-container/30 border-l-4 border-secondary p-3 flex gap-3">
+<span class="material-symbols-outlined text-secondary" data-icon="info">info</span>
+<div>
+<p class="text-xs font-bold text-on-secondary-container">STALE_DATE_WARNING</p>
+<p class="text-[11px] text-on-surface-variant">Lender Promotion Sheet (B82) was last updated 45 days ago.</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Raw JSON Viewer -->
+<div class="col-span-4 flex flex-col">
+<div class="flex-1 bg-slate-900 rounded-lg p-4 font-mono text-[11px] text-emerald-400/80 overflow-auto max-h-[500px] border border-slate-800">
+<div class="flex justify-between items-center mb-4 border-b border-slate-800 pb-2">
+<span class="text-white text-[10px] font-bold">RAW PAYLOAD (READ-ONLY)</span>
+<button class="hover:text-white transition-colors">
+<span class="material-symbols-outlined text-[14px]" data-icon="content_copy">content_copy</span>
+</button>
+</div>
+<pre>{
+  "request_id": "SN-99201",
+  "meta": {
+    "engine_version": "v2.4.1",
+    "timestamp": "2023-11-14T09:42:01Z"
+  },
+  "params": {
+    "model_id": 4491,
+    "term": 36,
+    "annual_km": 20000,
+    "downpayment": 10000000
+  },
+  "workbook_trace": [
+    {
+      "step": "INIT_LOOKUP",
+      "source": "LENDER_SHINHAN_V2.XLSX",
+      "tab": "RESIDUAL_MATRIX",
+      "cell_hit": "C42"
+    },
+    {
+      "step": "FEE_CALC",
+      "source": "INTERNAL_POLICY.JSON",
+      "logic": "fixed_fee_plus_tax"
+    }
+  ]
+}
+</pre>
+</div>
+</div>
+</div>
+</section>
+<!-- SECTION 15: System Status Screen -->
+<section class="p-6 mt-10 mb-10 border-t border-outline-variant/20">
+<div class="flex justify-between items-center mb-8">
+<div>
+<h2 class="text-2xl font-headline font-extrabold tracking-tight text-primary leading-none">System Infrastructure</h2>
+<p class="text-on-surface-variant text-sm mt-1">Real-time health monitoring of database, API latency, and background parsing jobs.</p>
+</div>
+<div class="flex items-center gap-3">
+<div class="flex items-center gap-2 bg-tertiary-container/10 px-3 py-1.5 rounded-full">
+<span class="w-2 h-2 rounded-full bg-tertiary-fixed animate-pulse"></span>
+<span class="text-[11px] font-bold text-on-tertiary-container uppercase tracking-tight">Production Environment</span>
+</div>
+</div>
+</div>
+<div class="grid grid-cols-4 gap-4 mb-8">
+<div class="bg-surface-container-low p-4 rounded border border-surface-container">
+<p class="text-[10px] font-bold text-on-surface-variant uppercase mb-2">DB Connectivity</p>
+<div class="flex justify-between items-end">
+<span class="text-2xl font-black font-headline text-primary">99.98%</span>
+<span class="text-tertiary-fixed-dim text-xs font-bold">+0.02%</span>
+</div>
+</div>
+<div class="bg-surface-container-low p-4 rounded border border-surface-container">
+<p class="text-[10px] font-bold text-on-surface-variant uppercase mb-2">API Latency (p95)</p>
+<div class="flex justify-between items-end">
+<span class="text-2xl font-black font-headline text-primary tabular-nums">142ms</span>
+<span class="text-error text-xs font-bold">+12ms</span>
+</div>
+</div>
+<div class="bg-surface-container-low p-4 rounded border border-surface-container">
+<p class="text-[10px] font-bold text-on-surface-variant uppercase mb-2">Active Jobs</p>
+<div class="flex justify-between items-end">
+<span class="text-2xl font-black font-headline text-primary">12</span>
+<span class="text-on-surface-variant text-xs">4 Queued</span>
+</div>
+</div>
+<div class="bg-surface-container-low p-4 rounded border border-surface-container">
+<p class="text-[10px] font-bold text-on-surface-variant uppercase mb-2">Parse Success Rate</p>
+<div class="flex justify-between items-end">
+<span class="text-2xl font-black font-headline text-primary">100%</span>
+<span class="text-tertiary-fixed-dim text-xs font-bold">Nominal</span>
+</div>
+</div>
+</div>
+<!-- Health Charts & Logs -->
+<div class="grid grid-cols-12 gap-6">
+<div class="col-span-7">
+<div class="bg-surface-container-lowest p-5 rounded-lg border border-surface-container h-full">
+<h3 class="text-on-surface font-bold text-xs uppercase tracking-widest mb-6 flex justify-between items-center">
+<span>API Response Performance (24h)</span>
+<span class="material-symbols-outlined text-outline" data-icon="query_stats">query_stats</span>
+</h3>
+<div class="flex items-end gap-1 h-48 w-full">
+<!-- Mock bar chart -->
+<div class="flex-1 bg-primary-container h-[40%] rounded-t-sm" title="24ms"></div>
+<div class="flex-1 bg-primary-container h-[45%] rounded-t-sm" title="28ms"></div>
+<div class="flex-1 bg-primary-container h-[60%] rounded-t-sm" title="40ms"></div>
+<div class="flex-1 bg-primary-container h-[35%] rounded-t-sm" title="22ms"></div>
+<div class="flex-1 bg-primary-container h-[55%] rounded-t-sm" title="38ms"></div>
+<div class="flex-1 bg-primary-container h-[80%] rounded-t-sm" title="60ms"></div>
+<div class="flex-1 bg-error/40 h-[95%] rounded-t-sm" title="Peak: 142ms"></div>
+<div class="flex-1 bg-primary-container h-[40%] rounded-t-sm" title="24ms"></div>
+<div class="flex-1 bg-primary-container h-[42%] rounded-t-sm" title="26ms"></div>
+<div class="flex-1 bg-primary-container h-[38%] rounded-t-sm" title="23ms"></div>
+<div class="flex-1 bg-primary-container h-[45%] rounded-t-sm" title="28ms"></div>
+<div class="flex-1 bg-primary-container h-[30%] rounded-t-sm" title="18ms"></div>
+</div>
+<div class="flex justify-between mt-2 text-[10px] font-bold text-on-surface-variant">
+<span>00:00</span>
+<span>06:00</span>
+<span>12:00</span>
+<span>18:00</span>
+<span>NOW</span>
+</div>
+</div>
+</div>
+<div class="col-span-5">
+<div class="bg-surface-container-lowest p-5 rounded-lg border border-surface-container h-full">
+<h3 class="text-on-surface font-bold text-xs uppercase tracking-widest mb-4">Recent Stability Logs</h3>
+<div class="space-y-3 font-mono text-[11px]">
+<div class="flex items-start gap-3 text-on-surface-variant">
+<span class="text-primary-container font-bold">[14:22]</span>
+<span class="text-tertiary-fixed-dim">INFO:</span>
+<span>Job #4492 - Workbook parsed successfully.</span>
+</div>
+<div class="flex items-start gap-3 text-on-surface-variant">
+<span class="text-primary-container font-bold">[14:15]</span>
+<span class="text-error font-bold">WARN:</span>
+<span class="bg-error-container/30 px-1">API Timeout: POST /v1/quote (Shinhan Gateway)</span>
+</div>
+<div class="flex items-start gap-3 text-on-surface-variant">
+<span class="text-primary-container font-bold">[14:02]</span>
+<span class="text-tertiary-fixed-dim">INFO:</span>
+<span>Routine maintenance script finished in 220ms.</span>
+</div>
+<div class="flex items-start gap-3 text-on-surface-variant">
+<span class="text-primary-container font-bold">[13:55]</span>
+<span class="text-tertiary-fixed-dim">INFO:</span>
+<span>New Snapshot created: #SN-99201</span>
+</div>
+<div class="flex items-start gap-3 text-on-surface-variant">
+<span class="text-primary-container font-bold">[13:48]</span>
+<span class="text-on-secondary-container">DEBUG:</span>
+<span>Memory usage stable at 442MB.</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+</main>
+<!-- Interaction Logic Visual (FAB Placeholder if needed - suppressed per mandate) -->
+</body></html>

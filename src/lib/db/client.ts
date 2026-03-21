@@ -12,6 +12,7 @@ export function createDbClient(databaseUrl: string): {
   const sql = postgres(databaseUrl, {
     max: 1,
     prepare: false,
+    connect_timeout: 5,
   });
 
   return {

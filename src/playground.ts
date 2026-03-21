@@ -1,106 +1,619 @@
+import { mgCatalog, mgResidualMatrixLookup } from "@/mg-catalog";
+
+type PlaygroundCatalogBrand = {
+  brand: string;
+  modelCount: number;
+  models: Array<{
+    modelName: string;
+    vehiclePrice: number;
+    vehicleClass: string | null;
+    engineDisplacementCc: number | null;
+    highResidualAllowed: boolean | null;
+    hybridAllowed: boolean | null;
+    residualPromotionCode: string | null;
+    snkResidualBand: string | null;
+    residuals?: Partial<Record<12 | 24 | 36 | 48 | 60, number>>;
+    snkResiduals?: Partial<Record<12 | 24 | 36 | 48 | 60, number>>;
+    apsResiduals?: Partial<Record<12 | 24 | 36 | 48 | 60, number>>;
+    chatbotResiduals?: Partial<Record<12 | 24 | 36 | 48 | 60, number>>;
+  }>;
+};
+
 export function renderPlaygroundHtml() {
   return `<!doctype html>
 <html lang="ko">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>MG Quote Playground</title>
+    <title>정밀 견적 터미널</title>
     <style>
       :root {
-        --bg: #f5efe5;
-        --panel: rgba(255, 251, 245, 0.94);
-        --ink: #1f1b17;
-        --muted: #6c6259;
-        --line: rgba(68, 47, 27, 0.12);
-        --accent: #0f766e;
-        --accent-strong: #115e59;
-        --accent-soft: rgba(15, 118, 110, 0.1);
-        --warn: #b45309;
-        --shadow: 0 24px 60px rgba(73, 44, 20, 0.12);
+        --background: #f7f9fb;
+        --surface: #ffffff;
+        --surface-low: #f2f4f6;
+        --surface-high: #e6e8ea;
+        --surface-ink: #191c1e;
+        --muted: #5f6670;
+        --muted-soft: #7b838d;
+        --primary: #041627;
+        --primary-strong: #0d2236;
+        --primary-container: #1a2b3c;
+        --accent: #6ffbbe;
+        --accent-strong: #0d8a62;
+        --warning: #b26a00;
+        --warning-soft: rgba(178, 106, 0, 0.12);
+        --danger: #ba1a1a;
+        --danger-soft: rgba(186, 26, 26, 0.1);
+        --line: rgba(116, 119, 125, 0.18);
+        --line-strong: rgba(116, 119, 125, 0.32);
+        --shadow: 0 18px 60px rgba(4, 22, 39, 0.06);
+        --shadow-float: 0 24px 80px rgba(4, 22, 39, 0.12);
+        --radius: 10px;
+        --radius-sm: 8px;
+        --sidebar-width: 264px;
       }
 
-      * { box-sizing: border-box; }
+      * {
+        box-sizing: border-box;
+      }
+
+      html {
+        scroll-behavior: smooth;
+      }
 
       body {
         margin: 0;
         min-height: 100vh;
-        font-family: Georgia, "Times New Roman", serif;
-        color: var(--ink);
         background:
-          radial-gradient(circle at top left, rgba(15, 118, 110, 0.14), transparent 30%),
-          radial-gradient(circle at top right, rgba(180, 83, 9, 0.12), transparent 24%),
-          linear-gradient(180deg, #f8f2ea 0%, var(--bg) 100%);
+          radial-gradient(circle at top left, rgba(111, 251, 190, 0.08), transparent 24%),
+          radial-gradient(circle at top right, rgba(26, 43, 60, 0.08), transparent 28%),
+          linear-gradient(180deg, #fbfcfd 0%, var(--background) 100%);
+        color: var(--surface-ink);
+        font-family: "Pretendard", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        font-size: 14px;
+        line-height: 1.5;
+      }
+
+      button,
+      input,
+      select,
+      textarea {
+        font: inherit;
+      }
+
+      button {
+        cursor: pointer;
+      }
+
+      a {
+        color: inherit;
+        text-decoration: none;
       }
 
       .shell {
-        width: min(1120px, calc(100% - 32px));
-        margin: 32px auto 64px;
+        min-height: 100vh;
       }
 
-      .hero {
-        padding: 28px 28px 20px;
+      .sidebar {
+        position: fixed;
+        inset: 0 auto 0 0;
+        width: var(--sidebar-width);
+        background:
+          linear-gradient(180deg, rgba(255, 255, 255, 0.06), transparent 20%),
+          linear-gradient(180deg, #07192b 0%, #04111d 100%);
+        color: rgba(255, 255, 255, 0.92);
+        display: flex;
+        flex-direction: column;
+        border-right: 1px solid rgba(255, 255, 255, 0.08);
+        z-index: 20;
       }
 
-      .eyebrow {
+      .brand {
+        padding: 28px 24px 22px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      }
+
+      .brand-mark {
         display: inline-flex;
-        padding: 6px 10px;
-        border-radius: 999px;
-        background: var(--accent-soft);
-        color: var(--accent-strong);
-        font-size: 12px;
-        letter-spacing: 0.08em;
-        text-transform: uppercase;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 14px;
       }
 
-      h1 {
-        margin: 18px 0 10px;
-        font-size: clamp(32px, 6vw, 60px);
-        line-height: 0.95;
+      .brand-badge {
+        width: 38px;
+        height: 38px;
+        border-radius: 12px;
+        background: linear-gradient(135deg, rgba(111, 251, 190, 0.26), rgba(111, 251, 190, 0.08));
+        color: var(--accent);
+        display: grid;
+        place-items: center;
+        font-weight: 800;
+        letter-spacing: 0.08em;
+      }
+
+      .brand-title {
+        font-size: 18px;
+        font-weight: 800;
+        letter-spacing: -0.03em;
+      }
+
+      .brand-subtitle {
+        color: rgba(210, 228, 251, 0.7);
+        font-size: 12px;
+      }
+
+      .nav {
+        padding: 18px 12px;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+
+      .nav-button {
+        width: 100%;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        border: 0;
+        border-left: 3px solid transparent;
+        border-radius: var(--radius-sm);
+        padding: 12px 14px;
+        background: transparent;
+        color: rgba(255, 255, 255, 0.68);
+        text-align: left;
+        transition: 140ms ease;
+      }
+
+      .nav-button:hover {
+        color: #fff;
+        background: rgba(255, 255, 255, 0.06);
+      }
+
+      .nav-button.active {
+        color: var(--accent);
+        border-left-color: var(--accent);
+        background: rgba(111, 251, 190, 0.08);
+      }
+
+      .nav-kicker {
+        font-size: 11px;
+        color: rgba(255, 255, 255, 0.5);
+      }
+
+      .sidebar-foot {
+        margin-top: auto;
+        padding: 20px 18px 22px;
+        border-top: 1px solid rgba(255, 255, 255, 0.08);
+      }
+
+      .status-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        border-radius: 999px;
+        padding: 6px 10px;
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.02em;
+        background: rgba(111, 251, 190, 0.12);
+        color: var(--accent);
+      }
+
+      .status-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 999px;
+        background: currentColor;
+      }
+
+      .content {
+        margin-left: var(--sidebar-width);
+        min-height: 100vh;
+      }
+
+      .topbar {
+        position: sticky;
+        top: 0;
+        z-index: 15;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 18px;
+        padding: 18px 28px;
+        backdrop-filter: blur(18px);
+        background: rgba(247, 249, 251, 0.78);
+        border-bottom: 1px solid rgba(116, 119, 125, 0.12);
+      }
+
+      .topbar-title {
+        font-size: 22px;
+        font-weight: 800;
         letter-spacing: -0.04em;
       }
 
-      .hero p {
-        margin: 0;
-        max-width: 720px;
-        color: var(--muted);
-        font-size: 16px;
-        line-height: 1.6;
-      }
-
-      .grid {
-        display: grid;
-        grid-template-columns: 1.05fr 0.95fr;
-        gap: 20px;
-      }
-
-      .panel {
-        background: var(--panel);
-        border: 1px solid var(--line);
-        border-radius: 28px;
-        box-shadow: var(--shadow);
-        overflow: hidden;
-        backdrop-filter: blur(16px);
-      }
-
-      .panel-head {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 20px 22px 14px;
-      }
-
-      .panel-title {
-        font-size: 20px;
-        margin: 0;
-      }
-
-      .panel-sub {
+      .topbar-subtitle {
         color: var(--muted);
         font-size: 13px;
       }
 
-      form {
-        padding: 0 22px 22px;
+      .topbar-meta {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+      }
+
+      .pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        min-height: 34px;
+        padding: 7px 12px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.82);
+        border: 1px solid rgba(116, 119, 125, 0.16);
+        color: var(--muted);
+        font-size: 12px;
+        font-weight: 700;
+      }
+
+      .page {
+        padding: 28px;
+      }
+
+      .section {
+        display: none;
+        animation: fade-up 180ms ease;
+      }
+
+      .section.active {
+        display: block;
+      }
+
+      @keyframes fade-up {
+        from {
+          opacity: 0;
+          transform: translateY(6px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .page-stack {
+        display: flex;
+        flex-direction: column;
+        gap: 22px;
+      }
+
+      .hero-grid,
+      .summary-grid,
+      .dashboard-grid,
+      .import-grid,
+      .quote-grid,
+      .debug-grid {
+        display: grid;
+        gap: 18px;
+      }
+
+      .hero-grid {
+        grid-template-columns: 1.4fr 1fr;
+      }
+
+      .summary-grid {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+      }
+
+      .dashboard-grid,
+      .quote-grid {
+        grid-template-columns: 1.1fr 0.9fr;
+      }
+
+      .import-grid,
+      .debug-grid {
+        grid-template-columns: 0.95fr 1.05fr;
+      }
+
+      .card {
+        background: rgba(255, 255, 255, 0.82);
+        border: 1px solid rgba(116, 119, 125, 0.14);
+        border-radius: var(--radius);
+        box-shadow: var(--shadow);
+        overflow: hidden;
+      }
+
+      .card.hero {
+        background:
+          linear-gradient(135deg, rgba(4, 22, 39, 0.98), rgba(26, 43, 60, 0.92));
+        color: white;
+        position: relative;
+      }
+
+      .card.hero::after {
+        content: "";
+        position: absolute;
+        inset: auto -80px -80px auto;
+        width: 240px;
+        height: 240px;
+        border-radius: 999px;
+        background: radial-gradient(circle, rgba(111, 251, 190, 0.18), transparent 62%);
+      }
+
+      .card-head {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 18px 18px 12px;
+      }
+
+      .card-body {
+        padding: 0 18px 18px;
+      }
+
+      .hero-body {
+        padding: 24px;
+        position: relative;
+        z-index: 1;
+      }
+
+      .eyebrow {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        border-radius: 999px;
+        padding: 6px 10px;
+        background: rgba(111, 251, 190, 0.12);
+        color: var(--accent);
+        font-size: 11px;
+        font-weight: 700;
+      }
+
+      h1,
+      h2,
+      h3,
+      h4 {
+        margin: 0;
+        letter-spacing: -0.03em;
+      }
+
+      .hero-title {
+        margin-top: 18px;
+        font-size: clamp(28px, 4vw, 44px);
+        line-height: 1.02;
+        font-weight: 800;
+      }
+
+      .hero-copy {
+        margin-top: 12px;
+        max-width: 700px;
+        color: rgba(255, 255, 255, 0.74);
+        font-size: 15px;
+      }
+
+      .hero-metrics {
+        margin-top: 22px;
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 12px;
+      }
+
+      .hero-metric {
+        padding: 14px;
+        border-radius: var(--radius-sm);
+        background: rgba(255, 255, 255, 0.06);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+      }
+
+      .hero-metric-label,
+      .label,
+      .table-label {
+        color: var(--muted-soft);
+        font-size: 11px;
+        font-weight: 700;
+      }
+
+      .card.hero .hero-metric-label {
+        color: rgba(255, 255, 255, 0.62);
+      }
+
+      .hero-metric-value {
+        margin-top: 6px;
+        font-size: 22px;
+        font-weight: 800;
+      }
+
+      .card-title {
+        font-size: 17px;
+        font-weight: 800;
+      }
+
+      .card-subtitle {
+        color: var(--muted);
+        font-size: 12px;
+        margin-top: 3px;
+      }
+
+      .stat-card {
+        padding: 18px;
+      }
+
+      .stat-value {
+        margin-top: 10px;
+        font-size: 28px;
+        font-weight: 800;
+        letter-spacing: -0.04em;
+      }
+
+      .stat-foot {
+        margin-top: 10px;
+        color: var(--muted);
+        font-size: 12px;
+      }
+
+      .toolbar {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+      }
+
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        min-height: 40px;
+        border-radius: 10px;
+        border: 1px solid transparent;
+        padding: 0 14px;
+        background: var(--surface);
+        color: var(--surface-ink);
+        font-weight: 700;
+        letter-spacing: -0.01em;
+        transition: 140ms ease;
+      }
+
+      .btn:hover {
+        transform: translateY(-1px);
+      }
+
+      .btn-primary {
+        background: var(--primary);
+        color: white;
+      }
+
+      .btn-primary:hover {
+        background: var(--primary-strong);
+      }
+
+      .btn-secondary {
+        border-color: rgba(116, 119, 125, 0.16);
+        background: rgba(255, 255, 255, 0.7);
+      }
+
+      .btn-tonal {
+        background: rgba(111, 251, 190, 0.14);
+        color: #0d6f50;
+        border-color: rgba(111, 251, 190, 0.24);
+      }
+
+      .btn-danger {
+        background: var(--danger-soft);
+        color: var(--danger);
+        border-color: rgba(186, 26, 26, 0.18);
+      }
+
+      .table-wrap {
+        overflow: auto;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+
+      th,
+      td {
+        padding: 12px 14px;
+        text-align: left;
+        vertical-align: top;
+        border-bottom: 1px solid rgba(116, 119, 125, 0.12);
+      }
+
+      th {
+        position: sticky;
+        top: 0;
+        background: rgba(242, 244, 246, 0.92);
+        backdrop-filter: blur(12px);
+        font-size: 11px;
+        color: var(--muted);
+        font-weight: 800;
+      }
+
+      td {
+        font-size: 13px;
+      }
+
+      .mono,
+      .tabular {
+        font-variant-numeric: tabular-nums;
+        font-feature-settings: "tnum";
+      }
+
+      .mono {
+        font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+      }
+
+      .kpi-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+      }
+
+      .mini-card {
+        padding: 14px;
+        border-radius: 10px;
+        background: var(--surface-low);
+      }
+
+      .mini-value {
+        margin-top: 6px;
+        font-size: 20px;
+        font-weight: 800;
+      }
+
+      .list {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+
+      .list-row {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 12px;
+        padding: 14px;
+        border-radius: 10px;
+        background: var(--surface-low);
+      }
+
+      .list-title {
+        font-weight: 700;
+      }
+
+      .list-subtitle {
+        color: var(--muted);
+        font-size: 12px;
+        margin-top: 3px;
+      }
+
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 4px 9px;
+        border-radius: 999px;
+        font-size: 11px;
+        font-weight: 700;
+        white-space: nowrap;
+      }
+
+      .badge.success {
+        background: rgba(111, 251, 190, 0.14);
+        color: #0d6f50;
+      }
+
+      .badge.warning {
+        background: var(--warning-soft);
+        color: var(--warning);
+      }
+
+      .badge.neutral {
+        background: rgba(4, 22, 39, 0.08);
+        color: var(--primary);
       }
 
       .form-grid {
@@ -115,554 +628,1975 @@ export function renderPlaygroundHtml() {
         gap: 8px;
       }
 
-      .field.full {
+      .field.span-2 {
         grid-column: 1 / -1;
       }
 
-      label {
-        font-size: 12px;
-        letter-spacing: 0.06em;
-        text-transform: uppercase;
+      .field label {
+        font-size: 11px;
+        font-weight: 800;
         color: var(--muted);
       }
 
-      input, select, button, textarea {
-        font: inherit;
-      }
-
-      input, select {
+      .input,
+      .select,
+      .textarea {
         width: 100%;
-        border: 1px solid var(--line);
-        border-radius: 16px;
-        background: white;
-        padding: 14px 15px;
-        color: var(--ink);
+        min-height: 44px;
+        border-radius: 10px;
+        border: 1px solid rgba(116, 119, 125, 0.18);
+        background: rgba(255, 255, 255, 0.86);
+        padding: 11px 12px;
+        color: var(--surface-ink);
+        transition: 120ms ease;
       }
 
-      input:focus, select:focus {
-        outline: 2px solid rgba(15, 118, 110, 0.24);
-        border-color: var(--accent);
+      .textarea {
+        min-height: 120px;
+        resize: vertical;
       }
 
-      .actions {
+      .input:focus,
+      .select:focus,
+      .textarea:focus {
+        outline: none;
+        border-color: rgba(4, 22, 39, 0.34);
+        box-shadow: 0 0 0 4px rgba(4, 22, 39, 0.06);
+      }
+
+      .form-actions {
         display: flex;
-        gap: 12px;
+        flex-wrap: wrap;
+        gap: 10px;
         margin-top: 18px;
       }
 
-      button {
-        border: 0;
-        border-radius: 999px;
-        padding: 14px 18px;
-        cursor: pointer;
+      .inline-hint {
+        color: var(--muted);
+        font-size: 12px;
       }
 
-      .primary {
-        background: var(--accent);
-        color: white;
-        min-width: 170px;
-      }
-
-      .secondary {
-        background: rgba(255,255,255,0.8);
-        color: var(--ink);
-        border: 1px solid var(--line);
-      }
-
-      .results {
-        padding: 0 22px 22px;
-      }
-
-      .summary {
+      .result-grid {
         display: grid;
         grid-template-columns: repeat(2, minmax(0, 1fr));
         gap: 12px;
       }
 
-      .stat {
-        padding: 16px;
-        border-radius: 18px;
-        background: rgba(255,255,255,0.7);
-        border: 1px solid var(--line);
+      .result-card {
+        padding: 14px;
+        border-radius: 10px;
+        background: var(--surface-low);
       }
 
-      .stat-k {
-        color: var(--muted);
-        font-size: 12px;
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
+      .result-card.primary {
+        grid-column: 1 / -1;
+        background: linear-gradient(135deg, rgba(4, 22, 39, 0.96), rgba(26, 43, 60, 0.92));
+        color: white;
       }
 
-      .stat-v {
-        margin-top: 6px;
-        font-size: 24px;
+      .result-card.primary .label {
+        color: rgba(255, 255, 255, 0.58);
+      }
+
+      .result-value {
+        margin-top: 8px;
+        font-size: 22px;
+        font-weight: 800;
         letter-spacing: -0.03em;
       }
 
-      .stack {
-        display: flex;
-        flex-direction: column;
-        gap: 14px;
+      .result-card.primary .result-value {
+        font-size: 34px;
+        color: var(--accent);
       }
 
       .callout {
-        padding: 16px;
-        border-radius: 18px;
-        background: rgba(255,255,255,0.72);
-        border: 1px solid var(--line);
+        padding: 14px;
+        border-radius: 10px;
+        background: var(--surface-low);
+        border: 1px solid rgba(116, 119, 125, 0.12);
       }
 
-      .callout.warn {
-        background: rgba(180, 83, 9, 0.09);
-        border-color: rgba(180, 83, 9, 0.24);
+      .callout.warning {
+        background: var(--warning-soft);
+        border-color: rgba(178, 106, 0, 0.22);
+      }
+
+      .callout.danger {
+        background: var(--danger-soft);
+        border-color: rgba(186, 26, 26, 0.2);
       }
 
       .candidate-list {
-        display: grid;
-        gap: 10px;
-      }
-
-      .candidate {
-        padding: 14px;
-        border-radius: 18px;
-        border: 1px solid var(--line);
-        background: rgba(255,255,255,0.78);
-      }
-
-      .candidate-head {
         display: flex;
-        justify-content: space-between;
-        align-items: center;
+        flex-direction: column;
         gap: 12px;
       }
 
-      .candidate-name {
-        font-size: 18px;
+      .candidate-card {
+        padding: 14px;
+        border-radius: 10px;
+        background: var(--surface-low);
+        border: 1px solid rgba(116, 119, 125, 0.12);
+      }
+
+      .candidate-top {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        align-items: start;
+      }
+
+      .candidate-title {
+        font-size: 15px;
+        font-weight: 800;
       }
 
       .candidate-meta {
         margin-top: 8px;
-        color: var(--muted);
-        font-size: 13px;
-        line-height: 1.5;
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 10px;
       }
 
-      .candidate button {
-        margin-top: 12px;
-        width: 100%;
-        background: rgba(15, 118, 110, 0.09);
-        color: var(--accent-strong);
-        border: 1px solid rgba(15, 118, 110, 0.16);
+      .candidate-meta .mini-card {
+        background: rgba(255, 255, 255, 0.7);
       }
 
-      pre {
+      .json {
         margin: 0;
         padding: 16px;
+        min-height: 320px;
+        max-height: 620px;
         overflow: auto;
-        border-radius: 18px;
-        background: #171411;
-        color: #f5efe5;
+        border-radius: 10px;
+        background: #06111e;
+        color: #dde6f0;
         font-size: 12px;
-        line-height: 1.5;
+        line-height: 1.55;
       }
 
-      .muted {
+      .split {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+      }
+
+      .catalog-list {
+        display: grid;
+        gap: 10px;
+        max-height: 360px;
+        overflow: auto;
+      }
+
+      .catalog-brand {
+        padding: 12px 14px;
+        border-radius: 10px;
+        background: var(--surface-low);
+      }
+
+      .catalog-brand-title {
+        font-weight: 800;
+      }
+
+      .catalog-models {
+        margin-top: 6px;
+        color: var(--muted);
+        font-size: 12px;
+        line-height: 1.6;
+      }
+
+      .empty-state {
+        padding: 20px;
+        border-radius: 10px;
+        background: var(--surface-low);
         color: var(--muted);
       }
 
       .hidden {
+        display: none !important;
+      }
+
+      .auto-grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 12px;
+        margin: 0 0 18px;
+      }
+
+      .auto-card {
+        padding: 14px;
+        border-radius: 10px;
+        background: var(--surface-low);
+      }
+
+      .auto-value {
+        margin-top: 8px;
+        font-size: 18px;
+        font-weight: 800;
+        letter-spacing: -0.02em;
+      }
+
+      .quote-sheet {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+      }
+
+      .sheet-block {
+        border: 1px solid rgba(116, 119, 125, 0.14);
+        border-radius: 12px;
+        overflow: hidden;
+        background: rgba(255, 255, 255, 0.74);
+      }
+
+      .sheet-block-title {
+        padding: 12px 14px;
+        background: linear-gradient(180deg, rgba(4, 22, 39, 0.94), rgba(13, 34, 54, 0.94));
+        color: white;
+        font-size: 13px;
+        font-weight: 800;
+        letter-spacing: -0.02em;
+      }
+
+      .sheet-grid {
+        display: grid;
+        grid-template-columns: 148px minmax(0, 1fr) 148px minmax(0, 1fr);
+      }
+
+      .sheet-label,
+      .sheet-value {
+        min-height: 48px;
+        display: flex;
+        align-items: center;
+        padding: 10px 12px;
+        border-right: 1px solid rgba(116, 119, 125, 0.12);
+        border-bottom: 1px solid rgba(116, 119, 125, 0.12);
+      }
+
+      .sheet-label {
+        background: #0c2034;
+        color: rgba(255, 255, 255, 0.92);
+        font-size: 12px;
+        font-weight: 800;
+      }
+
+      .sheet-value {
+        background: rgba(255, 251, 220, 0.38);
+      }
+
+      .sheet-value:last-child {
+        border-right: 0;
+      }
+
+      .sheet-grid > *:nth-child(4n) {
+        border-right: 0;
+      }
+
+      .sheet-field {
+        width: 100%;
+        min-height: 34px;
+        border: 1px solid rgba(116, 119, 125, 0.18);
+        border-radius: 8px;
+        background: rgba(255, 255, 255, 0.86);
+        padding: 7px 10px;
+        color: var(--surface-ink);
+      }
+
+      .sheet-field.readonly {
+        background: rgba(245, 247, 249, 0.9);
+      }
+
+      .sheet-inline {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        width: 100%;
+      }
+
+      .sheet-inline .sheet-field {
+        flex: 1;
+      }
+
+      .sheet-help {
+        display: block;
+        margin-top: 6px;
+        color: var(--muted);
+        font-size: 11px;
+      }
+
+      .sheet-note {
+        padding: 10px 14px 14px;
+        color: var(--muted);
+        font-size: 12px;
+      }
+
+      .advanced-panel {
+        border: 1px dashed rgba(116, 119, 125, 0.24);
+        border-radius: 12px;
+        background: rgba(255, 255, 255, 0.68);
+      }
+
+      .advanced-panel summary {
+        cursor: pointer;
+        list-style: none;
+        padding: 14px 16px;
+        font-weight: 800;
+      }
+
+      .advanced-panel summary::-webkit-details-marker {
         display: none;
       }
 
-      @media (max-width: 900px) {
-        .grid {
+      .advanced-body {
+        padding: 0 16px 16px;
+      }
+
+      @media (max-width: 1280px) {
+        .summary-grid {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .hero-grid,
+        .dashboard-grid,
+        .quote-grid,
+        .import-grid,
+        .debug-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      @media (max-width: 960px) {
+        :root {
+          --sidebar-width: 100%;
+        }
+
+        .sidebar {
+          position: static;
+          width: 100%;
+          height: auto;
+        }
+
+        .content {
+          margin-left: 0;
+        }
+
+        .topbar {
+          position: static;
+        }
+
+        .page {
+          padding: 18px;
+        }
+
+        .summary-grid,
+        .hero-metrics,
+        .form-grid,
+        .auto-grid,
+        .result-grid,
+        .split,
+        .candidate-meta,
+        .sheet-grid {
           grid-template-columns: 1fr;
         }
 
-        .form-grid, .summary {
-          grid-template-columns: 1fr;
+        .sheet-label,
+        .sheet-value {
+          border-right: 0;
         }
       }
     </style>
   </head>
   <body>
-    <main class="shell">
-      <section class="hero">
-        <span class="eyebrow">MG Capital Playground</span>
-        <h1>Residual Selection Testbed</h1>
-        <p>
-          로컬에서 바로 POST /api/quotes/calculate 를 때려보면서 hidden residual candidate,
-          최종 잔가율 선택, 재계산 흐름까지 확인할 수 있는 테스트 페이지입니다.
-        </p>
-      </section>
-
-      <section class="grid">
-        <div class="panel">
-          <div class="panel-head">
+    <div class="shell">
+      <aside class="sidebar">
+        <div class="brand">
+          <div class="brand-mark">
+            <div class="brand-badge">DL</div>
             <div>
-              <h2 class="panel-title">Quote Input</h2>
-              <div class="panel-sub">샘플 값을 바꿔가며 견적을 확인하세요.</div>
+              <div class="brand-title">도림 자동차 견적 솔루션</div>
+              <div class="brand-subtitle">Precision Ledger · 한국어 운영 콘솔</div>
             </div>
           </div>
-          <form id="quote-form">
-            <div class="form-grid">
-              <div class="field">
-                <label for="brand">Brand</label>
-                <select id="brand" name="brand">
-                  <option value="AUDI">AUDI</option>
-                  <option value="BMW">BMW</option>
-                  <option value="BENZ">BENZ</option>
-                  <option value="VOLVO">VOLVO</option>
-                </select>
-              </div>
-              <div class="field">
-                <label for="modelName">Model</label>
-                <input id="modelName" name="modelName" value="A3 40 TFSI Premium" />
-              </div>
-              <div class="field">
-                <label for="ownershipType">Ownership</label>
-                <select id="ownershipType" name="ownershipType">
-                  <option value="company">Company</option>
-                  <option value="customer">Customer</option>
-                </select>
-              </div>
-              <div class="field">
-                <label for="leaseTermMonths">Lease Term</label>
-                <select id="leaseTermMonths" name="leaseTermMonths">
-                  <option value="36">36</option>
-                  <option value="60">60</option>
-                  <option value="48">48</option>
-                  <option value="24">24</option>
-                  <option value="12">12</option>
-                </select>
-              </div>
-              <div class="field">
-                <label for="annualMileageKm">Annual Mileage</label>
-                <select id="annualMileageKm" name="annualMileageKm">
-                  <option value="20000">20,000km</option>
-                  <option value="10000">10,000km</option>
-                  <option value="30000">30,000km</option>
-                  <option value="35000">35,000km</option>
-                </select>
-              </div>
-              <div class="field">
-                <label for="quotedVehiclePrice">Quoted Vehicle Price</label>
-                <input id="quotedVehiclePrice" name="quotedVehiclePrice" type="number" value="46400000" />
-              </div>
-              <div class="field">
-                <label for="discountAmount">Discount Amount</label>
-                <input id="discountAmount" name="discountAmount" type="number" value="0" />
-              </div>
-              <div class="field">
-                <label for="upfrontPayment">Upfront Payment</label>
-                <input id="upfrontPayment" name="upfrontPayment" type="number" value="0" />
-              </div>
-              <div class="field">
-                <label for="depositAmount">Deposit Amount</label>
-                <input id="depositAmount" name="depositAmount" type="number" value="0" />
-              </div>
-              <div class="field">
-                <label for="annualIrrRateOverride">Displayed Annual IRR</label>
-                <input id="annualIrrRateOverride" name="annualIrrRateOverride" type="number" step="0.000001" value="0.047" />
-              </div>
-              <div class="field">
-                <label for="annualEffectiveRateOverride">Effective Annual IRR</label>
-                <input id="annualEffectiveRateOverride" name="annualEffectiveRateOverride" type="number" step="0.000001" value="0.04699540291" />
-              </div>
-              <div class="field">
-                <label for="paymentRateOverride">Payment Rate Override</label>
-                <input id="paymentRateOverride" name="paymentRateOverride" type="number" step="0.00001" value="0.04709" />
-              </div>
-              <div class="field">
-                <label for="selectedResidualRateOverride">Selected Residual Rate</label>
-                <input id="selectedResidualRateOverride" name="selectedResidualRateOverride" type="number" step="0.000001" placeholder="e.g. 0.525" />
-              </div>
-              <div class="field">
-                <label for="residualAmountOverride">Residual Amount Override</label>
-                <input id="residualAmountOverride" name="residualAmountOverride" type="number" placeholder="e.g. 24360000" />
-              </div>
-              <div class="field">
-                <label for="acquisitionTaxRateOverride">Acquisition Tax Rate</label>
-                <input id="acquisitionTaxRateOverride" name="acquisitionTaxRateOverride" type="number" step="0.0001" value="0.07" />
-              </div>
-              <div class="field">
-                <label for="stampDuty">Stamp Duty</label>
-                <input id="stampDuty" name="stampDuty" type="number" value="10000" />
-              </div>
-            </div>
-            <div class="actions">
-              <button class="primary" type="submit">Calculate Quote</button>
-              <button class="secondary" id="reset-sample" type="button">Load AUDI Sample</button>
-            </div>
-          </form>
+          <div class="nav-kicker">월별 워크북 업로드부터 잔가 선택형 견적 계산까지 한 화면에서 검증합니다.</div>
         </div>
 
-        <div class="stack">
-          <div class="panel">
-            <div class="panel-head">
-              <div>
-                <h2 class="panel-title">Quote Output</h2>
-                <div class="panel-sub">적용된 잔가율과 월 납입금을 바로 확인합니다.</div>
-              </div>
-            </div>
-            <div class="results">
-              <div class="summary" id="summary"></div>
-            </div>
-          </div>
+        <nav class="nav">
+          <button class="nav-button active" data-target="dashboard" type="button">대시보드</button>
+          <button class="nav-button" data-target="quotes" type="button">견적 계산</button>
+          <button class="nav-button" data-target="imports" type="button">워크북 업로드</button>
+          <button class="nav-button" data-target="debug" type="button">디버그</button>
+        </nav>
 
-          <div class="panel">
-            <div class="panel-head">
-              <div>
-                <h2 class="panel-title">Residual Candidates</h2>
-                <div class="panel-sub">필요하면 후보를 눌러 최종 잔가율로 재계산합니다.</div>
-              </div>
-            </div>
-            <div class="results stack">
-              <div id="selection-guide" class="callout hidden"></div>
-              <div id="warnings" class="stack"></div>
-              <div id="candidate-list" class="candidate-list"></div>
-            </div>
-          </div>
-
-          <div class="panel">
-            <div class="panel-head">
-              <div>
-                <h2 class="panel-title">Raw Response</h2>
-                <div class="panel-sub">API 응답 전체를 그대로 봅니다.</div>
-              </div>
-            </div>
-            <div class="results">
-              <pre id="raw-response">{}</pre>
-            </div>
+        <div class="sidebar-foot">
+          <div class="status-chip">
+            <span class="status-dot"></span>
+            MG 캐피탈 운용리스 백엔드 연결됨
           </div>
         </div>
-      </section>
-    </main>
+      </aside>
+
+      <div class="content">
+        <header class="topbar">
+          <div>
+            <div class="topbar-title">한글 운영 화면 프리뷰</div>
+            <div class="topbar-subtitle">현재 스택에 맞춘 서버 렌더링 UI입니다. 계산 API와 업로드 API를 직접 호출합니다.</div>
+          </div>
+          <div class="topbar-meta">
+            <div class="pill" id="env-pill">환경 확인 중</div>
+            <div class="pill" id="version-pill">활성 버전 조회 중</div>
+          </div>
+        </header>
+
+        <main class="page">
+          <div class="page-stack">
+            <section class="section active" data-section="dashboard">
+              <div class="page-stack">
+                <div class="hero-grid">
+                  <article class="card hero">
+                    <div class="hero-body">
+                      <div class="eyebrow">운영형 자동차 금융 플랫폼</div>
+                      <h1 class="hero-title">각 금융사 워크북을 웹 계산기로 연결하는 한글 업무 화면</h1>
+                      <div class="hero-copy">
+                        MG캐피탈 월별 엑셀 정책을 업로드하고, 활성 버전을 기준으로 운용리스 견적을 계산하고,
+                        hidden residual 후보를 사용자 확인형 UX로 검증할 수 있도록 구성했습니다.
+                      </div>
+                      <div class="hero-metrics">
+                        <div class="hero-metric">
+                          <div class="hero-metric-label">현재 구현 상품</div>
+                          <div class="hero-metric-value">운용리스</div>
+                        </div>
+                        <div class="hero-metric">
+                          <div class="hero-metric-label">활성 금융사</div>
+                          <div class="hero-metric-value" id="hero-lender-count">1</div>
+                        </div>
+                        <div class="hero-metric">
+                          <div class="hero-metric-label">업로드 이력</div>
+                          <div class="hero-metric-value" id="hero-import-count">0</div>
+                        </div>
+                      </div>
+                    </div>
+                  </article>
+
+                  <article class="card">
+                    <div class="card-head">
+                      <div>
+                        <h2 class="card-title">빠른 액션</h2>
+                        <div class="card-subtitle">지금 바로 로컬에서 확인할 핵심 흐름</div>
+                      </div>
+                    </div>
+                    <div class="card-body">
+                      <div class="toolbar">
+                        <button class="btn btn-primary" data-target-jump="quotes" type="button">견적 계산 테스트</button>
+                        <button class="btn btn-secondary" data-target-jump="imports" type="button">워크북 미리보기</button>
+                        <button class="btn btn-tonal" id="refresh-dashboard" type="button">상태 새로고침</button>
+                      </div>
+                      <div class="list" style="margin-top: 16px">
+                        <div class="list-row">
+                          <div>
+                            <div class="list-title">잔가 후보 선택 UX</div>
+                            <div class="list-subtitle">selectionGuide와 candidateSummary를 한국어 운영 화면으로 노출</div>
+                          </div>
+                          <div class="badge success">연결됨</div>
+                        </div>
+                        <div class="list-row">
+                          <div>
+                            <div class="list-title">워크북 업로드 및 활성화</div>
+                            <div class="list-subtitle">preview와 persist를 같은 화면에서 검증</div>
+                          </div>
+                          <div class="badge neutral">로컬 가능</div>
+                        </div>
+                        <div class="list-row">
+                          <div>
+                            <div class="list-title">Cloudflare Pages Functions 호환</div>
+                            <div class="list-subtitle">정적 빌드 없이 Functions 경로에서 바로 렌더링</div>
+                          </div>
+                          <div class="badge neutral">현재 구조 유지</div>
+                        </div>
+                      </div>
+                    </div>
+                  </article>
+                </div>
+
+                <div class="summary-grid">
+                  <article class="card stat-card">
+                    <div class="label">시스템 상태</div>
+                    <div class="stat-value" id="health-status">확인 중</div>
+                    <div class="stat-foot" id="health-subtext">/health 응답 대기</div>
+                  </article>
+                  <article class="card stat-card">
+                    <div class="label">최근 활성 버전</div>
+                    <div class="stat-value" id="active-version">미확인</div>
+                    <div class="stat-foot" id="active-version-subtext">업로드 이력 조회 대기</div>
+                  </article>
+                  <article class="card stat-card">
+                    <div class="label">등록된 금융사</div>
+                    <div class="stat-value" id="lender-count">0</div>
+                    <div class="stat-foot">현재 API가 반환하는 lender 목록 기준</div>
+                  </article>
+                  <article class="card stat-card">
+                    <div class="label">업로드 누적 건수</div>
+                    <div class="stat-value" id="import-count">0</div>
+                    <div class="stat-foot">Supabase 기준 workbook import rows</div>
+                  </article>
+                </div>
+
+                <div class="dashboard-grid">
+                  <article class="card">
+                    <div class="card-head">
+                      <div>
+                        <h2 class="card-title">최근 워크북 이력</h2>
+                        <div class="card-subtitle">활성 버전과 최근 반영 기록을 빠르게 읽습니다.</div>
+                      </div>
+                    </div>
+                    <div class="card-body table-wrap">
+                      <table>
+                        <thead>
+                          <tr>
+                            <th>버전</th>
+                            <th>파일명</th>
+                            <th>상태</th>
+                            <th>업로드 시각</th>
+                          </tr>
+                        </thead>
+                        <tbody id="imports-table-body">
+                          <tr>
+                            <td colspan="4" class="inline-hint">아직 데이터를 불러오지 않았습니다.</td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  </article>
+
+                  <article class="card">
+                    <div class="card-head">
+                      <div>
+                        <h2 class="card-title">현재 연결 상황</h2>
+                        <div class="card-subtitle">실제 API 기준으로 프론트 연결 상태를 요약합니다.</div>
+                      </div>
+                    </div>
+                    <div class="card-body">
+                      <div class="kpi-grid">
+                        <div class="mini-card">
+                          <div class="label">활성 금융사</div>
+                          <div class="mini-value" id="dashboard-lender-name">MG Capital</div>
+                        </div>
+                        <div class="mini-card">
+                          <div class="label">기본 상품</div>
+                          <div class="mini-value">운용리스</div>
+                        </div>
+                        <div class="mini-card">
+                          <div class="label">잔가 선택 UX</div>
+                          <div class="mini-value">사용자 확인형</div>
+                        </div>
+                        <div class="mini-card">
+                          <div class="label">프론트 방식</div>
+                          <div class="mini-value">서버 렌더링</div>
+                        </div>
+                        <div class="mini-card">
+                          <div class="label">브랜드 수</div>
+                          <div class="mini-value" id="catalog-brand-count">0</div>
+                        </div>
+                        <div class="mini-card">
+                          <div class="label">모델 수</div>
+                          <div class="mini-value" id="catalog-model-count">0</div>
+                        </div>
+                      </div>
+                    </div>
+                  </article>
+                </div>
+              </div>
+            </section>
+
+            <section class="section" data-section="quotes">
+              <div class="page-stack">
+                <div class="quote-grid">
+                  <article class="card">
+                    <div class="card-head">
+                      <div>
+                        <h2 class="card-title">견적 입력</h2>
+                        <div class="card-subtitle">엑셀 견적 시트와 같은 항목 이름과 흐름으로 맞춘 입력 화면입니다.</div>
+                      </div>
+                    </div>
+                    <div class="card-body">
+                      <form id="quote-form">
+                        <div class="quote-sheet">
+                          <div class="sheet-block">
+                            <div class="sheet-block-title">차량 정보</div>
+                            <div class="sheet-grid">
+                              <div class="sheet-label">Brand</div>
+                              <div class="sheet-value">
+                                <select class="sheet-field" id="brand" name="brand"></select>
+                              </div>
+                              <div class="sheet-label">Model</div>
+                              <div class="sheet-value">
+                                <select class="sheet-field" id="modelName" name="modelName"></select>
+                              </div>
+
+                              <div class="sheet-label">차종구분</div>
+                              <div class="sheet-value">
+                                <input class="sheet-field readonly" id="sheet-vehicle-class" type="text" readonly value="-" />
+                              </div>
+                              <div class="sheet-label">배기량</div>
+                              <div class="sheet-value">
+                                <input class="sheet-field readonly tabular" id="sheet-engine-cc" type="text" readonly value="-" />
+                              </div>
+
+                              <div class="sheet-label">기본차량가</div>
+                              <div class="sheet-value">
+                                <input class="sheet-field tabular" id="quotedVehiclePrice" name="quotedVehiclePrice" type="number" />
+                              </div>
+                              <div class="sheet-label">옵션</div>
+                              <div class="sheet-value">
+                                <input class="sheet-field readonly tabular" id="optionAmountDisplay" type="text" readonly value="0" />
+                              </div>
+
+                              <div class="sheet-label">할인</div>
+                              <div class="sheet-value">
+                                <input class="sheet-field tabular" id="discountAmount" name="discountAmount" type="number" value="0" />
+                              </div>
+                              <div class="sheet-label">차량가계(계산서가)</div>
+                              <div class="sheet-value">
+                                <input class="sheet-field readonly tabular" id="discountedVehiclePriceDisplay" type="text" readonly value="-" />
+                              </div>
+                            </div>
+                            <div class="sheet-note" id="selected-model-meta">선택한 모델의 차종, 배기량, 고잔가 여부와 프로모션 코드가 자동 반영됩니다.</div>
+                          </div>
+
+                          <div class="sheet-block">
+                            <div class="sheet-block-title">계약 및 부대비용</div>
+                            <div class="sheet-grid">
+                              <div class="sheet-label">차량명의</div>
+                              <div class="sheet-value">
+                                <select class="sheet-field" id="ownershipType" name="ownershipType">
+                                  <option value="company">법인</option>
+                                  <option value="customer">고객명의</option>
+                                </select>
+                              </div>
+                              <div class="sheet-label">공채</div>
+                              <div class="sheet-value">
+                                <input class="sheet-field tabular" id="publicBondCost" name="publicBondCost" type="number" value="0" />
+                              </div>
+
+                              <div class="sheet-label">리스기간(개월)</div>
+                              <div class="sheet-value">
+                                <select class="sheet-field" id="leaseTermMonths" name="leaseTermMonths">
+                                  <option value="12">12</option>
+                                  <option value="24">24</option>
+                                  <option value="36" selected>36</option>
+                                  <option value="48">48</option>
+                                  <option value="60">60</option>
+                                </select>
+                              </div>
+                              <div class="sheet-label">장기선수금</div>
+                              <div class="sheet-value">
+                                <input class="sheet-field tabular" id="upfrontPayment" name="upfrontPayment" type="number" value="0" />
+                              </div>
+
+                              <div class="sheet-label">보증금</div>
+                              <div class="sheet-value">
+                                <input class="sheet-field tabular" id="depositAmount" name="depositAmount" type="number" value="0" />
+                              </div>
+                              <div class="sheet-label">약정주행거리</div>
+                              <div class="sheet-value">
+                                <select class="sheet-field" id="annualMileageKm" name="annualMileageKm">
+                                  <option value="10000">10,000km</option>
+                                  <option value="20000" selected>20,000km</option>
+                                  <option value="30000">30,000km</option>
+                                  <option value="35000">35,000km</option>
+                                </select>
+                              </div>
+
+                              <div class="sheet-label">취득세율</div>
+                              <div class="sheet-value">
+                                <input class="sheet-field tabular" id="acquisitionTaxRateOverride" name="acquisitionTaxRateOverride" type="number" step="0.0001" value="0.07" />
+                              </div>
+                              <div class="sheet-label">취득세</div>
+                              <div class="sheet-value">
+                                <input class="sheet-field readonly tabular" id="sheet-acquisition-tax-amount" type="text" readonly value="-" />
+                              </div>
+
+                              <div class="sheet-label">기타부대비</div>
+                              <div class="sheet-value">
+                                <input class="sheet-field readonly tabular" id="sheet-extra-fees" type="text" readonly value="0" />
+                              </div>
+                              <div class="sheet-label">탁송료</div>
+                              <div class="sheet-value">
+                                <input class="sheet-field readonly tabular" id="sheet-delivery-fee" type="text" readonly value="0" />
+                              </div>
+
+                              <div class="sheet-label">자동차세</div>
+                              <div class="sheet-value">
+                                <input class="sheet-field readonly" id="sheet-car-tax" type="text" readonly value="미포함" />
+                              </div>
+                              <div class="sheet-label">보험료(年)</div>
+                              <div class="sheet-value">
+                                <input class="sheet-field readonly tabular" id="sheet-insurance" type="text" readonly value="-" />
+                              </div>
+
+                              <div class="sheet-label">부가서비스</div>
+                              <div class="sheet-value">
+                                <input class="sheet-field readonly" id="sheet-extra-service" type="text" readonly value="-" />
+                              </div>
+                              <div class="sheet-label">영업담당자</div>
+                              <div class="sheet-value">
+                                <input class="sheet-field readonly" id="sheet-sales-owner" type="text" readonly value="-" />
+                              </div>
+                            </div>
+                          </div>
+
+                          <div class="sheet-block">
+                            <div class="sheet-block-title">잔가 및 금리</div>
+                            <div class="sheet-grid">
+                              <div class="sheet-label">최종 잔가율(BK27)</div>
+                              <div class="sheet-value">
+                                <input class="sheet-field tabular" id="selectedResidualRateOverride" name="selectedResidualRateOverride" type="text" inputmode="decimal" placeholder="예: 52 또는 52.5" />
+                                <span class="sheet-help">선택하지 않으면 후보 잔가 기준으로 계산합니다.</span>
+                              </div>
+                              <div class="sheet-label">적용 잔가율</div>
+                              <div class="sheet-value">
+                                <input class="sheet-field readonly tabular" id="sheet-applied-residual-rate" type="text" readonly value="-" />
+                              </div>
+
+                              <div class="sheet-label">최소잔가</div>
+                              <div class="sheet-value">
+                                <input class="sheet-field readonly tabular" id="sheet-min-residual-rate" type="text" readonly value="-" />
+                              </div>
+                              <div class="sheet-label">최대잔가</div>
+                              <div class="sheet-value">
+                                <input class="sheet-field readonly tabular" id="sheet-max-residual-rate" type="text" readonly value="-" />
+                              </div>
+
+                              <div class="sheet-label">잔가금액</div>
+                              <div class="sheet-value">
+                                <input class="sheet-field readonly tabular" id="sheet-residual-amount" type="text" readonly value="-" />
+                              </div>
+                              <div class="sheet-label">적용금리</div>
+                              <div class="sheet-value">
+                                <input class="sheet-field tabular" id="annualIrrRateOverride" name="annualIrrRateOverride" type="text" inputmode="decimal" placeholder="자동 반영" />
+                                <span class="sheet-help" id="annual-rate-help">비워두면 현재 정책 기준 금리를 자동 적용합니다.</span>
+                              </div>
+
+                              <div class="sheet-label">고잔가</div>
+                              <div class="sheet-value">
+                                <input class="sheet-field readonly" id="sheet-high-residual" type="text" readonly value="-" />
+                              </div>
+                              <div class="sheet-label">프로모션</div>
+                              <div class="sheet-value">
+                                <input class="sheet-field readonly" id="sheet-promo-code" type="text" readonly value="-" />
+                              </div>
+
+                              <div class="sheet-label">AG수수료율</div>
+                              <div class="sheet-value">
+                                <input class="sheet-field tabular" id="agFeeRate" name="agFeeRate" type="text" inputmode="decimal" value="0%" />
+                              </div>
+                              <div class="sheet-label">CM수수료율</div>
+                              <div class="sheet-value">
+                                <input class="sheet-field tabular" id="cmFeeRate" name="cmFeeRate" type="text" inputmode="decimal" value="0%" />
+                              </div>
+
+                              <div class="sheet-label">인지세</div>
+                              <div class="sheet-value">
+                                <input class="sheet-field tabular" id="stampDuty" name="stampDuty" type="number" value="0" />
+                              </div>
+                              <div class="sheet-label">잔가금액 override</div>
+                              <div class="sheet-value">
+                                <input class="sheet-field tabular" id="residualAmountOverride" name="residualAmountOverride" type="number" placeholder="예: 24360000" />
+                              </div>
+                            </div>
+                          </div>
+
+                          <details class="advanced-panel">
+                            <summary>고급 override 열기</summary>
+                            <div class="advanced-body">
+                              <div class="form-grid">
+                                <div class="field">
+                                  <label for="annualEffectiveRateOverride">유효 IRR override</label>
+                                  <input class="input tabular" id="annualEffectiveRateOverride" name="annualEffectiveRateOverride" type="number" step="0.000001" />
+                                </div>
+                                <div class="field">
+                                  <label for="paymentRateOverride">월 납입률 override</label>
+                                  <input class="input tabular" id="paymentRateOverride" name="paymentRateOverride" type="number" step="0.00001" />
+                                </div>
+                              </div>
+                            </div>
+                          </details>
+                        </div>
+                        <div class="form-actions">
+                          <button class="btn btn-secondary" id="reset-workbook-defaults" type="button">엑셀 기본값 적용</button>
+                          <button class="btn btn-primary" id="quote-submit-button" type="submit">견적 계산</button>
+                          <button class="btn btn-secondary" id="reset-selected-residual" type="button">잔가 선택값 지우기</button>
+                        </div>
+                        <div class="callout warning hidden" id="workbook-diff-warning" style="margin-top: 10px"></div>
+                        <div class="inline-hint" id="quote-submit-status" style="margin-top: 10px">입력값을 바꾸면 자동으로 재계산되고, 버튼으로도 즉시 계산할 수 있습니다.</div>
+                      </form>
+                    </div>
+                  </article>
+
+                  <div class="page-stack">
+                    <article class="card">
+                      <div class="card-head">
+                        <div>
+                          <h2 class="card-title">활성 카탈로그</h2>
+                          <div class="card-subtitle">현재 활성 워크북에 들어 있는 전체 브랜드와 모델 목록입니다.</div>
+                        </div>
+                      </div>
+                      <div class="card-body">
+                        <div class="split">
+                          <div class="mini-card">
+                            <div class="label">브랜드 수</div>
+                            <div class="mini-value" id="quote-catalog-brand-count">0</div>
+                          </div>
+                          <div class="mini-card">
+                            <div class="label">모델 수</div>
+                            <div class="mini-value" id="quote-catalog-model-count">0</div>
+                          </div>
+                        </div>
+                        <div class="catalog-list" id="catalog-list" style="margin-top: 14px">
+                          <div class="empty-state">카탈로그를 불러오는 중입니다.</div>
+                        </div>
+                      </div>
+                    </article>
+
+                    <article class="card">
+                      <div class="card-head">
+                        <div>
+                          <h2 class="card-title">견적 결과</h2>
+                          <div class="card-subtitle">월 납입금, 잔가, 금리 정보를 즉시 확인합니다.</div>
+                        </div>
+                      </div>
+                      <div class="card-body">
+                        <div class="result-grid" id="quote-summary">
+                          <div class="empty-state">아직 계산 결과가 없습니다. 왼쪽에서 값을 입력하고 견적 계산을 눌러주세요.</div>
+                        </div>
+                      </div>
+                    </article>
+
+                    <article class="card">
+                      <div class="card-head">
+                        <div>
+                          <h2 class="card-title">잔가 후보 선택</h2>
+                          <div class="card-subtitle">BK27 성격의 최종 선택값을 웹에서 다루는 영역입니다.</div>
+                        </div>
+                      </div>
+                      <div class="card-body">
+                        <div id="selection-guide" class="callout hidden"></div>
+                        <div id="quote-warnings" class="page-stack"></div>
+                        <div id="candidate-list" class="candidate-list"></div>
+                      </div>
+                    </article>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <section class="section" data-section="imports">
+              <div class="page-stack">
+                <div class="import-grid">
+                  <article class="card">
+                    <div class="card-head">
+                      <div>
+                        <h2 class="card-title">워크북 업로드</h2>
+                        <div class="card-subtitle">실제 preview/import API를 사용합니다.</div>
+                      </div>
+                    </div>
+                    <div class="card-body">
+                      <form id="import-form">
+                        <div class="form-grid">
+                          <div class="field">
+                            <label for="import-lender-code">금융사 코드</label>
+                            <select class="select" id="import-lender-code" name="lenderCode">
+                              <option value="mg-capital">mg-capital</option>
+                            </select>
+                          </div>
+                          <div class="field">
+                            <label for="activate-import">업로드 후 활성화</label>
+                            <select class="select" id="activate-import" name="activate">
+                              <option value="true">예</option>
+                              <option value="false">아니오</option>
+                            </select>
+                          </div>
+                          <div class="field span-2">
+                            <label for="workbook-file">엑셀 파일</label>
+                            <input class="input" id="workbook-file" name="file" type="file" accept=".xlsx,.xlsm,.xls" />
+                            <div class="inline-hint">preview는 DB 저장 없이 파싱만 확인하고, import는 실제 Supabase에 저장합니다.</div>
+                          </div>
+                        </div>
+                        <div class="form-actions">
+                          <button class="btn btn-secondary" id="preview-import" type="button">미리보기</button>
+                          <button class="btn btn-primary" id="commit-import" type="button">업로드 및 저장</button>
+                        </div>
+                      </form>
+                    </div>
+                  </article>
+
+                  <article class="card">
+                    <div class="card-head">
+                      <div>
+                        <h2 class="card-title">워크북 분석 결과</h2>
+                        <div class="card-subtitle">sheet, 차량 수, 정책 수, anomaly를 운영자 관점으로 표시합니다.</div>
+                      </div>
+                    </div>
+                    <div class="card-body">
+                      <div class="split">
+                        <div class="mini-card">
+                          <div class="label">탐지된 버전</div>
+                          <div class="mini-value" id="preview-version">대기 중</div>
+                        </div>
+                        <div class="mini-card">
+                          <div class="label">시트 수</div>
+                          <div class="mini-value" id="preview-sheet-count">0</div>
+                        </div>
+                        <div class="mini-card">
+                          <div class="label">차량 프로그램 수</div>
+                          <div class="mini-value" id="preview-vehicle-count">0</div>
+                        </div>
+                        <div class="mini-card">
+                          <div class="label">잔가 매트릭스 수</div>
+                          <div class="mini-value" id="preview-matrix-count">0</div>
+                        </div>
+                      </div>
+                      <div class="page-stack" style="margin-top: 14px">
+                        <div id="preview-status" class="callout">아직 미리보기 결과가 없습니다.</div>
+                        <pre class="json" id="preview-json">{}</pre>
+                      </div>
+                    </div>
+                  </article>
+                </div>
+              </div>
+            </section>
+
+            <section class="section" data-section="debug">
+              <div class="page-stack">
+                <div class="debug-grid">
+                  <article class="card">
+                    <div class="card-head">
+                      <div>
+                        <h2 class="card-title">운영 디버그 패널</h2>
+                        <div class="card-subtitle">selectionGuide, candidate summary, import response를 한 번에 검토합니다.</div>
+                      </div>
+                    </div>
+                    <div class="card-body">
+                      <div class="list">
+                        <div class="list-row">
+                          <div>
+                            <div class="list-title">BK27 성격</div>
+                            <div class="list-subtitle">현재 구현은 workbook 최종 선택값을 사용자 입력형 override로 취급합니다.</div>
+                          </div>
+                          <div class="badge warning">중요</div>
+                        </div>
+                        <div class="list-row">
+                          <div>
+                            <div class="list-title">candidateSummary</div>
+                            <div class="list-subtitle">SNK / APS / 차봇 후보 잔가율을 함께 노출해 UI가 직접 선택할 수 있게 합니다.</div>
+                          </div>
+                          <div class="badge success">연결됨</div>
+                        </div>
+                        <div class="list-row">
+                          <div>
+                            <div class="list-title">Cloudflare Pages 적합성</div>
+                            <div class="list-subtitle">서버 렌더링 HTML이라 추가 프런트 빌드 없이 Functions에서 그대로 동작합니다.</div>
+                          </div>
+                          <div class="badge neutral">유지 쉬움</div>
+                        </div>
+                      </div>
+                    </div>
+                  </article>
+
+                  <article class="card">
+                    <div class="card-head">
+                      <div>
+                        <h2 class="card-title">마지막 API 응답</h2>
+                        <div class="card-subtitle">견적 계산 또는 업로드 응답 전체를 그대로 확인합니다.</div>
+                      </div>
+                    </div>
+                    <div class="card-body">
+                      <pre class="json" id="raw-response">{}</pre>
+                    </div>
+                  </article>
+                </div>
+              </div>
+            </section>
+          </div>
+        </main>
+      </div>
+    </div>
 
     <script>
-      const form = document.getElementById("quote-form");
-      const summary = document.getElementById("summary");
-      const rawResponse = document.getElementById("raw-response");
-      const warnings = document.getElementById("warnings");
-      const candidateList = document.getElementById("candidate-list");
-      const selectionGuide = document.getElementById("selection-guide");
-      const resetSample = document.getElementById("reset-sample");
+      const navButtons = Array.from(document.querySelectorAll('.nav-button'));
+      const initialBrands = ${JSON.stringify(mgCatalog)};
+      const sections = Array.from(document.querySelectorAll('.section'));
+      const jumpButtons = Array.from(document.querySelectorAll('[data-target-jump]'));
 
-      const formatCurrency = (value) =>
-        new Intl.NumberFormat("ko-KR", { maximumFractionDigits: 0 }).format(Number(value || 0));
+      const envPill = document.getElementById('env-pill');
+      const versionPill = document.getElementById('version-pill');
+      const heroLenderCount = document.getElementById('hero-lender-count');
+      const heroImportCount = document.getElementById('hero-import-count');
+      const healthStatus = document.getElementById('health-status');
+      const healthSubtext = document.getElementById('health-subtext');
+      const activeVersion = document.getElementById('active-version');
+      const activeVersionSubtext = document.getElementById('active-version-subtext');
+      const lenderCount = document.getElementById('lender-count');
+      const importCount = document.getElementById('import-count');
+      const importsTableBody = document.getElementById('imports-table-body');
+      const dashboardLenderName = document.getElementById('dashboard-lender-name');
+      const catalogBrandCount = document.getElementById('catalog-brand-count');
+      const catalogModelCount = document.getElementById('catalog-model-count');
 
-      const formatPercent = (value) =>
-        new Intl.NumberFormat("ko-KR", { style: "percent", minimumFractionDigits: 2, maximumFractionDigits: 3 }).format(Number(value || 0));
+      const quoteForm = document.getElementById('quote-form');
+      const brandSelect = document.getElementById('brand');
+      const modelSelect = document.getElementById('modelName');
+      const selectedModelMeta = document.getElementById('selected-model-meta');
+      const sheetVehicleClass = document.getElementById('sheet-vehicle-class');
+      const sheetEngineCc = document.getElementById('sheet-engine-cc');
+      const optionAmountDisplay = document.getElementById('optionAmountDisplay');
+      const discountedVehiclePriceDisplay = document.getElementById('discountedVehiclePriceDisplay');
+      const sheetAcquisitionTaxAmount = document.getElementById('sheet-acquisition-tax-amount');
+      const sheetAppliedResidualRate = document.getElementById('sheet-applied-residual-rate');
+      const sheetMinResidualRate = document.getElementById('sheet-min-residual-rate');
+      const sheetMaxResidualRate = document.getElementById('sheet-max-residual-rate');
+      const sheetResidualAmount = document.getElementById('sheet-residual-amount');
+      const annualIrrRateInput = document.getElementById('annualIrrRateOverride');
+      const annualRateHelp = document.getElementById('annual-rate-help');
+      const sheetHighResidual = document.getElementById('sheet-high-residual');
+      const sheetPromoCode = document.getElementById('sheet-promo-code');
+      const sheetExtraFees = document.getElementById('sheet-extra-fees');
+      const sheetDeliveryFee = document.getElementById('sheet-delivery-fee');
+      const sheetCarTax = document.getElementById('sheet-car-tax');
+      const sheetInsurance = document.getElementById('sheet-insurance');
+      const sheetExtraService = document.getElementById('sheet-extra-service');
+      const sheetSalesOwner = document.getElementById('sheet-sales-owner');
+      const agFeeRateInput = document.getElementById('agFeeRate');
+      const cmFeeRateInput = document.getElementById('cmFeeRate');
+      const quoteCatalogBrandCount = document.getElementById('quote-catalog-brand-count');
+      const quoteCatalogModelCount = document.getElementById('quote-catalog-model-count');
+      const catalogList = document.getElementById('catalog-list');
+      const quoteSubmitButton = document.getElementById('quote-submit-button');
+      const quoteSubmitStatus = document.getElementById('quote-submit-status');
+      const resetSelectedResidualButton = document.getElementById('reset-selected-residual');
+      const resetWorkbookDefaultsButton = document.getElementById('reset-workbook-defaults');
+      const workbookDiffWarning = document.getElementById('workbook-diff-warning');
+      const quoteSummary = document.getElementById('quote-summary');
+      const quoteWarnings = document.getElementById('quote-warnings');
+      const candidateList = document.getElementById('candidate-list');
+      const selectionGuide = document.getElementById('selection-guide');
+      const rawResponse = document.getElementById('raw-response');
+      const selectedResidualRateInput = document.getElementById('selectedResidualRateOverride');
 
-      const samplePresets = {
-        AUDI: {
-          modelName: "A3 40 TFSI Premium",
-          quotedVehiclePrice: 46400000,
-          discountAmount: 0,
-          annualIrrRateOverride: 0.047,
-          annualEffectiveRateOverride: 0.04699540291,
-          paymentRateOverride: 0.04709,
-          selectedResidualRateOverride: "",
-          residualAmountOverride: "",
-        },
-        BMW: {
-          modelName: "X7 xDrive 40d DPE (6인승)",
-          quotedVehiclePrice: 500000000,
-          discountAmount: 8500000,
-          annualIrrRateOverride: 0.047,
-          annualEffectiveRateOverride: 0.047000978068,
-          paymentRateOverride: 0.04701,
-          selectedResidualRateOverride: "",
-          residualAmountOverride: "",
-        },
-        BENZ: {
-          modelName: "A 200d Sedan",
-          quotedVehiclePrice: 46300000,
-          discountAmount: 0,
-          annualIrrRateOverride: 0.047,
-          annualEffectiveRateOverride: 0.046995282907,
-          paymentRateOverride: 0.04709,
-          selectedResidualRateOverride: "",
-          residualAmountOverride: "",
-        },
-        VOLVO: {
-          modelName: "XC40 B4 AWD Ultra Dark",
-          quotedVehiclePrice: 52100000,
-          discountAmount: 0,
-          annualIrrRateOverride: 0.047,
-          annualEffectiveRateOverride: 0.046995767236,
-          paymentRateOverride: 0.04708,
-          selectedResidualRateOverride: "",
-          residualAmountOverride: "",
-        },
-      };
+      const importForm = document.getElementById('import-form');
+      const previewButton = document.getElementById('preview-import');
+      const commitButton = document.getElementById('commit-import');
+      const previewVersion = document.getElementById('preview-version');
+      const previewSheetCount = document.getElementById('preview-sheet-count');
+      const previewVehicleCount = document.getElementById('preview-vehicle-count');
+      const previewMatrixCount = document.getElementById('preview-matrix-count');
+      const previewStatus = document.getElementById('preview-status');
+      const previewJson = document.getElementById('preview-json');
+      const refreshDashboardButton = document.getElementById('refresh-dashboard');
+      let activeCatalog = initialBrands;
+      let activeModels = [];
+      let autoCalculateTimer = null;
+      let quoteRequestController = null;
 
-      function applyPreset(brand) {
-        const preset = samplePresets[brand];
-        if (!preset) return;
-        for (const [key, value] of Object.entries(preset)) {
-          const field = form.elements.namedItem(key);
-          if (field) field.value = value;
+      function setSection(target) {
+        navButtons.forEach((button) => {
+          button.classList.toggle('active', button.dataset.target === target);
+        });
+        sections.forEach((section) => {
+          section.classList.toggle('active', section.dataset.section === target);
+        });
+      }
+
+      navButtons.forEach((button) => {
+        button.addEventListener('click', () => setSection(button.dataset.target));
+      });
+
+      jumpButtons.forEach((button) => {
+        button.addEventListener('click', () => setSection(button.dataset.targetJump));
+      });
+
+      function formatNumber(value) {
+        return new Intl.NumberFormat('ko-KR', { maximumFractionDigits: 0 }).format(Number(value || 0));
+      }
+
+      function formatPercent(value) {
+        return new Intl.NumberFormat('ko-KR', {
+          style: 'percent',
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 3,
+        }).format(Number(value || 0));
+      }
+
+      function minimumResidualRateByTerm(termMonths) {
+        const lookup = {
+          12: 0.5,
+          24: 0.4,
+          36: 0.3,
+          48: 0.2,
+          60: 0.15,
+        };
+        return lookup[Number(termMonths)] ?? null;
+      }
+
+      function previewMaximumResidualRate(model, termMonths) {
+        if (!model) return null;
+
+        const term = Number(termMonths);
+        const band = model.snkResidualBand;
+        const fromMatrix =
+          band && mgResidualMatrixLookup[band] && mgResidualMatrixLookup[band][term]
+            ? Number(
+                mgResidualMatrixLookup[band][term]['에스앤케이모터스'] ??
+                  mgResidualMatrixLookup[band][term]['APS'] ??
+                  Object.values(mgResidualMatrixLookup[band][term])[0],
+              )
+            : null;
+
+        const directRate =
+          Number(model.residuals?.[term] ?? model.snkResiduals?.[term] ?? model.apsResiduals?.[term] ?? model.chatbotResiduals?.[term]);
+
+        const baseRate = Number.isFinite(fromMatrix) ? fromMatrix : Number.isFinite(directRate) ? directRate : null;
+        if (baseRate == null) return null;
+        return model.highResidualAllowed ? baseRate + 0.08 : baseRate;
+      }
+
+      function updateResidualPreviewFromInputs(model) {
+        const term = Number(quoteForm.elements.namedItem('leaseTermMonths').value || 0);
+        const minimumRate = minimumResidualRateByTerm(term);
+        const maximumRate = previewMaximumResidualRate(model, term);
+
+        if (sheetAppliedResidualRate.value === '-' || !sheetAppliedResidualRate.value) {
+          setFieldValue(sheetAppliedResidualRate, maximumRate == null ? '-' : formatPercent(maximumRate));
+        }
+        setFieldValue(sheetMinResidualRate, minimumRate == null ? '-' : formatPercent(minimumRate));
+        setFieldValue(sheetMaxResidualRate, maximumRate == null ? '-' : formatPercent(maximumRate));
+      }
+
+      function setRawResponse(value) {
+        rawResponse.textContent = JSON.stringify(value, null, 2);
+      }
+
+      function setQuoteSubmitState(state, message) {
+        if (quoteSubmitButton) {
+          quoteSubmitButton.disabled = state === 'loading';
+          quoteSubmitButton.textContent = state === 'loading' ? '계산 중...' : '견적 계산';
+        }
+
+        if (quoteSubmitStatus) {
+          quoteSubmitStatus.textContent = message;
         }
       }
 
-      function readPayload() {
-        const data = new FormData(form);
+      function parseJsonSafely(text) {
+        try {
+          return JSON.parse(text);
+        } catch {
+          return null;
+        }
+      }
+
+      function setFieldValue(field, value) {
+        if (!field) return;
+        field.value = value;
+      }
+
+      function updateDiscountedVehiclePriceDisplay() {
+        const basePrice = Number(quoteForm.elements.namedItem('quotedVehiclePrice').value || 0);
+        const discountAmount = Number(quoteForm.elements.namedItem('discountAmount').value || 0);
+        const optionAmount = Number(optionAmountDisplay.value || 0);
+        const discountedVehiclePrice = Math.max(0, basePrice + optionAmount - discountAmount);
+        discountedVehiclePriceDisplay.value = discountedVehiclePrice > 0 ? '₩ ' + formatNumber(discountedVehiclePrice) : '-';
+      }
+
+      function resetWorkbookDefaults(options) {
+        const preserveResidualSelection = options && options.preserveResidualSelection === true;
+        const model = activeModels.find((entry) => entry.modelName === modelSelect.value) || null;
+
+        if (model) {
+          quoteForm.elements.namedItem('quotedVehiclePrice').value = String(model.vehiclePrice);
+        }
+
+        quoteForm.elements.namedItem('discountAmount').value = '0';
+        quoteForm.elements.namedItem('publicBondCost').value = '0';
+        quoteForm.elements.namedItem('upfrontPayment').value = '0';
+        quoteForm.elements.namedItem('depositAmount').value = '0';
+        quoteForm.elements.namedItem('acquisitionTaxRateOverride').value = '0.07';
+        quoteForm.elements.namedItem('stampDuty').value = '0';
+        agFeeRateInput.value = '0%';
+        cmFeeRateInput.value = '0%';
+
+        if (!preserveResidualSelection) {
+          quoteForm.elements.namedItem('selectedResidualRateOverride').value = '';
+          quoteForm.elements.namedItem('residualAmountOverride').value = '';
+        }
+
+        annualIrrRateInput.dataset.manual = 'false';
+        annualIrrRateInput.value = '';
+        updateDiscountedVehiclePriceDisplay();
+      }
+
+      function updateWorkbookDiffWarning() {
+        const model = activeModels.find((entry) => entry.modelName === modelSelect.value) || null;
+        const diffs = [];
+
+        if (model) {
+          const currentVehiclePrice = Number(quoteForm.elements.namedItem('quotedVehiclePrice').value || 0);
+          if (currentVehiclePrice !== Number(model.vehiclePrice)) {
+            diffs.push('기본차량가가 활성 워크북 값(₩ ' + formatNumber(model.vehiclePrice) + ')과 다릅니다.');
+          }
+        }
+
+        const agFeeRate = parsePercentInput(agFeeRateInput.value) ?? 0;
+        const cmFeeRate = parsePercentInput(cmFeeRateInput.value) ?? 0;
+
+        if (agFeeRate !== 0) {
+          diffs.push('AG수수료율이 엑셀 기본값 0%와 다릅니다.');
+        }
+
+        if (cmFeeRate !== 0) {
+          diffs.push('CM수수료율이 엑셀 기본값 0%와 다릅니다.');
+        }
+
+        const publicBondCost = Number(quoteForm.elements.namedItem('publicBondCost').value || 0);
+        if (publicBondCost !== 0) {
+          diffs.push('공채 값이 수동 입력 상태입니다.');
+        }
+
+        if (diffs.length === 0) {
+          workbookDiffWarning.classList.add('hidden');
+          workbookDiffWarning.textContent = '';
+          return;
+        }
+
+        workbookDiffWarning.classList.remove('hidden');
+        workbookDiffWarning.innerHTML =
+          '<strong>현재 입력은 엑셀 기본값과 다릅니다.</strong><div style="margin-top:6px">' + diffs.join('<br />') + '</div>';
+      }
+
+      function setAutoSummaryFromModel(model) {
+        setFieldValue(sheetEngineCc, model && model.engineDisplacementCc ? formatNumber(model.engineDisplacementCc) + 'cc' : '-');
+        setFieldValue(sheetVehicleClass, model && model.vehicleClass ? model.vehicleClass : '-');
+        setFieldValue(sheetHighResidual, model ? (model.highResidualAllowed ? '가능' : '기본') : '-');
+        setFieldValue(sheetPromoCode, model && model.residualPromotionCode ? model.residualPromotionCode : '-');
+        optionAmountDisplay.value = '0';
+        updateDiscountedVehiclePriceDisplay();
+        updateResidualPreviewFromInputs(model);
+      }
+
+      function setAutoSummaryFromQuote(quote) {
+        if (!quote) {
+          setFieldValue(sheetAppliedResidualRate, '-');
+          setAnnualRateAutoDisplay(undefined);
+          setFieldValue(sheetResidualAmount, '-');
+          setFieldValue(sheetAcquisitionTaxAmount, '-');
+          setFieldValue(sheetMinResidualRate, '-');
+          setFieldValue(sheetMaxResidualRate, '-');
+          setFieldValue(sheetExtraFees, '0');
+          setFieldValue(sheetDeliveryFee, '0');
+          setFieldValue(sheetCarTax, '미포함');
+          setFieldValue(sheetInsurance, '-');
+          setFieldValue(sheetExtraService, '-');
+          setFieldValue(sheetSalesOwner, '-');
+          return;
+        }
+
+        const candidates = quote.residual?.candidateSummary?.candidates || [];
+
+        setFieldValue(sheetAppliedResidualRate, formatPercent(quote.residual.rateDecimal));
+        setAnnualRateAutoDisplay(quote.rates.annualRateDecimal);
+        setFieldValue(sheetResidualAmount, '₩ ' + formatNumber(quote.residual.amount));
+        setFieldValue(sheetAcquisitionTaxAmount, '₩ ' + formatNumber(quote.feesAndTaxes.acquisitionTax));
+        setFieldValue(sheetMinResidualRate, quote.residual.minRateDecimal == null ? '-' : formatPercent(quote.residual.minRateDecimal));
+        setFieldValue(sheetMaxResidualRate, quote.residual.maxRateDecimal == null ? '-' : formatPercent(quote.residual.maxRateDecimal));
+        setFieldValue(sheetExtraFees, formatNumber(quote.feesAndTaxes.extraFees || 0));
+      }
+
+      function scheduleAutoCalculate() {
+        if (autoCalculateTimer) {
+          clearTimeout(autoCalculateTimer);
+        }
+        autoCalculateTimer = setTimeout(() => {
+          if (!brandSelect.value || !modelSelect.value) return;
+          quoteForm.requestSubmit();
+        }, 180);
+      }
+
+      function renderCatalogBrands(brands) {
+        if (!brands || brands.length === 0) {
+          brandSelect.innerHTML = '<option value="">브랜드 없음</option>';
+          brandSelect.disabled = true;
+          return;
+        }
+
+        brandSelect.disabled = false;
+        brandSelect.innerHTML = brands
+          .map((entry) => '<option value="' + entry.brand + '">' + entry.brand + '</option>')
+          .join('');
+      }
+
+      async function renderCatalogModels(brand, preferredModelName) {
+        if (!brand) {
+          activeModels = [];
+          modelSelect.innerHTML = '<option value="">모델 없음</option>';
+          modelSelect.disabled = true;
+          selectedModelMeta.textContent = '활성 워크북에서 브랜드를 먼저 선택해주세요.';
+          return;
+        }
+
+        const brandEntry = activeCatalog.find((entry) => entry.brand === brand) || null;
+        activeModels = brandEntry ? brandEntry.models : [];
+
+        if (activeModels.length === 0) {
+          modelSelect.innerHTML = '<option value="">모델 없음</option>';
+          modelSelect.disabled = true;
+          selectedModelMeta.textContent = '선택한 브랜드의 모델을 불러오지 못했습니다.';
+          return;
+        }
+
+        modelSelect.disabled = false;
+
+        modelSelect.innerHTML = activeModels
+          .map((model) => '<option value="' + model.modelName + '">' + model.modelName + '</option>')
+          .join('');
+
+        if (preferredModelName && activeModels.some((model) => model.modelName === preferredModelName)) {
+          modelSelect.value = preferredModelName;
+        } else if (activeModels[0]) {
+          modelSelect.value = activeModels[0].modelName;
+        }
+
+        syncSelectedModelMeta();
+      }
+
+      function syncSelectedModelMeta() {
+        const model = activeModels.find((entry) => entry.modelName === modelSelect.value) || null;
+
+        if (!model) {
+          selectedModelMeta.textContent = '현재 선택된 모델의 메타데이터가 없습니다.';
+          setAutoSummaryFromModel(null);
+          return;
+        }
+
+        const flags = [];
+        if (model.highResidualAllowed) flags.push('고잔가 가능');
+        if (model.hybridAllowed) flags.push('하이브리드 허용');
+        if (model.residualPromotionCode) flags.push('프로모션 ' + model.residualPromotionCode);
+
+        selectedModelMeta.textContent =
+          '기본차량가 ₩ ' +
+          formatNumber(model.vehiclePrice) +
+          (model.vehicleClass ? ' · 차종 ' + model.vehicleClass : '') +
+          (model.engineDisplacementCc ? ' · ' + formatNumber(model.engineDisplacementCc) + 'cc' : '') +
+          (flags.length > 0 ? ' · ' + flags.join(' · ') : '');
+        quoteForm.elements.namedItem('quotedVehiclePrice').value = String(model.vehiclePrice);
+        setAutoSummaryFromModel(model);
+        updateWorkbookDiffWarning();
+      }
+
+      function renderCatalogList(brands) {
+        if (!brands || brands.length === 0) {
+          catalogList.innerHTML = '<div class="empty-state">활성 워크북 카탈로그가 없습니다.</div>';
+          return;
+        }
+
+        catalogList.innerHTML = brands
+          .map((entry) => {
+            return (
+              '<div class="catalog-brand">' +
+              '<div class="catalog-brand-title">' + entry.brand + ' <span class="badge neutral" style="margin-left:8px">' + formatNumber(entry.modelCount) + '개</span></div>' +
+              '<div class="catalog-models">' +
+              '활성 워크북에 등록된 모델 ' + formatNumber(entry.modelCount) + '개' +
+              '</div>' +
+              '</div>'
+            );
+          })
+          .join('');
+      }
+
+      function readNumber(data, key) {
+        const value = data.get(key);
+        if (value === null || value === '') return undefined;
+        return Number(value);
+      }
+
+      function parsePercentInput(rawValue) {
+        if (rawValue == null) return undefined;
+        const normalized = String(rawValue).replace(/%/g, '').replace(/,/g, '').trim();
+        if (!normalized) return undefined;
+        const parsed = Number(normalized);
+        if (!Number.isFinite(parsed)) return undefined;
+        return parsed > 1 ? parsed / 100 : parsed;
+      }
+
+      function formatPercentInputValue(rateDecimal) {
+        if (rateDecimal == null || !Number.isFinite(Number(rateDecimal))) return '';
+        const percentage = Number(rateDecimal) * 100;
+        const rounded = Math.round(percentage * 1000) / 1000;
+        return Number.isInteger(rounded) ? String(rounded) : String(rounded);
+      }
+
+      function applyResidualInputDisplay() {
+        const parsed = parsePercentInput(selectedResidualRateInput.value);
+        if (parsed == null) {
+          selectedResidualRateInput.value = '';
+          return;
+        }
+        selectedResidualRateInput.value = formatPercentInputValue(parsed) + '%';
+      }
+
+      function applyPercentInputDisplay(field) {
+        const parsed = parsePercentInput(field.value);
+        if (parsed == null) {
+          field.value = '';
+          return;
+        }
+        field.value = formatPercentInputValue(parsed) + '%';
+      }
+
+      function isManualAnnualRateOverride() {
+        return annualIrrRateInput.dataset.manual === 'true';
+      }
+
+      function setAnnualRateAutoDisplay(rateDecimal) {
+        if (rateDecimal == null || !Number.isFinite(Number(rateDecimal))) {
+          if (!isManualAnnualRateOverride()) {
+            annualIrrRateInput.value = '';
+          }
+          annualRateHelp.textContent = '비워두면 현재 정책 기준 금리를 자동 적용합니다.';
+          return;
+        }
+
+        if (!isManualAnnualRateOverride()) {
+          annualIrrRateInput.value = formatPercentInputValue(rateDecimal) + '%';
+        }
+        annualRateHelp.textContent = '현재 자동 반영 금리: ' + formatPercent(rateDecimal);
+      }
+
+      function readQuotePayload() {
+        const data = new FormData(quoteForm);
         const payload = {
-          lenderCode: "mg-capital",
-          productType: "operating_lease",
-          brand: data.get("brand"),
-          modelName: data.get("modelName"),
-          ownershipType: data.get("ownershipType"),
-          leaseTermMonths: Number(data.get("leaseTermMonths")),
-          annualMileageKm: Number(data.get("annualMileageKm")),
-          upfrontPayment: Number(data.get("upfrontPayment") || 0),
-          depositAmount: Number(data.get("depositAmount") || 0),
-          quotedVehiclePrice: Number(data.get("quotedVehiclePrice") || 0),
-          discountAmount: Number(data.get("discountAmount") || 0),
-          annualIrrRateOverride: Number(data.get("annualIrrRateOverride") || 0),
-          annualEffectiveRateOverride: Number(data.get("annualEffectiveRateOverride") || 0),
-          paymentRateOverride: Number(data.get("paymentRateOverride") || 0),
-          acquisitionTaxRateOverride: Number(data.get("acquisitionTaxRateOverride") || 0),
-          stampDuty: Number(data.get("stampDuty") || 0),
+          lenderCode: 'mg-capital',
+          productType: 'operating_lease',
+          brand: String(data.get('brand')),
+          modelName: String(data.get('modelName')),
+          ownershipType: String(data.get('ownershipType')),
+          leaseTermMonths: Number(data.get('leaseTermMonths')),
+          annualMileageKm: Number(data.get('annualMileageKm')),
+          upfrontPayment: Number(data.get('upfrontPayment') || 0),
+          depositAmount: Number(data.get('depositAmount') || 0),
+          quotedVehiclePrice: readNumber(data, 'quotedVehiclePrice'),
+          discountAmount: readNumber(data, 'discountAmount'),
+          publicBondCost: readNumber(data, 'publicBondCost'),
+          annualIrrRateOverride: parsePercentInput(data.get('annualIrrRateOverride')),
+          annualEffectiveRateOverride: readNumber(data, 'annualEffectiveRateOverride'),
+          paymentRateOverride: readNumber(data, 'paymentRateOverride'),
+          selectedResidualRateOverride: parsePercentInput(data.get('selectedResidualRateOverride')),
+          residualAmountOverride: readNumber(data, 'residualAmountOverride'),
+          acquisitionTaxRateOverride: readNumber(data, 'acquisitionTaxRateOverride'),
+          stampDuty: readNumber(data, 'stampDuty'),
+          agFeeRate: parsePercentInput(data.get('agFeeRate')),
+          cmFeeRate: parsePercentInput(data.get('cmFeeRate')),
         };
-
-        const selectedResidualRateOverride = data.get("selectedResidualRateOverride");
-        const residualAmountOverride = data.get("residualAmountOverride");
-
-        if (selectedResidualRateOverride) {
-          payload.selectedResidualRateOverride = Number(selectedResidualRateOverride);
-        }
-
-        if (residualAmountOverride) {
-          payload.residualAmountOverride = Number(residualAmountOverride);
-        }
 
         return payload;
       }
 
-      function renderSummary(quote) {
-        summary.innerHTML = "";
-        const items = [
-          ["Monthly Payment", formatCurrency(quote.monthlyPayment) + "원"],
-          ["Residual Amount", formatCurrency(quote.residual.amount) + "원"],
-          ["Applied Residual Rate", formatPercent(quote.residual.rateDecimal)],
-          ["Displayed Annual IRR", formatPercent(quote.rates.annualRateDecimal)],
-          ["Effective Annual IRR", formatPercent(quote.rates.effectiveAnnualRateDecimal)],
-          ["Financed Principal", formatCurrency(quote.majorInputs.financedPrincipal) + "원"],
-        ];
-        for (const [label, value] of items) {
-          const card = document.createElement("div");
-          card.className = "stat";
-          card.innerHTML = '<div class="stat-k">' + label + '</div><div class="stat-v">' + value + "</div>";
-          summary.appendChild(card);
-        }
-      }
-
-      function renderWarnings(quote) {
-        warnings.innerHTML = "";
-        for (const message of quote.warnings || []) {
-          const item = document.createElement("div");
-          item.className = "callout warn";
-          item.textContent = message;
-          warnings.appendChild(item);
-        }
-      }
-
-      function renderSelectionGuide(quote) {
-        const guide = quote.residual.selectionGuide;
-        if (!guide) {
-          selectionGuide.classList.add("hidden");
-          selectionGuide.textContent = "";
+      function renderQuoteWarnings(warnings) {
+        quoteWarnings.innerHTML = '';
+        if (!warnings || warnings.length === 0) {
+          quoteWarnings.innerHTML = '<div class="callout">경고가 없습니다. 현재 입력으로 계산이 정상 완료되었습니다.</div>';
           return;
         }
 
-        selectionGuide.classList.remove("hidden");
-        selectionGuide.className = "callout" + (guide.requiresUserConfirmation ? " warn" : "");
-        selectionGuide.innerHTML =
-          "<strong>Residual Selection</strong><br />" +
-          "default: " + formatPercent(guide.defaultRateDecimal) +
-          (guide.reason ? "<br />" + guide.reason : "");
+        warnings.forEach((warning) => {
+          const node = document.createElement('div');
+          node.className = 'callout warning';
+          node.textContent = warning;
+          quoteWarnings.appendChild(node);
+        });
       }
 
-      function renderCandidates(quote) {
-        candidateList.innerHTML = "";
-        const candidates = quote.residual.candidateSummary?.candidates || [];
-        for (const candidate of candidates) {
-          const card = document.createElement("div");
-          card.className = "candidate";
-          card.innerHTML =
-            '<div class="candidate-head">' +
-              '<div class="candidate-name">' + candidate.name + "</div>" +
-              "<strong>" + formatPercent(candidate.boostedRate) + "</strong>" +
-            "</div>" +
-            '<div class="candidate-meta">' +
-              "base: " + formatPercent(candidate.baseRate) +
-              "<br />mileage adjusted: " + formatPercent(candidate.mileageAdjustedRate) +
-              "<br />boosted: " + formatPercent(candidate.boostedRate) +
-            "</div>";
+      function renderSelectionGuide(guide) {
+        if (!guide) {
+          selectionGuide.classList.add('hidden');
+          selectionGuide.textContent = '';
+          return;
+        }
 
-          const button = document.createElement("button");
-          button.type = "button";
-          button.textContent = "Use this residual rate";
-          button.addEventListener("click", () => {
-            form.elements.namedItem("selectedResidualRateOverride").value = candidate.boostedRate.toFixed(6);
-            form.requestSubmit();
+        selectionGuide.classList.remove('hidden');
+        selectionGuide.className = 'callout ' + (guide.requiresUserConfirmation ? 'warning' : '');
+        const defaultRate = guide.defaultRateDecimal == null ? '-' : formatPercent(guide.defaultRateDecimal);
+        selectionGuide.innerHTML =
+          '<strong>선택 가이드</strong><div style="margin-top:6px">' +
+          (guide.requiresUserConfirmation ? '사용자 확인이 필요합니다. ' : '자동 후보를 사용할 수 있습니다. ') +
+          '기본 제안 잔가율: ' + defaultRate +
+          (guide.reason ? '<br />사유: ' + guide.reason : '') +
+          '</div>';
+      }
+
+      function renderCandidateList(candidateSummary) {
+        candidateList.innerHTML = '';
+
+        if (!candidateSummary || !Array.isArray(candidateSummary.candidates) || candidateSummary.candidates.length === 0) {
+          candidateList.innerHTML = '<div class="empty-state">후보 잔가 데이터가 없습니다.</div>';
+          return;
+        }
+
+        candidateSummary.candidates.forEach((candidate) => {
+          const card = document.createElement('div');
+          card.className = 'candidate-card';
+
+          const isSelected = candidate.name === candidateSummary.selectedCandidateName;
+          const top = document.createElement('div');
+          top.className = 'candidate-top';
+          top.innerHTML =
+            '<div>' +
+            '<div class="candidate-title">' + candidate.name + '</div>' +
+            '<div class="card-subtitle">엑셀 hidden residual candidate 기준 요약</div>' +
+            '</div>' +
+            '<div class="badge ' + (isSelected ? 'success' : 'neutral') + '">' +
+            (isSelected ? '기본 후보' : '후보') +
+            '</div>';
+          card.appendChild(top);
+
+          const meta = document.createElement('div');
+          meta.className = 'candidate-meta';
+          meta.innerHTML =
+            '<div class="mini-card"><div class="label">기본</div><div class="mini-value tabular">' + formatPercent(candidate.baseRate) + '</div></div>' +
+            '<div class="mini-card"><div class="label">주행거리 반영</div><div class="mini-value tabular">' + formatPercent(candidate.mileageAdjustedRate) + '</div></div>' +
+            '<div class="mini-card"><div class="label">최종 후보</div><div class="mini-value tabular">' + formatPercent(candidate.boostedRate) + '</div></div>';
+          card.appendChild(meta);
+
+          const button = document.createElement('button');
+          button.type = 'button';
+          button.className = 'btn btn-tonal';
+          button.style.marginTop = '12px';
+          button.textContent = '이 잔가율로 재계산';
+          button.addEventListener('click', () => {
+            quoteForm.elements.namedItem('selectedResidualRateOverride').value = formatPercentInputValue(candidate.boostedRate) + '%';
+            quoteForm.requestSubmit();
           });
           card.appendChild(button);
           candidateList.appendChild(card);
-        }
+        });
       }
 
-      async function calculate() {
-        const payload = readPayload();
-        rawResponse.textContent = "Loading...";
-        try {
-          const response = await fetch("/api/quotes/calculate", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(payload),
-          });
-          const data = await response.json();
-          rawResponse.textContent = JSON.stringify(data, null, 2);
+      function renderQuoteSummary(quote) {
+        if (!quote) {
+          quoteSummary.innerHTML = '<div class="empty-state">계산 결과가 없습니다.</div>';
+          return;
+        }
 
-          if (!data.ok) {
-            summary.innerHTML = "";
-            warnings.innerHTML = '<div class="callout warn">' + (data.error || "Calculation failed.") + "</div>";
-            candidateList.innerHTML = "";
-            selectionGuide.classList.add("hidden");
+        const workbookLabel = quote.workbookImport ? quote.workbookImport.versionLabel : '-';
+        const matrixGroup = quote.residual && quote.residual.matrixGroup ? quote.residual.matrixGroup : '미지정';
+        const currentInputSummary =
+          quote.resolvedVehicle.brand +
+          ' · ' +
+          quote.resolvedVehicle.modelName +
+          ' · 차량가 ₩ ' +
+          formatNumber(quote.majorInputs.vehiclePrice) +
+          ' · ' +
+          quote.majorInputs.leaseTermMonths +
+          '개월 · ' +
+          (quote.majorInputs.ownershipType === 'company' ? '법인' : '고객명의');
+        quoteSummary.innerHTML =
+          '<div class="result-card primary">' +
+          '<div class="label">월 납입금</div>' +
+          '<div class="result-value tabular">₩ ' + formatNumber(quote.monthlyPayment) + '</div>' +
+          '<div class="card-subtitle" style="color: rgba(255,255,255,0.7); margin-top: 8px;">' + workbookLabel + ' 기준 · ' + matrixGroup + '</div>' +
+          '<div class="card-subtitle" style="color: rgba(255,255,255,0.82); margin-top: 6px;">' + currentInputSummary + '</div>' +
+          '</div>' +
+          '<div class="result-card"><div class="label">적용 잔가율</div><div class="result-value tabular">' + formatPercent(quote.residual.rateDecimal) + '</div></div>' +
+          '<div class="result-card"><div class="label">잔가금액</div><div class="result-value tabular">₩ ' + formatNumber(quote.residual.amount) + '</div></div>' +
+          '<div class="result-card"><div class="label">조달원금</div><div class="result-value tabular">₩ ' + formatNumber(quote.majorInputs.financedPrincipal) + '</div></div>' +
+          '<div class="result-card"><div class="label">표시 IRR</div><div class="result-value tabular">' + formatPercent(quote.rates.annualRateDecimal) + '</div></div>' +
+          '<div class="result-card"><div class="label">유효 IRR</div><div class="result-value tabular">' + formatPercent(quote.rates.effectiveAnnualRateDecimal) + '</div></div>' +
+          '<div class="result-card"><div class="label">취득세</div><div class="result-value tabular">₩ ' + formatNumber(quote.feesAndTaxes.acquisitionTax) + '</div></div>' +
+          '<div class="result-card"><div class="label">인지세</div><div class="result-value tabular">₩ ' + formatNumber(quote.feesAndTaxes.stampDuty) + '</div></div>';
+      }
+
+      async function runQuoteCalculation() {
+        const payload = readQuotePayload();
+        setQuoteSubmitState('loading', '견적 계산 요청을 보내는 중입니다...');
+        quoteSummary.innerHTML = '<div class="empty-state">견적 계산 중입니다. 잠시만 기다려주세요.</div>';
+
+        try {
+          if (quoteRequestController) {
+            quoteRequestController.abort();
+          }
+
+          quoteRequestController = new AbortController();
+          const timeoutId = setTimeout(() => {
+            if (quoteRequestController) {
+              quoteRequestController.abort();
+            }
+          }, 8000);
+
+          const response = await fetch('/api/quotes/calculate', {
+            method: 'POST',
+            headers: {
+              'content-type': 'application/json',
+            },
+            body: JSON.stringify(payload),
+            signal: quoteRequestController.signal,
+          });
+          clearTimeout(timeoutId);
+
+          const rawText = await response.text();
+          const json = parseJsonSafely(rawText);
+          setRawResponse(json ?? { ok: false, rawText });
+
+          if (!json) {
+            renderQuoteSummary(null);
+            renderSelectionGuide(null);
+            renderCandidateList(null);
+            setAutoSummaryFromQuote(null);
+            quoteWarnings.innerHTML =
+              '<div class="callout danger">계산 API가 JSON이 아닌 응답을 반환했습니다.</div>';
+            setQuoteSubmitState('error', '서버가 예상하지 않은 응답을 반환했습니다. 디버그 응답을 확인해주세요.');
             return;
           }
 
-          renderSummary(data.quote);
-          renderWarnings(data.quote);
-          renderSelectionGuide(data.quote);
-          renderCandidates(data.quote);
+          if (!response.ok || !json.ok) {
+            renderQuoteSummary(null);
+            renderSelectionGuide(null);
+            renderCandidateList(null);
+            setAutoSummaryFromQuote(null);
+            quoteWarnings.innerHTML = '<div class="callout danger">' + (json.error || '견적 계산에 실패했습니다.') + '</div>';
+            setQuoteSubmitState('error', '계산에 실패했습니다. 오른쪽 경고 또는 디버그 응답을 확인해주세요.');
+            return;
+          }
+
+          renderQuoteSummary(json.quote);
+          renderQuoteWarnings(json.quote.warnings);
+          renderSelectionGuide(json.quote.residual.selectionGuide);
+          renderCandidateList(json.quote.residual.candidateSummary);
+          setAutoSummaryFromQuote(json.quote);
+          setQuoteSubmitState('success', '계산이 완료되었습니다. 결과 카드와 잔가 후보를 확인해주세요.');
         } catch (error) {
-          rawResponse.textContent = String(error);
+          renderQuoteSummary(null);
+          renderSelectionGuide(null);
+          renderCandidateList(null);
+          setAutoSummaryFromQuote(null);
+          const message =
+            error instanceof Error && error.name === 'AbortError'
+              ? '계산 요청 시간이 초과되었습니다.'
+              : error instanceof Error
+                ? error.message
+                : '알 수 없는 오류가 발생했습니다.';
+          quoteWarnings.innerHTML = '<div class="callout danger">계산 요청 중 오류가 발생했습니다: ' + message + '</div>';
+          setRawResponse({ ok: false, error: message });
+          setQuoteSubmitState('error', '요청이 지연되었거나 실패했습니다. 입력값과 로컬 서버 로그를 확인해주세요.');
+        } finally {
+          quoteRequestController = null;
         }
       }
 
-      form.addEventListener("submit", async (event) => {
+      quoteForm.addEventListener('submit', async (event) => {
         event.preventDefault();
-        await calculate();
+        await runQuoteCalculation();
       });
 
-      form.elements.namedItem("brand").addEventListener("change", (event) => {
-        applyPreset(event.target.value);
+      brandSelect.addEventListener('change', () => {
+        if (!isManualAnnualRateOverride()) {
+          annualIrrRateInput.value = '';
+        }
+        void renderCatalogModels(brandSelect.value);
+        resetWorkbookDefaults({ preserveResidualSelection: false });
+        updateWorkbookDiffWarning();
+        scheduleAutoCalculate();
       });
 
-      resetSample.addEventListener("click", () => {
-        form.reset();
-        form.elements.namedItem("brand").value = "AUDI";
-        form.elements.namedItem("ownershipType").value = "company";
-        form.elements.namedItem("leaseTermMonths").value = "36";
-        form.elements.namedItem("annualMileageKm").value = "20000";
-        applyPreset("AUDI");
+      modelSelect.addEventListener('change', () => {
+        if (!isManualAnnualRateOverride()) {
+          annualIrrRateInput.value = '';
+        }
+        syncSelectedModelMeta();
+        resetWorkbookDefaults({ preserveResidualSelection: false });
+        updateWorkbookDiffWarning();
+        scheduleAutoCalculate();
       });
 
-      applyPreset("AUDI");
-      calculate();
+      annualIrrRateInput.addEventListener('focus', () => {
+        const parsed = parsePercentInput(annualIrrRateInput.value);
+        if (parsed != null) {
+          annualIrrRateInput.value = formatPercentInputValue(parsed);
+        }
+      });
+
+      annualIrrRateInput.addEventListener('blur', () => {
+        if (!annualIrrRateInput.value.trim()) {
+          annualIrrRateInput.dataset.manual = 'false';
+          setAnnualRateAutoDisplay(undefined);
+          return;
+        }
+        annualIrrRateInput.dataset.manual = 'true';
+        applyPercentInputDisplay(annualIrrRateInput);
+      });
+
+      annualIrrRateInput.addEventListener('change', () => {
+        annualIrrRateInput.dataset.manual = annualIrrRateInput.value.trim() ? 'true' : 'false';
+        if (annualIrrRateInput.value.trim()) {
+          applyPercentInputDisplay(annualIrrRateInput);
+        }
+        updateWorkbookDiffWarning();
+        scheduleAutoCalculate();
+      });
+
+      selectedResidualRateInput.addEventListener('focus', () => {
+        const parsed = parsePercentInput(selectedResidualRateInput.value);
+        if (parsed != null) {
+          selectedResidualRateInput.value = formatPercentInputValue(parsed);
+        }
+      });
+
+      selectedResidualRateInput.addEventListener('blur', () => {
+        applyResidualInputDisplay();
+      });
+
+      selectedResidualRateInput.addEventListener('change', () => {
+        applyResidualInputDisplay();
+        updateWorkbookDiffWarning();
+        scheduleAutoCalculate();
+      });
+
+      selectedResidualRateInput.addEventListener('input', () => {
+        scheduleAutoCalculate();
+      });
+
+      [agFeeRateInput, cmFeeRateInput].forEach((field) => {
+        field.addEventListener('focus', () => {
+          const parsed = parsePercentInput(field.value);
+          if (parsed != null) {
+            field.value = formatPercentInputValue(parsed);
+          }
+        });
+
+        field.addEventListener('blur', () => {
+          applyPercentInputDisplay(field);
+        });
+
+        field.addEventListener('change', () => {
+          applyPercentInputDisplay(field);
+          updateWorkbookDiffWarning();
+          scheduleAutoCalculate();
+        });
+      });
+
+      ['ownershipType', 'leaseTermMonths', 'annualMileageKm', 'quotedVehiclePrice', 'discountAmount', 'upfrontPayment', 'depositAmount', 'publicBondCost', 'acquisitionTaxRateOverride', 'stampDuty'].forEach((name) => {
+        const field = quoteForm.elements.namedItem(name);
+        if (field) {
+          field.addEventListener('change', () => {
+            if ((name === 'ownershipType' || name === 'leaseTermMonths') && !isManualAnnualRateOverride()) {
+              annualIrrRateInput.value = '';
+            }
+            if (name === 'leaseTermMonths') {
+              const model = activeModels.find((entry) => entry.modelName === modelSelect.value) || null;
+              updateResidualPreviewFromInputs(model);
+            }
+            updateDiscountedVehiclePriceDisplay();
+            updateWorkbookDiffWarning();
+            scheduleAutoCalculate();
+          });
+          field.addEventListener('input', () => {
+            updateDiscountedVehiclePriceDisplay();
+            updateWorkbookDiffWarning();
+            scheduleAutoCalculate();
+          });
+        }
+      });
+
+      resetSelectedResidualButton.addEventListener('click', () => {
+        quoteForm.elements.namedItem('selectedResidualRateOverride').value = '';
+        quoteForm.elements.namedItem('residualAmountOverride').value = '';
+        updateWorkbookDiffWarning();
+        scheduleAutoCalculate();
+      });
+
+      resetWorkbookDefaultsButton.addEventListener('click', () => {
+        resetWorkbookDefaults({ preserveResidualSelection: false });
+        updateWorkbookDiffWarning();
+        scheduleAutoCalculate();
+      });
+
+      function renderImportPreview(workbook) {
+        if (!workbook) return;
+
+        previewVersion.textContent = workbook.detectedVersionLabel || '미확인';
+        previewSheetCount.textContent = String((workbook.sheetNames || []).length);
+        previewVehicleCount.textContent = formatNumber((workbook.vehiclePrograms || []).length);
+        previewMatrixCount.textContent = formatNumber((workbook.residualMatrixRows || []).length);
+
+        const anomalyCount = workbook.analysis && Array.isArray(workbook.analysis.anomalies)
+          ? workbook.analysis.anomalies.length
+          : 0;
+
+        previewStatus.className = 'callout ' + (anomalyCount > 0 ? 'warning' : '');
+        previewStatus.innerHTML =
+          '<strong>미리보기 완료</strong><div style="margin-top:6px">차량 프로그램 ' +
+          formatNumber((workbook.vehiclePrograms || []).length) +
+          '건, 잔가 매트릭스 ' +
+          formatNumber((workbook.residualMatrixRows || []).length) +
+          '건, anomaly ' +
+          anomalyCount +
+          '건</div>';
+
+        previewJson.textContent = JSON.stringify(workbook, null, 2);
+      }
+
+      async function submitImport(mode) {
+        const formData = new FormData(importForm);
+        const lenderCode = String(formData.get('lenderCode') || 'mg-capital');
+
+        if (!(formData.get('file') instanceof File) || formData.get('file').size === 0) {
+          previewStatus.className = 'callout danger';
+          previewStatus.textContent = '먼저 엑셀 파일을 선택해주세요.';
+          return;
+        }
+
+        const endpoint = mode === 'preview' ? '/api/imports/preview?lenderCode=' + encodeURIComponent(lenderCode) : '/api/imports?lenderCode=' + encodeURIComponent(lenderCode);
+
+        const response = await fetch(endpoint, {
+          method: 'POST',
+          body: formData,
+        });
+
+        const json = await response.json();
+        setRawResponse(json);
+
+        if (!response.ok || !json.ok) {
+          previewStatus.className = 'callout danger';
+          previewStatus.textContent = json.error || '워크북 처리에 실패했습니다.';
+          previewJson.textContent = JSON.stringify(json, null, 2);
+          return;
+        }
+
+        renderImportPreview(json.workbook);
+
+        if (mode === 'commit') {
+          previewStatus.className = 'callout';
+          previewStatus.innerHTML =
+            '<strong>업로드 완료</strong><div style="margin-top:6px">버전 ' +
+            json.import.versionLabel +
+            ' 이 저장되었습니다.</div>';
+          await refreshDashboard();
+        }
+      }
+
+      previewButton.addEventListener('click', async () => {
+        await submitImport('preview');
+      });
+
+      commitButton.addEventListener('click', async () => {
+        await submitImport('commit');
+      });
+
+      function renderImportsTable(imports) {
+        if (!imports || imports.length === 0) {
+          importsTableBody.innerHTML = '<tr><td colspan="4" class="inline-hint">아직 import 이력이 없습니다.</td></tr>';
+          return;
+        }
+
+        importsTableBody.innerHTML = imports
+          .slice(0, 8)
+          .map((item) => {
+            const statusClass = item.isActive ? 'success' : item.status === 'validated' ? 'warning' : 'neutral';
+            const importedAt = item.importedAt ? new Date(item.importedAt).toLocaleString('ko-KR') : '-';
+            return '<tr>' +
+              '<td><div style="font-weight: 700">' + item.versionLabel + '</div><div class="card-subtitle">' + item.lenderName + '</div></td>' +
+              '<td class="mono">' + item.sourceFileName + '</td>' +
+              '<td><span class="badge ' + statusClass + '">' + (item.isActive ? '활성' : item.status) + '</span></td>' +
+              '<td class="tabular">' + importedAt + '</td>' +
+            '</tr>';
+          })
+          .join('');
+      }
+
+      async function refreshCatalog() {
+        activeCatalog = initialBrands;
+
+        const totalModels = activeCatalog.reduce((sum, entry) => sum + entry.modelCount, 0);
+
+        catalogBrandCount.textContent = formatNumber(activeCatalog.length);
+        catalogModelCount.textContent = formatNumber(totalModels);
+        quoteCatalogBrandCount.textContent = formatNumber(activeCatalog.length);
+        quoteCatalogModelCount.textContent = formatNumber(totalModels);
+        renderCatalogList(activeCatalog);
+
+        if (activeCatalog.length === 0) {
+          renderCatalogBrands([]);
+          modelSelect.innerHTML = '';
+          modelSelect.disabled = true;
+          activeModels = [];
+          selectedModelMeta.textContent = '활성 워크북 카탈로그가 없습니다.';
+          return;
+        }
+
+        renderCatalogBrands(activeCatalog);
+
+        const currentBrand = brandSelect.value;
+        const hasCurrentBrand = activeCatalog.some((entry) => entry.brand === currentBrand);
+        const nextBrand = hasCurrentBrand ? currentBrand : activeCatalog[0].brand;
+        brandSelect.value = nextBrand;
+        await renderCatalogModels(nextBrand, modelSelect.value || undefined);
+      }
+
+      async function refreshDashboard() {
+        const [healthRes, lenderRes, importsRes] = await Promise.all([
+          fetch('/health'),
+          fetch('/api/lenders'),
+          fetch('/api/imports?lenderCode=mg-capital'),
+        ]);
+
+        const healthJson = await healthRes.json();
+        const lenderJson = await lenderRes.json();
+        const importsJson = await importsRes.json();
+
+        healthStatus.textContent = healthJson.ok ? '정상' : '장애';
+        healthSubtext.textContent = 'APP_ENV=' + (healthJson.env || 'unknown') + ' · ' + healthJson.timestamp;
+        envPill.textContent = '환경 · ' + (healthJson.env || 'unknown');
+
+        const lenders = Array.isArray(lenderJson.lenders) ? lenderJson.lenders : [];
+        lenderCount.textContent = formatNumber(lenders.length);
+        heroLenderCount.textContent = formatNumber(lenders.length);
+        dashboardLenderName.textContent = lenders[0] ? lenders[0].lenderName : '없음';
+
+        const imports = Array.isArray(importsJson.imports) ? importsJson.imports : [];
+        importCount.textContent = formatNumber(imports.length);
+        heroImportCount.textContent = formatNumber(imports.length);
+        renderImportsTable(imports);
+
+        const active = imports.find((entry) => entry.isActive) || imports[0];
+        if (active) {
+          activeVersion.textContent = active.versionLabel;
+          activeVersionSubtext.textContent = active.sourceFileName;
+          versionPill.textContent = '활성 버전 · ' + active.versionLabel;
+        } else {
+          activeVersion.textContent = '없음';
+          activeVersionSubtext.textContent = '아직 저장된 import가 없습니다.';
+          versionPill.textContent = '활성 버전 없음';
+        }
+
+        await refreshCatalog();
+      }
+
+      refreshDashboardButton.addEventListener('click', refreshDashboard);
+      if (activeCatalog.length > 0) {
+        renderCatalogBrands(activeCatalog);
+        brandSelect.value = activeCatalog[0].brand;
+        modelSelect.innerHTML = '<option value="">모델 불러오는 중</option>';
+        modelSelect.disabled = true;
+        void renderCatalogModels(activeCatalog[0].brand);
+      } else {
+        brandSelect.innerHTML = '<option value="">브랜드 불러오는 중</option>';
+        brandSelect.disabled = true;
+        modelSelect.innerHTML = '<option value="">모델 불러오는 중</option>';
+        modelSelect.disabled = true;
+      }
+      updateDiscountedVehiclePriceDisplay();
+      setAutoSummaryFromQuote(null);
+      updateWorkbookDiffWarning();
+      refreshDashboard();
     </script>
   </body>
 </html>`;

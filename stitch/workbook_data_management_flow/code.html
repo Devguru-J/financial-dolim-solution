@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>AutoFinance Ops - Import &amp; Versioning</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "primary-fixed-dim": "#b7c8de",
+              "primary-container": "#1a2b3c",
+              "on-secondary": "#ffffff",
+              "primary-fixed": "#d2e4fb",
+              "secondary-fixed-dim": "#b7c8e1",
+              "surface-container": "#eceef0",
+              "on-primary-container": "#8192a7",
+              "on-surface-variant": "#44474c",
+              "on-tertiary": "#ffffff",
+              "error": "#ba1a1a",
+              "secondary-container": "#d0e1fb",
+              "on-error-container": "#93000a",
+              "on-surface": "#191c1e",
+              "tertiary-container": "#00311f",
+              "on-secondary-container": "#54647a",
+              "on-primary-fixed-variant": "#38485a",
+              "surface": "#f7f9fb",
+              "on-secondary-fixed-variant": "#38485d",
+              "on-tertiary-fixed-variant": "#005236",
+              "surface-container-high": "#e6e8ea",
+              "primary": "#041627",
+              "surface-variant": "#e0e3e5",
+              "surface-container-lowest": "#ffffff",
+              "inverse-primary": "#b7c8de",
+              "inverse-on-surface": "#eff1f3",
+              "tertiary-fixed-dim": "#4edea3",
+              "error-container": "#ffdad6",
+              "on-primary": "#ffffff",
+              "on-tertiary-container": "#00a572",
+              "on-primary-fixed": "#0b1d2d",
+              "surface-container-highest": "#e0e3e5",
+              "secondary-fixed": "#d3e4fe",
+              "on-tertiary-fixed": "#002113",
+              "on-error": "#ffffff",
+              "outline-variant": "#c4c6cd",
+              "outline": "#74777d",
+              "tertiary-fixed": "#6ffbbe",
+              "secondary": "#505f76",
+              "tertiary": "#001a0f",
+              "on-secondary-fixed": "#0b1c30",
+              "background": "#f7f9fb",
+              "on-background": "#191c1e",
+              "surface-tint": "#4f6073",
+              "surface-dim": "#d8dadc",
+              "surface-container-low": "#f2f4f6",
+              "inverse-surface": "#2d3133",
+              "surface-bright": "#f7f9fb"
+            },
+            fontFamily: {
+              "headline": ["Manrope"],
+              "body": ["Inter"],
+              "label": ["Inter"]
+            },
+            borderRadius: {"DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem"},
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            vertical-align: middle;
+        }
+        .tabular-nums { font-variant-numeric: tabular-nums; }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+    </style>
+</head>
+<body class="bg-surface font-body text-on-surface">
+<!-- TopAppBar Shell -->
+<header class="bg-slate-900 dark:bg-slate-950 flex justify-between items-center w-full px-6 h-12 z-50 fixed top-0 border-b-0">
+<div class="flex items-center gap-8">
+<span class="text-lg font-bold text-white tracking-tighter font-headline">AutoFinance Ops</span>
+<nav class="hidden md:flex items-center gap-6">
+<a class="font-manrope text-sm font-medium tracking-tight text-emerald-400 border-b-2 border-emerald-400 pb-1" href="#">Lender: Shinhan Card</a>
+<a class="font-manrope text-sm font-medium tracking-tight text-slate-400 hover:text-slate-200 transition-colors" href="#">v2.4.1-stable</a>
+</nav>
+</div>
+<div class="flex items-center gap-4">
+<button class="text-slate-400 hover:text-slate-200 transition-colors material-symbols-outlined">notifications</button>
+<button class="text-slate-400 hover:text-slate-200 transition-colors material-symbols-outlined">settings</button>
+<div class="w-8 h-8 rounded-full overflow-hidden border border-slate-700">
+<img alt="User Profile Avatar" data-alt="User profile placeholder avatar" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDjWvs4zT8vvXGCM9oGbEk9aTHUjr2O4fI2uJqJ11RQSRoRnhIt7iGpvH5WmJabU1FqEqr5ASJGjU0anfLvqEpx8zlxR2mY5mwA1kf3WUlmjcYExMP-DORsNy6KD7LWYYlxDTSMAszu9Q9tKPU-OPCmY2UTF5N6Q1sKw_adISEVpJVe_bWEpbqmDv82fptzlemDNLCsVDnn71SdRnUqULrjQl0W-LtM9dmSo6yWD_JLLh5ws5V-RuSmrBe-ZTqHAxQy5-sK74mykN9d"/>
+</div>
+</div>
+</header>
+<!-- SideNavBar Shell -->
+<aside class="bg-slate-900 dark:bg-black fixed left-0 top-0 h-full flex flex-col pt-16 z-40 w-64 border-r-0">
+<div class="px-6 mb-8">
+<h2 class="text-white font-black tracking-widest uppercase text-xs">Precision Ledger</h2>
+<p class="text-on-primary-container text-[10px] uppercase font-bold tracking-tighter">Institutional Terminal</p>
+</div>
+<nav class="flex flex-col flex-1 overflow-y-auto">
+<a class="font-manrope text-[0.8125rem] font-semibold text-slate-400 px-4 py-3 hover:text-slate-100 transition-all flex items-center gap-3" href="#">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span> Dashboard
+            </a>
+<a class="font-manrope text-[0.8125rem] font-semibold text-slate-400 px-4 py-3 hover:text-slate-100 transition-all flex items-center gap-3" href="#">
+<span class="material-symbols-outlined" data-icon="account_balance">account_balance</span> Lenders
+            </a>
+<a class="font-manrope text-[0.8125rem] font-semibold bg-emerald-500/10 text-emerald-400 border-l-4 border-emerald-400 px-4 py-3 transition-all flex items-center gap-3" href="#">
+<span class="material-symbols-outlined" data-icon="upload_file">upload_file</span> Imports
+            </a>
+<a class="font-manrope text-[0.8125rem] font-semibold text-slate-400 px-4 py-3 hover:text-slate-100 transition-all flex items-center gap-3" href="#">
+<span class="material-symbols-outlined" data-icon="calculate">calculate</span> Quotes
+            </a>
+<a class="font-manrope text-[0.8125rem] font-semibold text-slate-400 px-4 py-3 hover:text-slate-100 transition-all flex items-center gap-3" href="#">
+<span class="material-symbols-outlined" data-icon="compare_arrows">compare_arrows</span> Comparisons
+            </a>
+<a class="font-manrope text-[0.8125rem] font-semibold text-slate-400 px-4 py-3 hover:text-slate-100 transition-all flex items-center gap-3" href="#">
+<span class="material-symbols-outlined" data-icon="camera_roll">camera_roll</span> Snapshots
+            </a>
+<div class="mt-auto border-t border-slate-800/50">
+<a class="font-manrope text-[0.8125rem] font-semibold text-slate-400 px-4 py-3 hover:text-slate-100 transition-all flex items-center gap-3" href="#">
+<span class="material-symbols-outlined" data-icon="bug_report">bug_report</span> Debug
+                </a>
+<a class="font-manrope text-[0.8125rem] font-semibold text-slate-400 px-4 py-3 hover:text-slate-100 transition-all flex items-center gap-3" href="#">
+<span class="material-symbols-outlined" data-icon="settings_applications">settings_applications</span> System
+                </a>
+</div>
+</nav>
+</aside>
+<!-- Main Content Canvas -->
+<main class="ml-64 pt-12 min-h-screen">
+<div class="p-10 max-w-7xl mx-auto space-y-10">
+<!-- Screen 5: Workbook Upload -->
+<section class="space-y-6" id="workbook-upload">
+<div class="flex justify-between items-end">
+<div>
+<h1 class="text-primary font-headline font-bold text-2xl tracking-tight">Workbook Import Terminal</h1>
+<p class="text-on-surface-variant text-sm mt-1">Initialize new precision ledger data from Excel/XML workbooks.</p>
+</div>
+</div>
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+<!-- Left: Upload Configuration -->
+<div class="lg:col-span-1 space-y-6">
+<div class="bg-surface-container-low p-6 rounded-lg space-y-4">
+<label class="block text-xs font-bold text-primary tracking-widest uppercase">Target Lender</label>
+<select class="w-full bg-surface-container-highest border-0 border-b-2 border-outline-variant focus:border-primary focus:ring-0 text-sm font-medium h-10 px-3">
+<option>Shinhan Card (Main Portfolio)</option>
+<option>Hyundai Capital (Asset-Backed)</option>
+<option>KB Capital (Dealer-Focus)</option>
+</select>
+<div class="pt-4">
+<label class="flex items-center gap-3 cursor-pointer group">
+<div class="relative inline-flex items-center">
+<input checked="" class="sr-only peer" type="checkbox"/>
+<div class="w-11 h-6 bg-surface-container-highest peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-tertiary-fixed-dim"></div>
+</div>
+<span class="text-xs font-semibold text-primary">Activate immediately upon success</span>
+</label>
+</div>
+</div>
+<!-- File Drop Zone -->
+<div class="border-2 border-dashed border-outline-variant bg-surface p-10 flex flex-col items-center justify-center text-center space-y-4 rounded-lg hover:border-primary transition-colors cursor-pointer group">
+<span class="material-symbols-outlined text-4xl text-on-surface-variant group-hover:text-primary" data-icon="cloud_upload">cloud_upload</span>
+<div>
+<p class="text-sm font-bold text-primary">Drop workbook file here</p>
+<p class="text-[10px] text-on-surface-variant uppercase tracking-tighter mt-1">Supported: .xlsx, .xlsm (Max 25MB)</p>
+</div>
+<button class="px-6 py-2 bg-primary text-white text-xs font-bold rounded-lg hover:bg-slate-800 transition-all">Browse Files</button>
+</div>
+</div>
+<!-- Right: Analysis Preview (Visible after upload simulation) -->
+<div class="lg:col-span-2 space-y-4">
+<div class="bg-surface-container-low rounded-lg p-1 border-l-4 border-tertiary-fixed">
+<div class="p-5 flex justify-between items-start">
+<div class="flex gap-4">
+<div class="w-12 h-12 bg-tertiary-container flex items-center justify-center rounded">
+<span class="material-symbols-outlined text-tertiary-fixed" data-icon="check_circle">check_circle</span>
+</div>
+<div>
+<h3 class="text-sm font-bold text-primary">Analysis Complete: SH_Portfolio_v2.4.xlsx</h3>
+<p class="text-xs text-on-surface-variant">Validated against schema: <span class="text-tertiary-fixed-dim font-bold">LENDER_SH_V2</span></p>
+</div>
+</div>
+<span class="bg-tertiary-container text-tertiary-fixed text-[10px] font-bold px-3 py-1 rounded">READY TO COMMIT</span>
+</div>
+<div class="grid grid-cols-2 md:grid-cols-4 gap-[1px] bg-outline-variant/20 p-[1px]">
+<div class="bg-surface-container-low p-4">
+<p class="text-[10px] text-on-surface-variant uppercase font-bold tracking-widest">Sheets Found</p>
+<p class="text-xl font-headline font-bold text-primary tabular-nums mt-1">14/14</p>
+</div>
+<div class="bg-surface-container-low p-4">
+<p class="text-[10px] text-on-surface-variant uppercase font-bold tracking-widest">Brands/Models</p>
+<p class="text-xl font-headline font-bold text-primary tabular-nums mt-1">428</p>
+</div>
+<div class="bg-surface-container-low p-4">
+<p class="text-[10px] text-on-surface-variant uppercase font-bold tracking-widest">Residual Matrices</p>
+<p class="text-xl font-headline font-bold text-primary tabular-nums mt-1">1,024</p>
+</div>
+<div class="bg-surface-container-low p-4">
+<p class="text-[10px] text-on-surface-variant uppercase font-bold tracking-widest">Policy Rules</p>
+<p class="text-xl font-headline font-bold text-primary tabular-nums mt-1">56</p>
+</div>
+</div>
+<div class="p-5 border-t border-outline-variant/10">
+<div class="flex items-center justify-between mb-4">
+<h4 class="text-xs font-bold text-primary uppercase tracking-widest flex items-center gap-2">
+<span class="material-symbols-outlined text-sm" data-icon="report_problem">report_problem</span> Anomalies Detected
+                                    </h4>
+<span class="text-[10px] font-medium text-on-surface-variant">2 Non-critical items</span>
+</div>
+<div class="space-y-2">
+<div class="flex items-center justify-between bg-surface p-3 rounded text-[11px] border-l-2 border-on-secondary-fixed-variant">
+<span class="text-primary font-medium">Sheet 'Legacy_Rates' contains unmapped column 'IRR_MKT'</span>
+<span class="text-on-secondary-fixed-variant font-bold uppercase">Skipped</span>
+</div>
+<div class="flex items-center justify-between bg-surface p-3 rounded text-[11px] border-l-2 border-on-secondary-fixed-variant">
+<span class="text-primary font-medium">Price mismatch in 'Genesis G80 3.5T' vs Current Production Database</span>
+<span class="text-on-secondary-fixed-variant font-bold uppercase">Manual Review Req.</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<hr class="border-outline-variant/20"/>
+<!-- Screen 6: Import History -->
+<section class="space-y-6" id="import-history">
+<div class="flex justify-between items-center">
+<div>
+<h2 class="text-primary font-headline font-bold text-xl tracking-tight">Import Version Ledger</h2>
+<p class="text-on-surface-variant text-sm">Full traceability of institutional data injections.</p>
+</div>
+<div class="flex gap-2">
+<button class="bg-surface-container-high text-primary px-4 py-2 text-xs font-bold rounded flex items-center gap-2 border border-outline-variant/30">
+<span class="material-symbols-outlined text-sm" data-icon="filter_list">filter_list</span> Filter History
+                        </button>
+<button class="bg-primary text-white px-4 py-2 text-xs font-bold rounded flex items-center gap-2">
+<span class="material-symbols-outlined text-sm" data-icon="add">add</span> New Import
+                        </button>
+</div>
+</div>
+<div class="overflow-x-auto rounded-lg shadow-sm border border-outline-variant/10">
+<table class="w-full text-left border-collapse">
+<thead class="bg-surface-container-highest">
+<tr>
+<th class="p-4 text-[10px] uppercase font-bold text-on-surface-variant tracking-widest">Version Label</th>
+<th class="p-4 text-[10px] uppercase font-bold text-on-surface-variant tracking-widest">Source File</th>
+<th class="p-4 text-[10px] uppercase font-bold text-on-surface-variant tracking-widest">Checksum</th>
+<th class="p-4 text-[10px] uppercase font-bold text-on-surface-variant tracking-widest">Imported At</th>
+<th class="p-4 text-[10px] uppercase font-bold text-on-surface-variant tracking-widest">Status</th>
+<th class="p-4 text-[10px] uppercase font-bold text-on-surface-variant tracking-widest text-right">Actions</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-outline-variant/10 bg-surface">
+<tr class="hover:bg-surface-container-low transition-colors group">
+<td class="p-4">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-tertiary-fixed"></span>
+<span class="text-xs font-bold text-primary">v2.4.1-STABLE</span>
+</div>
+</td>
+<td class="p-4 text-xs font-medium text-on-surface-variant">SH_Q4_Final_v2.xlsx</td>
+<td class="p-4 text-[10px] font-mono text-on-surface-variant">0x7F4A...D92</td>
+<td class="p-4 text-xs tabular-nums text-on-surface-variant">2023-11-24 14:20</td>
+<td class="p-4">
+<span class="bg-tertiary-container text-tertiary-fixed text-[10px] font-bold px-2 py-0.5 rounded">ACTIVATED</span>
+</td>
+<td class="p-4 text-right space-x-2">
+<button class="text-[10px] font-bold text-primary hover:underline">View Details</button>
+<button class="text-[10px] font-bold text-primary/50 cursor-not-allowed">Compare</button>
+</td>
+</tr>
+<tr class="hover:bg-surface-container-low transition-colors group bg-surface-container-low/30">
+<td class="p-4">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-outline"></span>
+<span class="text-xs font-bold text-primary">v2.4.0-ARCHIVE</span>
+</div>
+</td>
+<td class="p-4 text-xs font-medium text-on-surface-variant">SH_Q4_Initial.xlsx</td>
+<td class="p-4 text-[10px] font-mono text-on-surface-variant">0x3E1B...F12</td>
+<td class="p-4 text-xs tabular-nums text-on-surface-variant">2023-11-15 09:12</td>
+<td class="p-4">
+<span class="bg-surface-container-highest text-on-surface-variant text-[10px] font-bold px-2 py-0.5 rounded">VALIDATED</span>
+</td>
+<td class="p-4 text-right space-x-2">
+<button class="text-[10px] font-bold text-primary hover:underline">View Details</button>
+<button class="text-[10px] font-bold text-secondary hover:underline">Compare</button>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<hr class="border-outline-variant/20"/>
+<!-- Screen 7: Import Detail -->
+<section class="space-y-6" id="import-detail">
+<div class="flex justify-between items-center border-b border-outline-variant/10 pb-4">
+<div class="flex items-center gap-4">
+<button class="material-symbols-outlined text-primary" data-icon="arrow_back">arrow_back</button>
+<div>
+<h2 class="text-primary font-headline font-bold text-xl tracking-tight">Version Detail: v2.4.1-STABLE</h2>
+<p class="text-on-surface-variant text-xs font-mono">ID: SH-IM-20231124-001</p>
+</div>
+</div>
+<div class="flex gap-2">
+<button class="bg-surface-container-high text-primary px-4 py-2 text-xs font-bold rounded flex items-center gap-2">
+<span class="material-symbols-outlined text-sm" data-icon="file_download">file_download</span> Export Source
+                        </button>
+<button class="bg-primary text-white px-4 py-2 text-xs font-bold rounded flex items-center gap-2 shadow-sm">
+<span class="material-symbols-outlined text-sm" data-icon="verified">verified</span> Re-Validate
+                        </button>
+</div>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+<!-- Statistics Column -->
+<div class="md:col-span-1 space-y-4">
+<div class="bg-surface-container-low p-4 rounded-lg space-y-3">
+<h4 class="text-[10px] font-black text-primary uppercase tracking-widest border-b border-outline-variant/10 pb-2">Technical Metadata</h4>
+<div class="space-y-2">
+<div class="flex justify-between">
+<span class="text-[10px] text-on-surface-variant uppercase font-medium">Rows Parsed</span>
+<span class="text-xs font-bold text-primary tabular-nums">42,812</span>
+</div>
+<div class="flex justify-between">
+<span class="text-[10px] text-on-surface-variant uppercase font-medium">Memory Footprint</span>
+<span class="text-xs font-bold text-primary tabular-nums">4.2 MB</span>
+</div>
+<div class="flex justify-between">
+<span class="text-[10px] text-on-surface-variant uppercase font-medium">Processing Time</span>
+<span class="text-xs font-bold text-primary tabular-nums">1.4s</span>
+</div>
+</div>
+</div>
+<div class="bg-surface-container-low p-4 rounded-lg">
+<h4 class="text-[10px] font-black text-primary uppercase tracking-widest border-b border-outline-variant/10 pb-2 mb-3">Model Hierarchy</h4>
+<div class="space-y-1">
+<div class="flex items-center gap-2">
+<div class="w-full bg-surface-container-highest h-1.5 rounded-full overflow-hidden">
+<div class="bg-primary h-full w-[85%]"></div>
+</div>
+<span class="text-[10px] font-bold text-primary">Domestic</span>
+</div>
+<div class="flex items-center gap-2">
+<div class="w-full bg-surface-container-highest h-1.5 rounded-full overflow-hidden">
+<div class="bg-secondary h-full w-[15%]"></div>
+</div>
+<span class="text-[10px] font-bold text-primary">Imported</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Data Samples -->
+<div class="md:col-span-3 space-y-6">
+<div class="bg-surface-container-lowest border border-outline-variant/10 rounded-lg overflow-hidden">
+<div class="p-4 bg-surface-container-low flex justify-between items-center">
+<h4 class="text-xs font-bold text-primary uppercase tracking-widest">Parsed Row Samples (Brands/Models)</h4>
+<nav class="flex gap-4">
+<button class="text-[10px] font-bold border-b-2 border-primary pb-1">VEHICLES</button>
+<button class="text-[10px] font-bold text-on-surface-variant hover:text-primary transition-colors">RESIDUALS</button>
+<button class="text-[10px] font-bold text-on-surface-variant hover:text-primary transition-colors">POLICIES</button>
+</nav>
+</div>
+<table class="w-full text-left text-xs">
+<thead class="border-b border-outline-variant/10">
+<tr>
+<th class="p-3 text-[10px] font-bold text-on-surface-variant">Brand</th>
+<th class="p-3 text-[10px] font-bold text-on-surface-variant">Model Name</th>
+<th class="p-3 text-[10px] font-bold text-on-surface-variant">Trim Level</th>
+<th class="p-3 text-[10px] font-bold text-on-surface-variant tabular-nums">Base Price</th>
+<th class="p-3 text-[10px] font-bold text-on-surface-variant tabular-nums">RV % (36m)</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-outline-variant/10">
+<tr>
+<td class="p-3 font-bold">Genesis</td>
+<td class="p-3">G80</td>
+<td class="p-3">3.5T AWD AWD 20"</td>
+<td class="p-3 tabular-nums">84,500,000</td>
+<td class="p-3 tabular-nums text-emerald-600 font-bold">54.2%</td>
+</tr>
+<tr>
+<td class="p-3 font-bold">Hyundai</td>
+<td class="p-3">Grandeur</td>
+<td class="p-3">Calligraphy 2.5</td>
+<td class="p-3 tabular-nums">46,040,000</td>
+<td class="p-3 tabular-nums text-emerald-600 font-bold">58.1%</td>
+</tr>
+<tr>
+<td class="p-3 font-bold">Kia</td>
+<td class="p-3">EV9</td>
+<td class="p-3">Earth 4WD 6-Seater</td>
+<td class="p-3 tabular-nums">92,400,000</td>
+<td class="p-3 tabular-nums text-emerald-600 font-bold">49.5%</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+</section>
+<hr class="border-outline-variant/20"/>
+<!-- Screen 8: Version Comparison -->
+<section class="space-y-6" id="version-comparison">
+<div class="bg-primary text-white p-8 rounded-lg shadow-xl relative overflow-hidden">
+<!-- Abstract Background Decorative Element -->
+<div class="absolute top-0 right-0 w-64 h-64 bg-emerald-500/10 rounded-full blur-3xl -mr-20 -mt-20"></div>
+<div class="relative z-10 space-y-6">
+<div class="flex justify-between items-start">
+<div>
+<h2 class="font-headline font-bold text-2xl tracking-tight">Delta Analysis Report</h2>
+<p class="text-on-primary-container text-sm mt-1">Comparing <span class="text-white font-bold">v2.4.1-STABLE</span> (Current) against <span class="text-white font-bold">v2.4.0-ARCHIVE</span> (Previous)</p>
+</div>
+<span class="bg-tertiary-fixed text-primary text-[10px] font-black px-3 py-1 rounded-full">EXECUTIVE SUMMARY</span>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+<div class="bg-primary-container p-5 rounded border border-white/5 space-y-2">
+<p class="text-[10px] uppercase font-bold text-on-primary-container tracking-widest">Pricing Delta</p>
+<div class="flex items-baseline gap-2">
+<span class="text-3xl font-headline font-bold text-white tabular-nums">+1.4%</span>
+<span class="text-xs text-on-primary-container">Avg. MSRP Increase</span>
+</div>
+</div>
+<div class="bg-primary-container p-5 rounded border border-white/5 space-y-2">
+<p class="text-[10px] uppercase font-bold text-on-primary-container tracking-widest">Residual Trend</p>
+<div class="flex items-baseline gap-2">
+<span class="text-3xl font-headline font-bold text-emerald-400 tabular-nums">+0.85%</span>
+<span class="text-xs text-on-primary-container">RV Strengthening</span>
+</div>
+</div>
+<div class="bg-primary-container p-5 rounded border border-white/5 space-y-2">
+<p class="text-[10px] uppercase font-bold text-on-primary-container tracking-widest">IRR Adjustments</p>
+<div class="flex items-baseline gap-2">
+<span class="text-3xl font-headline font-bold text-error tabular-nums">-12 bps</span>
+<span class="text-xs text-on-primary-container">Portfolio Yield Impact</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Side-by-Side Table -->
+<div class="space-y-4">
+<h3 class="text-primary font-bold text-sm uppercase tracking-widest flex items-center gap-2">
+<span class="material-symbols-outlined text-sm" data-icon="data_exploration">data_exploration</span> Granular Change Log
+                    </h3>
+<div class="bg-surface-container-lowest border border-outline-variant/10 rounded-lg overflow-hidden">
+<table class="w-full text-left text-xs border-collapse">
+<thead>
+<tr class="bg-surface-container-low">
+<th class="p-4 text-[10px] font-bold text-on-surface-variant uppercase">Entity / Model</th>
+<th class="p-4 text-[10px] font-bold text-on-surface-variant uppercase text-center border-x border-outline-variant/10">v2.4.0 (Prev)</th>
+<th class="p-4 text-[10px] font-bold text-on-surface-variant uppercase text-center border-r border-outline-variant/10">v2.4.1 (Curr)</th>
+<th class="p-4 text-[10px] font-bold text-on-surface-variant uppercase">Change Note</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-outline-variant/10">
+<tr class="bg-error/5">
+<td class="p-4">
+<div class="flex items-center gap-3">
+<span class="text-error bg-error-container text-[8px] font-black px-1.5 py-0.5 rounded">MOD</span>
+<span class="font-bold">BMW iX xDrive50</span>
+</div>
+</td>
+<td class="p-4 text-center tabular-nums text-on-surface-variant border-x border-outline-variant/10">152,000,000</td>
+<td class="p-4 text-center tabular-nums font-bold text-primary border-r border-outline-variant/10">148,500,000</td>
+<td class="p-4">
+<span class="text-error font-medium">Price reduction due to inventory subsidy adjustment.</span>
+</td>
+</tr>
+<tr class="bg-tertiary-fixed/5">
+<td class="p-4">
+<div class="flex items-center gap-3">
+<span class="text-tertiary-container bg-tertiary-fixed text-[8px] font-black px-1.5 py-0.5 rounded">NEW</span>
+<span class="font-bold">Kia Sorento F/L Hybrid</span>
+</div>
+</td>
+<td class="p-4 text-center italic text-outline-variant border-x border-outline-variant/10">Null</td>
+<td class="p-4 text-center tabular-nums font-bold text-primary border-r border-outline-variant/10">45,200,000</td>
+<td class="p-4">
+<span class="text-tertiary-fixed-dim font-bold">Product launch integration.</span>
+</td>
+</tr>
+<tr>
+<td class="p-4">
+<div class="flex items-center gap-3">
+<span class="text-on-surface-variant bg-surface-container-high text-[8px] font-black px-1.5 py-0.5 rounded">RV</span>
+<span class="font-bold">Mercedes S500L</span>
+</div>
+</td>
+<td class="p-4 text-center tabular-nums text-on-surface-variant border-x border-outline-variant/10">42% (RV)</td>
+<td class="p-4 text-center tabular-nums font-bold text-primary border-r border-outline-variant/10">44% (RV)</td>
+<td class="p-4 text-on-surface-variant">
+                                        Residual uplift based on secondary market performance metrics.
+                                    </td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</section>
+</div>
+</main>
+<!-- Contextual FAB - Suppression on detail screens, visible for actions -->
+<!-- Suppression logic applied: FAB hidden for this specific transactional journey -->
+</body></html>

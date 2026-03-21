@@ -36,6 +36,8 @@ export type CanonicalQuoteInput = {
   acquisitionTaxAmountOverride?: number;
   publicBondCost?: number;
   stampDuty?: number;
+  agFeeRate?: number;
+  cmFeeRate?: number;
   insuranceMonthly?: number;
   lossDamageAmount?: number;
 };
@@ -79,6 +81,8 @@ export type CanonicalQuoteResult = {
     source: "override" | "vehicle-program" | "residual-matrix";
     rateDecimal: number;
     amount: number;
+    minRateDecimal?: number;
+    maxRateDecimal?: number;
     selectionGuide?: {
       requiresUserConfirmation: boolean;
       defaultRateDecimal: number;
@@ -96,7 +100,7 @@ export type CanonicalQuoteResult = {
     };
   };
   rates: {
-    source: "override" | "brand-policy";
+    source: "override" | "brand-policy" | "workbook-heuristic";
     annualRateDecimal: number;
     effectiveAnnualRateDecimal: number;
     monthlyRateDecimal: number;

@@ -1,9 +1,11 @@
 import { Hono } from "hono";
+import type { Context } from "hono";
 import { zValidator } from "@hono/zod-validator";
 import { z } from "zod";
 
 import { persistWorkbookImport } from "@/domain/imports/import-service";
 import { listWorkbookImports } from "@/domain/imports/import-queries";
+import { getActiveWorkbookBrands, getActiveWorkbookModels } from "@/domain/imports/catalog-queries";
 import { getLenderAdapter } from "@/domain/imports/lender-registry";
 import { calculateMgOperatingLeaseQuote } from "@/domain/lenders/mg-capital/operating-lease-service";
 import { renderPlaygroundHtml } from "@/playground";
@@ -12,6 +14,11 @@ type Bindings = Env;
 
 const previewQuerySchema = z.object({
   lenderCode: z.string().min(1).default("mg-capital"),
+});
+
+const catalogModelsQuerySchema = z.object({
+  lenderCode: z.string().min(1).default("mg-capital"),
+  brand: z.string().min(1),
 });
 
 const calculateQuoteSchema = z.object({
@@ -38,17 +45,11 @@ const calculateQuoteSchema = z.object({
   acquisitionTaxRateOverride: z.number().min(0).max(1).optional(),
   publicBondCost: z.number().min(0).optional(),
   stampDuty: z.number().min(0).optional(),
+  agFeeRate: z.number().min(0).optional(),
+  cmFeeRate: z.number().min(0).optional(),
 });
 
 export const app = new Hono<{ Bindings: Bindings }>();
-
-app.get("/", (c) => {
-  return c.json({
-    service: "mg-lease-web",
-    status: "ok",
-    message: "Upload monthly lender workbooks and normalize quote data for the web calculator.",
-  });
-});
 
 app.get("/health", (c) => {
   return c.json({
@@ -58,8 +59,20 @@ app.get("/health", (c) => {
   });
 });
 
-app.get("/playground", (c) => {
+app.get("/favicon.ico", (c) => c.body(null, 204));
+app.get("/apple-touch-icon.png", (c) => c.body(null, 204));
+app.get("/apple-touch-icon-precomposed.png", (c) => c.body(null, 204));
+
+function renderPlaygroundResponse(c: Context<{ Bindings: Bindings }>) {
   return c.html(renderPlaygroundHtml());
+}
+
+app.get("/", async (c) => {
+  return renderPlaygroundResponse(c);
+});
+
+app.get("/playground", async (c) => {
+  return renderPlaygroundResponse(c);
 });
 
 app.get("/api/lenders", (c) => {
@@ -80,6 +93,33 @@ app.get("/api/imports", zValidator("query", previewQuerySchema), async (c) => {
   const result = await listWorkbookImports({
     databaseUrl: c.env.DATABASE_URL,
     lenderCode,
+  });
+
+  return c.json({
+    ok: true,
+    ...result,
+  });
+});
+
+app.get("/api/catalog/brands", zValidator("query", previewQuerySchema), async (c) => {
+  const lenderCode = c.req.valid("query").lenderCode;
+  const result = await getActiveWorkbookBrands({
+    databaseUrl: c.env.DATABASE_URL,
+    lenderCode,
+  });
+
+  return c.json({
+    ok: true,
+    ...result,
+  });
+});
+
+app.get("/api/catalog/models", zValidator("query", catalogModelsQuerySchema), async (c) => {
+  const { lenderCode, brand } = c.req.valid("query");
+  const result = await getActiveWorkbookModels({
+    databaseUrl: c.env.DATABASE_URL,
+    lenderCode,
+    brand,
   });
 
   return c.json({

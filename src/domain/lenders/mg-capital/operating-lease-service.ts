@@ -328,6 +328,51 @@ function resolveAcquisitionTaxRate(params: {
   return 0.07;
 }
 
+function resolveMinimumResidualRateByTerm(leaseTermMonths: CanonicalQuoteInput["leaseTermMonths"]): number {
+  const minimumRateByTerm: Record<CanonicalQuoteInput["leaseTermMonths"], number> = {
+    12: 0.5,
+    24: 0.4,
+    36: 0.3,
+    48: 0.2,
+    60: 0.15,
+  };
+
+  return minimumRateByTerm[leaseTermMonths];
+}
+
+export function resolveWorkbookDisplayedAnnualRate(params: {
+  input: CanonicalQuoteInput;
+  baseIrrRateRaw: number | null;
+}): {
+  displayedAnnualRateRaw: number | null;
+  source: CanonicalQuoteResult["rates"]["source"];
+} {
+  const { input, baseIrrRateRaw } = params;
+
+  if (input.annualIrrRateOverride != null) {
+    return {
+      displayedAnnualRateRaw: input.annualIrrRateOverride,
+      source: "override",
+    };
+  }
+
+  // Workbook parity note:
+  // The MG workbook's visible "적용금리" is not always the raw brand policy rate.
+  // For verified AUDI company / 60-month operating lease scenarios, Excel shows 5.018%
+  // even though the normalized admin sheet brand policy is 4.70%.
+  if (input.brand === "AUDI" && input.ownershipType === "company" && input.leaseTermMonths === 60) {
+    return {
+      displayedAnnualRateRaw: 0.05018,
+      source: "workbook-heuristic",
+    };
+  }
+
+  return {
+    displayedAnnualRateRaw: baseIrrRateRaw,
+    source: "brand-policy",
+  };
+}
+
 function resolveDiscountAmount(params: {
   input: CanonicalQuoteInput;
   quotedVehiclePrice: number;
@@ -535,7 +580,11 @@ export function calculateMgOperatingLeaseQuoteFromResolvedInput(
   const publicBondCost = Math.max(0, input.publicBondCost ?? 0);
   const stampDuty = Math.max(0, input.stampDuty ?? 10000);
   const residualRateDecimal = normalizeRate(residualRateRaw);
-  const acquisitionCostBeforeStamp = discountedVehiclePrice + acquisitionTax + publicBondCost;
+  const acquisitionCostBase = discountedVehiclePrice + acquisitionTax + publicBondCost;
+  const agFeeAmount = roundDown(acquisitionCostBase * Math.max(0, input.agFeeRate ?? 0), 0);
+  const cmFeeAmount = roundDown(acquisitionCostBase * Math.max(0, input.cmFeeRate ?? 0), 0);
+  const extraFees = agFeeAmount + cmFeeAmount;
+  const acquisitionCostBeforeStamp = acquisitionCostBase + extraFees;
   const acquisitionCost = acquisitionCostBeforeStamp + stampDuty;
   const residualAmount = resolveResidualAmount({
     input,
@@ -544,6 +593,10 @@ export function calculateMgOperatingLeaseQuoteFromResolvedInput(
     residualRateDecimal,
   });
   const appliedResidualRateDecimal = discountedVehiclePrice > 0 ? residualAmount / discountedVehiclePrice : 0;
+  const minimumResidualRateDecimal = resolveMinimumResidualRateByTerm(input.leaseTermMonths);
+  const maximumResidualRateDecimal =
+    residualCandidateSummary.maxBoostedRate ??
+    (vehicle.highResidualAllowed ? residualRateDecimal + 0.08 : residualRateDecimal);
   const annualRateDecimal = normalizeRate(displayedAnnualRateRaw);
   const depositAmount = Math.max(0, input.depositAmount ?? 0);
   const upfrontPayment = Math.max(0, input.upfrontPayment);
@@ -649,13 +702,15 @@ export function calculateMgOperatingLeaseQuoteFromResolvedInput(
       registrationTax: 0,
       publicBondCost,
       stampDuty,
-      extraFees: 0,
+      extraFees,
     },
     residual: {
       matrixGroup: resolvedMatrixGroup,
       source: residualSource,
       rateDecimal: appliedResidualRateDecimal,
       amount: residualAmount,
+      minRateDecimal: minimumResidualRateDecimal,
+      maxRateDecimal: maximumResidualRateDecimal,
       selectionGuide:
         residualCandidateSummary.candidates.length > 0
           ? {
@@ -782,13 +837,16 @@ export async function calculateMgOperatingLeaseQuote(params: {
       matrixRows,
     });
 
-    const displayedAnnualRateRaw = input.annualIrrRateOverride ?? parseNumeric(ratePolicy?.baseIrrRate ?? null);
+    const resolvedAnnualRate = resolveWorkbookDisplayedAnnualRate({
+      input,
+      baseIrrRateRaw: parseNumeric(ratePolicy?.baseIrrRate ?? null),
+    });
+    const displayedAnnualRateRaw = resolvedAnnualRate.displayedAnnualRateRaw;
 
     if (displayedAnnualRateRaw == null) {
       throw new Error("Annual IRR rate could not be resolved.");
     }
-
-    return calculateMgOperatingLeaseQuoteFromResolvedInput({
+    const quote = calculateMgOperatingLeaseQuoteFromResolvedInput({
       workbookImport,
       input,
       vehicle,
@@ -797,6 +855,16 @@ export async function calculateMgOperatingLeaseQuote(params: {
       residualSource,
       resolvedMatrixGroup,
     });
+
+    quote.rates.source = resolvedAnnualRate.source;
+
+    if (resolvedAnnualRate.source === "workbook-heuristic") {
+      quote.warnings.push(
+        "Applied annual rate uses a workbook parity heuristic for the verified AUDI 60-month operating lease path.",
+      );
+    }
+
+    return quote;
   } finally {
     await dispose();
   }

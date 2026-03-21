@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>AutoFinance Ops - Main Quote Calculation</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "primary-fixed-dim": "#b7c8de",
+              "primary-container": "#1a2b3c",
+              "on-secondary": "#ffffff",
+              "primary-fixed": "#d2e4fb",
+              "secondary-fixed-dim": "#b7c8e1",
+              "surface-container": "#eceef0",
+              "on-primary-container": "#8192a7",
+              "on-surface-variant": "#44474c",
+              "on-tertiary": "#ffffff",
+              "error": "#ba1a1a",
+              "secondary-container": "#d0e1fb",
+              "on-error-container": "#93000a",
+              "on-surface": "#191c1e",
+              "tertiary-container": "#00311f",
+              "on-secondary-container": "#54647a",
+              "on-primary-fixed-variant": "#38485a",
+              "surface": "#f7f9fb",
+              "on-secondary-fixed-variant": "#38485d",
+              "on-tertiary-fixed-variant": "#005236",
+              "surface-container-high": "#e6e8ea",
+              "primary": "#041627",
+              "surface-variant": "#e0e3e5",
+              "surface-container-lowest": "#ffffff",
+              "inverse-primary": "#b7c8de",
+              "inverse-on-surface": "#eff1f3",
+              "tertiary-fixed-dim": "#4edea3",
+              "error-container": "#ffdad6",
+              "on-primary": "#ffffff",
+              "on-tertiary-container": "#00a572",
+              "on-primary-fixed": "#0b1d2d",
+              "surface-container-highest": "#e0e3e5",
+              "secondary-fixed": "#d3e4fe",
+              "on-tertiary-fixed": "#002113",
+              "on-error": "#ffffff",
+              "outline-variant": "#c4c6cd",
+              "outline": "#74777d",
+              "tertiary-fixed": "#6ffbbe",
+              "secondary": "#505f76",
+              "tertiary": "#001a0f",
+              "on-secondary-fixed": "#0b1c30",
+              "background": "#f7f9fb",
+              "on-background": "#191c1e",
+              "surface-tint": "#4f6073",
+              "surface-dim": "#d8dadc",
+              "surface-container-low": "#f2f4f6",
+              "inverse-surface": "#2d3133",
+              "surface-bright": "#f7f9fb"
+            },
+            fontFamily: {
+              "headline": ["Manrope"],
+              "body": ["Inter"],
+              "label": ["Inter"]
+            },
+            borderRadius: {"DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem"},
+          },
+        },
+      }
+    </script>
+<style>
+      .material-symbols-outlined {
+        font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+      }
+      .tabular-nums {
+        font-variant-numeric: tabular-nums;
+      }
+      ::-webkit-scrollbar { width: 6px; height: 6px; }
+      ::-webkit-scrollbar-track { background: transparent; }
+      ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+      ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+    </style>
+</head>
+<body class="bg-surface font-body text-on-surface">
+<!-- TopAppBar Shell -->
+<header class="bg-slate-900 dark:bg-slate-950 flex justify-between items-center w-full px-6 h-12 z-50 fixed top-0 border-b-0 font-manrope text-sm font-medium tracking-tight flat no shadows">
+<div class="flex items-center gap-6">
+<span class="text-lg font-bold text-white tracking-tighter">AutoFinance Ops</span>
+<nav class="hidden md:flex items-center gap-4">
+<a class="text-emerald-400 border-b-2 border-emerald-400 pb-1" href="#">Lender: Shinhan Card</a>
+<a class="text-slate-400 hover:text-slate-200 transition-colors" href="#">v2.4.1-stable</a>
+</nav>
+</div>
+<div class="flex items-center gap-4">
+<span class="material-symbols-outlined text-slate-400 hover:text-slate-200 cursor-pointer" data-icon="notifications">notifications</span>
+<span class="material-symbols-outlined text-slate-400 hover:text-slate-200 cursor-pointer" data-icon="settings">settings</span>
+<div class="w-7 h-7 bg-slate-700 rounded-full overflow-hidden">
+<img alt="User Profile Avatar" class="w-full h-full object-cover" data-alt="Professional user profile picture avatar" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDZSFW3bEhqAC5pmjBIgf-NcmYXkJbGly3CjG4Ke8tb89E7Ydjn4R98cyQjMj5j-w7i3fuL85XZ8qC819JKhjl0kdtsS9rGPNBZNBY6AWO4y2Kv47_gEvDekL2lKyvZw3JzErAZJbuEUr2hhdAgKXcpLd0FB96erczyqMymhTaxTRYSSuZH9WUXVuOibaZSGUNKqmhSY0ZErIHvZXWDW0BVXjFAzv0YXsl7d6a9QFDNtNAUGPOERwJeKpIBQelg3RO_ka59NZO-dvAO"/>
+</div>
+</div>
+</header>
+<!-- SideNavBar Shell -->
+<aside class="fixed left-0 top-0 h-full flex flex-col pt-4 z-40 bg-slate-900 dark:bg-black font-manrope text-[0.8125rem] font-semibold docked h-screen left-0 w-64 border-r-0 flat">
+<div class="px-6 mb-8 pt-12">
+<h1 class="text-white font-black tracking-widest uppercase">Precision Ledger</h1>
+<p class="text-slate-500 text-[10px] tracking-wider uppercase">Institutional Terminal</p>
+</div>
+<nav class="flex-1 flex flex-col gap-1">
+<a class="text-slate-400 px-4 py-3 hover:text-slate-100 transition-all hover:bg-slate-800/50 flex items-center gap-3" href="#">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span> Dashboard
+            </a>
+<a class="text-slate-400 px-4 py-3 hover:text-slate-100 transition-all hover:bg-slate-800/50 flex items-center gap-3" href="#">
+<span class="material-symbols-outlined" data-icon="account_balance">account_balance</span> Lenders
+            </a>
+<a class="bg-emerald-500/10 text-emerald-400 border-l-4 border-emerald-400 px-4 py-3 flex items-center gap-3" href="#">
+<span class="material-symbols-outlined" data-icon="calculate">calculate</span> Quotes
+            </a>
+<a class="text-slate-400 px-4 py-3 hover:text-slate-100 transition-all hover:bg-slate-800/50 flex items-center gap-3" href="#">
+<span class="material-symbols-outlined" data-icon="compare_arrows">compare_arrows</span> Comparisons
+            </a>
+<a class="text-slate-400 px-4 py-3 hover:text-slate-100 transition-all hover:bg-slate-800/50 flex items-center gap-3" href="#">
+<span class="material-symbols-outlined" data-icon="camera_roll">camera_roll</span> Snapshots
+            </a>
+<a class="text-slate-400 px-4 py-3 hover:text-slate-100 transition-all hover:bg-slate-800/50 flex items-center gap-3" href="#">
+<span class="material-symbols-outlined" data-icon="upload_file">upload_file</span> Imports
+            </a>
+<div class="mt-auto pb-6">
+<a class="text-slate-400 px-4 py-3 hover:text-slate-100 transition-all hover:bg-slate-800/50 flex items-center gap-3" href="#">
+<span class="material-symbols-outlined" data-icon="bug_report">bug_report</span> Debug
+                </a>
+<a class="text-slate-400 px-4 py-3 hover:text-slate-100 transition-all hover:bg-slate-800/50 flex items-center gap-3" href="#">
+<span class="material-symbols-outlined" data-icon="settings_applications">settings_applications</span> System
+                </a>
+</div>
+</nav>
+</aside>
+<!-- Main Content Canvas -->
+<main class="ml-64 pt-12 min-h-screen">
+<div class="p-8 max-w-[1600px] mx-auto">
+<!-- Page Header -->
+<div class="flex justify-between items-end mb-8">
+<div>
+<h2 class="text-2xl font-headline font-bold text-primary tracking-tight">Main Quote Calculation</h2>
+<p class="text-on-surface-variant text-sm">Configure financial parameters for institutional asset estimation.</p>
+</div>
+<div class="flex gap-2">
+<button class="px-4 py-2 bg-surface-container-high hover:bg-surface-container-highest text-on-surface text-xs font-semibold rounded-lg flex items-center gap-2 transition-colors">
+<span class="material-symbols-outlined text-[18px]" data-icon="history">history</span> Load Recent
+                    </button>
+<button class="px-4 py-2 bg-primary text-white text-xs font-semibold rounded-lg flex items-center gap-2 transition-colors">
+<span class="material-symbols-outlined text-[18px]" data-icon="save">save</span> Save Snapshot
+                    </button>
+</div>
+</div>
+<!-- Bento Grid Layout -->
+<div class="grid grid-cols-12 gap-6 items-start">
+<!-- Left Column: Input Form -->
+<div class="col-span-12 xl:col-span-7 flex flex-col gap-6">
+<!-- Form Section: Vehicle & Contract -->
+<section class="bg-surface-container-low rounded-xl p-6 shadow-sm border border-outline-variant/10">
+<div class="flex items-center justify-between mb-6 border-b border-outline-variant/20 pb-4">
+<h3 class="font-headline font-bold text-sm uppercase tracking-wider text-on-primary-fixed-variant flex items-center gap-2">
+<span class="material-symbols-outlined text-primary" data-icon="directions_car">directions_car</span> Asset Details
+                            </h3>
+<span class="text-[10px] font-bold px-2 py-0.5 bg-tertiary-fixed text-on-tertiary-fixed rounded">REQUIRED</span>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
+<!-- Lender & Product -->
+<div class="space-y-1">
+<label class="text-[11px] font-bold text-on-surface-variant uppercase tracking-tighter">Lender Institution</label>
+<select class="w-full bg-surface-container-high border-0 border-b-2 border-outline-variant focus:border-primary focus:ring-0 text-sm py-2 px-1 font-semibold">
+<option>Shinhan Card (Auto-Lease)</option>
+<option>KB Capital</option>
+<option>Hyundai Capital</option>
+</select>
+</div>
+<div class="space-y-1">
+<label class="text-[11px] font-bold text-on-surface-variant uppercase tracking-tighter">Product Type</label>
+<select class="w-full bg-surface-container-high border-0 border-b-2 border-outline-variant focus:border-primary focus:ring-0 text-sm py-2 px-1 font-semibold">
+<option>Operational Lease (Standard)</option>
+<option>Financial Lease</option>
+<option>Long-term Rental</option>
+</select>
+</div>
+<!-- Brand & Model -->
+<div class="space-y-1">
+<label class="text-[11px] font-bold text-on-surface-variant uppercase tracking-tighter">Manufacturer/Brand</label>
+<input class="w-full bg-surface-container-high border-0 border-b-2 border-outline-variant focus:border-primary focus:ring-0 text-sm py-2 px-1 font-semibold" type="text" value="Mercedes-Benz"/>
+</div>
+<div class="space-y-1">
+<label class="text-[11px] font-bold text-on-surface-variant uppercase tracking-tighter">Model &amp; Trim</label>
+<input class="w-full bg-surface-container-high border-0 border-b-2 border-outline-variant focus:border-primary focus:ring-0 text-sm py-2 px-1 font-semibold" type="text" value="E-Class E300 4MATIC Exclusive"/>
+</div>
+<!-- Contract Vars -->
+<div class="space-y-1">
+<label class="text-[11px] font-bold text-on-surface-variant uppercase tracking-tighter">Contract Period (Months)</label>
+<div class="flex gap-2">
+<button class="flex-1 bg-primary text-white text-xs font-bold py-2 rounded">36</button>
+<button class="flex-1 bg-surface-container-highest text-on-surface text-xs font-bold py-2 rounded">48</button>
+<button class="flex-1 bg-surface-container-highest text-on-surface text-xs font-bold py-2 rounded">60</button>
+</div>
+</div>
+<div class="space-y-1">
+<label class="text-[11px] font-bold text-on-surface-variant uppercase tracking-tighter">Annual Mileage (km)</label>
+<select class="w-full bg-surface-container-high border-0 border-b-2 border-outline-variant focus:border-primary focus:ring-0 text-sm py-2 px-1 font-semibold">
+<option>20,000 km</option>
+<option>30,000 km</option>
+<option>Unlimited</option>
+</select>
+</div>
+</div>
+</section>
+<!-- Form Section: Financial Inputs -->
+<section class="bg-surface-container-low rounded-xl p-6 shadow-sm border border-outline-variant/10">
+<div class="flex items-center justify-between mb-6 border-b border-outline-variant/20 pb-4">
+<h3 class="font-headline font-bold text-sm uppercase tracking-wider text-on-primary-fixed-variant flex items-center gap-2">
+<span class="material-symbols-outlined text-primary" data-icon="payments">payments</span> Financial Parameters
+                            </h3>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+<div class="space-y-1">
+<label class="text-[11px] font-bold text-on-surface-variant uppercase tracking-tighter">Vehicle Price (₩)</label>
+<input class="w-full bg-surface-container-high border-0 border-b-2 border-outline-variant focus:border-primary focus:ring-0 text-sm py-2 px-1 font-semibold tabular-nums text-right" type="text" value="82,400,000"/>
+</div>
+<div class="space-y-1">
+<label class="text-[11px] font-bold text-on-surface-variant uppercase tracking-tighter">Discounts (₩)</label>
+<input class="w-full bg-surface-container-high border-0 border-b-2 border-emerald-400 focus:border-primary focus:ring-0 text-sm py-2 px-1 font-semibold tabular-nums text-right text-on-tertiary-container" type="text" value="4,500,000"/>
+</div>
+<div class="space-y-1">
+<label class="text-[11px] font-bold text-on-surface-variant uppercase tracking-tighter">Down Payment (%)</label>
+<input class="w-full bg-surface-container-high border-0 border-b-2 border-outline-variant focus:border-primary focus:ring-0 text-sm py-2 px-1 font-semibold text-right" type="number" value="10"/>
+</div>
+<div class="space-y-1">
+<label class="text-[11px] font-bold text-on-surface-variant uppercase tracking-tighter">Security Deposit (%)</label>
+<input class="w-full bg-surface-container-high border-0 border-b-2 border-outline-variant focus:border-primary focus:ring-0 text-sm py-2 px-1 font-semibold text-right" type="number" value="20"/>
+</div>
+<div class="space-y-1">
+<label class="text-[11px] font-bold text-on-surface-variant uppercase tracking-tighter">Residual Value (%)</label>
+<div class="flex items-center gap-2">
+<input class="w-1/2 bg-surface-container-high border-0 border-b-2 border-emerald-400 focus:border-primary focus:ring-0 text-sm py-2 px-1 font-semibold text-right" type="number" value="45"/>
+<button class="px-2 py-1 bg-on-primary-fixed-variant text-white text-[10px] rounded hover:bg-primary transition-colors">AUTO</button>
+</div>
+</div>
+<div class="space-y-1">
+<label class="text-[11px] font-bold text-on-surface-variant uppercase tracking-tighter">Tax/Fees Handling</label>
+<select class="w-full bg-surface-container-high border-0 border-b-2 border-outline-variant focus:border-primary focus:ring-0 text-sm py-2 px-1 font-semibold">
+<option>Include in Funding</option>
+<option>Pay Out-of-pocket</option>
+</select>
+</div>
+</div>
+<!-- Advanced Overrides -->
+<div class="mt-8 pt-4 border-t border-dashed border-outline-variant/30">
+<button class="text-[11px] font-bold text-secondary flex items-center gap-1 hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-[16px]" data-icon="tune">tune</span> ADVANCED OVERRIDES (EXPERT ONLY)
+                            </button>
+<div class="hidden grid grid-cols-4 gap-4 mt-4 opacity-50">
+<!-- Hidden for brevity as requested by 'Advanced Override' note -->
+</div>
+</div>
+</section>
+<!-- Residual Selection Table (Expert Component) -->
+<section class="bg-surface-container-low rounded-xl p-6 shadow-sm border border-outline-variant/10">
+<div class="flex items-center justify-between mb-4">
+<h3 class="font-headline font-bold text-sm uppercase tracking-wider text-on-primary-fixed-variant flex items-center gap-2">
+<span class="material-symbols-outlined text-primary" data-icon="analytics">analytics</span> Residual Value Candidates
+                            </h3>
+<div class="flex items-center gap-2 text-[11px] font-medium text-error bg-error-container/30 px-3 py-1 rounded">
+<span class="material-symbols-outlined text-[14px]" data-icon="warning">warning</span> User Confirmation Required
+                            </div>
+</div>
+<div class="overflow-x-auto">
+<table class="w-full text-left text-xs">
+<thead>
+<tr class="text-on-surface-variant font-bold border-b border-outline-variant/20 uppercase tracking-tighter">
+<th class="py-3 px-2">Source</th>
+<th class="py-3 px-2 text-right">Base Rate</th>
+<th class="py-3 px-2 text-right">Adj. Rate</th>
+<th class="py-3 px-2 text-right">Boosted</th>
+<th class="py-3 px-2 text-right">Final Rate</th>
+<th class="py-3 px-2 text-center">Action</th>
+</tr>
+</thead>
+<tbody>
+<tr class="border-b border-outline-variant/10 hover:bg-surface-container-high transition-colors">
+<td class="py-3 px-2 font-bold text-on-surface">SNK Matrix v4.2</td>
+<td class="py-3 px-2 text-right tabular-nums">42.5%</td>
+<td class="py-3 px-2 text-right tabular-nums">41.8%</td>
+<td class="py-3 px-2 text-right tabular-nums">+2.0%</td>
+<td class="py-3 px-2 text-right tabular-nums font-bold">43.8%</td>
+<td class="py-3 px-2 text-center">
+<input class="text-primary focus:ring-0" name="res_source" type="radio"/>
+</td>
+</tr>
+<tr class="border-b border-outline-variant/10 bg-primary-fixed/30">
+<td class="py-3 px-2 font-bold text-on-surface">APS Internal Standard</td>
+<td class="py-3 px-2 text-right tabular-nums">44.0%</td>
+<td class="py-3 px-2 text-right tabular-nums">43.5%</td>
+<td class="py-3 px-2 text-right tabular-nums">0.0%</td>
+<td class="py-3 px-2 text-right tabular-nums font-bold text-primary">43.5%</td>
+<td class="py-3 px-2 text-center">
+<input checked="" class="text-primary focus:ring-0" name="res_source" type="radio"/>
+</td>
+</tr>
+<tr class="hover:bg-surface-container-high transition-colors">
+<td class="py-3 px-2 font-bold text-on-surface">Chabot Dynamic Engine</td>
+<td class="py-3 px-2 text-right tabular-nums">46.2%</td>
+<td class="py-3 px-2 text-right tabular-nums">44.9%</td>
+<td class="py-3 px-2 text-right tabular-nums">-1.0%</td>
+<td class="py-3 px-2 text-right tabular-nums font-bold">43.9%</td>
+<td class="py-3 px-2 text-center">
+<input class="text-primary focus:ring-0" name="res_source" type="radio"/>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="mt-4 flex items-center gap-3">
+<button class="flex-1 py-2 bg-on-primary-fixed-variant text-white text-[11px] font-bold rounded uppercase tracking-widest hover:bg-primary transition-all">Recalculate with Selected Rate</button>
+<p class="text-[10px] text-on-surface-variant italic w-1/3">Multiple valid matrices found for this model. Expert validation is mandatory.</p>
+</div>
+</section>
+</div>
+<!-- Right Column: Results & Comparison -->
+<div class="col-span-12 xl:col-span-5 sticky top-20 flex flex-col gap-6">
+<!-- Quote Result Panel -->
+<section class="bg-primary rounded-xl overflow-hidden shadow-2xl relative">
+<!-- Decorative background texture -->
+<div class="absolute inset-0 bg-gradient-to-br from-primary-container/50 to-transparent pointer-events-none"></div>
+<div class="p-8 relative z-10">
+<div class="flex justify-between items-start mb-6">
+<span class="text-primary-fixed-dim text-xs font-bold uppercase tracking-widest">Monthly Payment</span>
+<div class="flex gap-2">
+<span class="material-symbols-outlined text-primary-fixed-dim text-[18px] cursor-pointer" data-icon="content_copy">content_copy</span>
+<span class="material-symbols-outlined text-primary-fixed-dim text-[18px] cursor-pointer" data-icon="share">share</span>
+</div>
+</div>
+<div class="mb-8">
+<div class="flex items-baseline gap-2">
+<span class="text-5xl font-headline font-black text-tertiary-fixed tabular-nums tracking-tighter">1,245,800</span>
+<span class="text-xl text-primary-fixed font-bold">KRW</span>
+</div>
+<div class="mt-2 flex items-center gap-2">
+<span class="text-[10px] font-bold px-2 py-0.5 bg-emerald-500/20 text-emerald-400 rounded">OPTIMIZED RATE</span>
+<span class="text-[10px] text-primary-fixed-dim font-medium uppercase tracking-widest">Workbook v2.1 (STABLE)</span>
+</div>
+</div>
+<div class="grid grid-cols-2 gap-y-4 border-t border-on-primary-fixed-variant pt-6">
+<div>
+<p class="text-[10px] text-primary-fixed-dim font-bold uppercase mb-1">Residual Amount</p>
+<p class="text-sm font-bold text-white tabular-nums tracking-tight">₩37,080,000 (45%)</p>
+</div>
+<div>
+<p class="text-[10px] text-primary-fixed-dim font-bold uppercase mb-1">Funding Principal</p>
+<p class="text-sm font-bold text-white tabular-nums tracking-tight">₩77,900,000</p>
+</div>
+<div>
+<p class="text-[10px] text-primary-fixed-dim font-bold uppercase mb-1">Nominal IRR</p>
+<p class="text-sm font-bold text-white tabular-nums tracking-tight">5.2%</p>
+</div>
+<div>
+<p class="text-[10px] text-primary-fixed-dim font-bold uppercase mb-1">Effective IRR</p>
+<p class="text-sm font-bold text-emerald-400 tabular-nums tracking-tight">5.85%</p>
+</div>
+<div>
+<p class="text-[10px] text-primary-fixed-dim font-bold uppercase mb-1">Acquisition Tax</p>
+<p class="text-sm font-bold text-white tabular-nums tracking-tight">₩5,768,000</p>
+</div>
+<div>
+<p class="text-[10px] text-primary-fixed-dim font-bold uppercase mb-1">Stamp Duty</p>
+<p class="text-sm font-bold text-white tabular-nums tracking-tight">₩10,000</p>
+</div>
+</div>
+<div class="mt-8">
+<button class="w-full py-4 bg-tertiary-fixed text-on-tertiary-fixed font-black text-sm rounded-lg uppercase tracking-[0.2em] shadow-lg shadow-emerald-500/20 hover:scale-[0.98] transition-all">Calculate Final Quote</button>
+</div>
+</div>
+</section>
+<!-- Quote Comparison Section -->
+<section class="bg-surface-container-low rounded-xl p-6 shadow-sm border border-outline-variant/10">
+<div class="flex items-center justify-between mb-4">
+<h3 class="font-headline font-bold text-sm uppercase tracking-wider text-on-primary-fixed-variant">Alternative Offers</h3>
+<button class="text-primary text-[10px] font-bold border-b border-primary">View Full Comparison</button>
+</div>
+<div class="space-y-3">
+<!-- Comparison Card 1: Best Offer -->
+<div class="p-3 bg-surface-container-lowest border-l-4 border-emerald-400 rounded shadow-sm flex items-center justify-between">
+<div>
+<div class="flex items-center gap-2 mb-1">
+<p class="text-[10px] font-black text-primary uppercase">Shinhan Card</p>
+<span class="text-[9px] px-1 bg-tertiary-fixed text-on-tertiary-fixed font-bold rounded">BEST</span>
+</div>
+<p class="text-sm font-headline font-bold tabular-nums">₩1,245,800</p>
+</div>
+<div class="text-right">
+<p class="text-[10px] font-bold text-on-surface-variant uppercase mb-1">Eff. IRR</p>
+<p class="text-xs font-bold text-on-tertiary-container tabular-nums">5.85%</p>
+</div>
+</div>
+<!-- Comparison Card 2 -->
+<div class="p-3 bg-surface-container-low border border-outline-variant/30 rounded flex items-center justify-between hover:bg-surface-container-high transition-colors cursor-pointer">
+<div>
+<div class="flex items-center gap-2 mb-1">
+<p class="text-[10px] font-black text-on-surface-variant uppercase">KB Capital</p>
+</div>
+<p class="text-sm font-headline font-bold tabular-nums text-on-surface-variant">₩1,298,500</p>
+</div>
+<div class="text-right">
+<p class="text-[10px] font-bold text-on-surface-variant uppercase mb-1">Eff. IRR</p>
+<p class="text-xs font-bold text-on-surface-variant tabular-nums">6.12%</p>
+</div>
+</div>
+<!-- Comparison Card 3 -->
+<div class="p-3 bg-surface-container-low border border-outline-variant/30 rounded flex items-center justify-between hover:bg-surface-container-high transition-colors cursor-pointer">
+<div>
+<div class="flex items-center gap-2 mb-1">
+<p class="text-[10px] font-black text-on-surface-variant uppercase">Hyundai Capital</p>
+</div>
+<p class="text-sm font-headline font-bold tabular-nums text-on-surface-variant">₩1,310,200</p>
+</div>
+<div class="text-right">
+<p class="text-[10px] font-bold text-on-surface-variant uppercase mb-1">Eff. IRR</p>
+<p class="text-xs font-bold text-on-surface-variant tabular-nums">6.25%</p>
+</div>
+</div>
+</div>
+<!-- Policy Warning Alert -->
+<div class="mt-6 p-4 bg-error-container/20 rounded-lg flex gap-3 items-start border border-error/10">
+<span class="material-symbols-outlined text-error" data-icon="report">report</span>
+<div>
+<p class="text-[11px] font-bold text-on-error-container uppercase mb-1">Policy Violation Detected</p>
+<p class="text-[10px] text-on-surface-variant leading-relaxed">Down payment (10%) is below the recommended institutional threshold for Corporate Individual owners. Requires manual exception approval.</p>
+</div>
+</div>
+</section>
+</div>
+</div>
+</div>
+</main>
+<!-- Bottom Actions Overlay (Mobile/Focused) -->
+<div class="fixed bottom-0 left-64 right-0 p-6 bg-surface/80 backdrop-blur-md border-t border-outline-variant/20 md:hidden">
+<button class="w-full py-4 bg-primary text-white font-bold rounded-xl shadow-lg flex items-center justify-center gap-2">
+<span class="material-symbols-outlined" data-icon="calculate">calculate</span> RUN CALCULATION
+        </button>
+</div>
+</body></html>
