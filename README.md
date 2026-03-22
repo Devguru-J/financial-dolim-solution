@@ -27,8 +27,9 @@
    - 브랜드별 기본 요율 정책 파싱
 5. 업로드 미리보기 API
 6. 업로드 데이터를 DB에 저장하는 import persistence 서비스
-7. MG캐피탈 `운용리스` 1차 계산 API
-8. 향후 여러 금융사를 붙이기 위한 planning 문서 세트
+7. MG캐피탈 `운용리스` 계산 API
+8. `/playground` 기반 한글 견적 테스트 UI
+9. 향후 여러 금융사를 붙이기 위한 planning 문서 세트
 
 ## 기술 스택
 
@@ -46,8 +47,8 @@
 
 ### Frontend / UI
 
-1. `shadcn/ui`
-2. 공통 quote UI 위에 금융사/상품별 정책을 얹는 구조
+1. 현재는 Hono server-rendered HTML 기반 테스트 UI
+2. 향후 `shadcn/ui` 스타일의 운영 UI로 확장 예정
 
 ### Workbook / Validation
 
@@ -165,7 +166,7 @@ docs/
 }
 ```
 
-현재 계산 결과에는 차량가, 실제 적용 잔가율, 브랜드 기본 IRR, 월 납입금과 hidden residual candidate summary가 포함됩니다.
+현재 계산 결과에는 차량가, 실제 적용 잔가율, 최소/최대잔가, 적용금리, 월 납입금과 hidden residual candidate summary가 포함됩니다.
 
 엑셀의 최종 선택 잔가율(`BK27`)은 workbook에서 수동 선택값처럼 동작하므로,
 정확히 맞추고 싶다면
@@ -175,12 +176,19 @@ docs/
 프론트나 API 소비 레이어에서 최종 잔가율 선택을 한 번 더 받아서
 `selectedResidualRateOverride`로 재호출하는 흐름을 권장합니다.
 
-아직 미반영된 항목:
+현재 구현 상태 메모:
 
-1. 취득세/등록세
-2. 부대비용
-3. workbook의 산재한 예외 규칙
-4. BK27 최종 선택 잔가율 자동화
+1. 운영 API는 더 이상 로컬 Excel 앱을 열지 않습니다.
+2. 계산은 Supabase에 저장된 정규화 데이터와 TypeScript 계산 엔진으로 수행합니다.
+3. `SNK/APS` 잔가사 선택과 보장수수료율 경로를 공통 로직으로 옮기는 작업을 진행 중입니다.
+4. 일부 대표 차종은 엑셀과 매우 가깝게 맞았지만, 아직 모든 차종이 100% 동일하다고 검증 완료된 상태는 아닙니다.
+
+아직 남은 항목:
+
+1. 모든 차종에 대한 적용금리/월 납입금 parity 검증
+2. hidden sheet 기반 예외 규칙의 추가 추출 및 반영
+3. `financial_lease`, `installment_loan` 구현
+4. 운영용 관리자 UI 완성
 
 ## 로컬 개발
 

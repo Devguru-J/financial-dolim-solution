@@ -35,11 +35,13 @@ What is ready:
 5. residual candidate summary and final residual override path for workbook parity
 6. local `/playground` test page for quote iteration
 7. documentation for continuing in a fresh thread
+8. production API path no longer depends on launching Microsoft Excel
+9. residual-company selection logic is moving toward a shared SNK/APS comparison path
 
 What is not done yet:
 
-1. final `BK27` user choice is not auto-derived because it behaves like a workbook-selected input
-2. taxes, fees, and workbook exception rules are not fully modeled in the calculator
+1. all-model Excel parity is not finished yet
+2. some hidden workbook fee/rate paths still need to be normalized into DB-backed rules
 3. admin UI is not implemented yet
 4. `financial_lease` and `installment_loan` are not implemented yet
 
@@ -79,7 +81,7 @@ Get full MG quote parity for at least one product first.
 
 Status:
 
-Advanced parity-hardening in progress.
+Advanced parity-hardening in progress with a DB-backed runtime path.
 
 Completed:
 
@@ -91,17 +93,20 @@ Completed:
 6. hidden residual candidate summary for `에스앤케이`, `APS`, and `차봇`
 7. final residual selection path through `selectedResidualRateOverride`
 8. local `/playground` page for manual quote testing
+9. removed Excel automation from the normal API calculation path
+10. generalized `SNK/APS` residual-company candidate comparison for more models
+11. monthly payment display now follows Excel quote-sheet `ROUNDUP(...,-2)` style output
 
 Remaining:
 
-1. model taxes, registration, and extra fee rules
-2. capture remaining workbook exception logic outside current residual flow
-3. build UI flow that lets users confirm workbook-style final residual selection
-4. tighten parity against more saved Excel outputs if new edge cases appear
+1. verify representative models across BMW, BENZ, AUDI, VOLVO and others with saved Excel outputs
+2. model remaining hidden fee and exception rules that still create small payment deltas
+3. complete the all-model residual-company selection verification path
+4. build UI flow that lets users confirm workbook-style final residual selection when needed
 
 Deliverable:
 
-One product works end to end with workbook-backed data and practical Excel parity, with a final residual-selection confirmation step.
+One product works end to end with workbook-backed data, a DB-backed runtime path, and repeatable Excel parity checks.
 
 ## Phase 3. MG product completion
 
@@ -208,9 +213,9 @@ Safe monthly production workflow.
 
 If work resumes in a fresh thread, do this in order:
 
-1. connect `residual.selectionGuide` and `candidateSummary` to a real quote UI
-2. model taxes, fees, and remaining workbook exception rules in the MG calculator
-3. verify more quote cases through `POST /api/quotes/calculate`
+1. add representative BENZ/BMW/AUDI/VOLVO fixtures for residual-company selection verification
+2. finish hidden fee and PMT-chain parity for monthly payment
+3. model remaining workbook exception rules in the MG calculator
 4. start `financial_lease`
 5. build the minimum admin UI for upload and activation
 

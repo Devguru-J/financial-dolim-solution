@@ -26,7 +26,7 @@ These documents are the long-term planning baseline for the lease calculator pla
 
 ## Current project status summary
 
-As of 2026-03-20, the project already has:
+As of 2026-03-22, the project already has:
 
 1. repository root normalized to `financial-dolim-solution`
 2. Bun + Hono + Drizzle + Cloudflare Pages scaffold in the repository root
@@ -40,7 +40,9 @@ As of 2026-03-20, the project already has:
 10. Drizzle migration files for the current schema
 11. fixture-based Excel parity tests and hidden residual candidate tracing
 12. `/playground` page for local quote testing and residual selection verification
-13. Korean README and planning docs for handoff continuity
+13. normal web calculation path no longer launches Microsoft Excel
+14. shared residual-company selection logic being hardened across models
+15. Korean README and planning docs for handoff continuity
 
 ## How to use these docs
 
@@ -50,3 +52,4 @@ As of 2026-03-20, the project already has:
 4. Use `Supabase Setup` when connecting a real Supabase project.
 5. Keep lender-specific discoveries in a dedicated `<lender>-implementation-plan.md` file.
 6. For current MG work, treat `candidateSummary` and `selectionGuide` as the bridge to the future quote UI.
+7. Treat all-model Excel parity as still in progress, not complete.

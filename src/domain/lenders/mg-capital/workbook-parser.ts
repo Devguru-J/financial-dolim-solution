@@ -4,6 +4,9 @@ import type {
   WorkbookBrandRatePolicy,
   WorkbookPreview,
   WorkbookResidualMatrixRow,
+  WorkbookSheetContracts,
+  WorkbookSheetFieldSnapshot,
+  WorkbookOperatingLeaseSheetContract,
   WorkbookVehicleProgram,
 } from "@/domain/imports/types";
 import type { ParseWorkbookOptions } from "@/domain/imports/lender-adapter";
@@ -26,6 +29,17 @@ function sheetToRows(workbook: XLSX.WorkBook, sheetName: string): unknown[][] {
 
 function readCell(sheet: XLSX.WorkSheet, address: string): unknown {
   return sheet[address]?.v ?? null;
+}
+
+function readField(sheet: XLSX.WorkSheet | undefined, address: string): WorkbookSheetFieldSnapshot {
+  const cell = sheet?.[address];
+
+  return {
+    cell: address,
+    value: (cell?.v as string | number | boolean | null | undefined) ?? null,
+    displayText: typeof cell?.w === "string" ? cell.w : cell?.w == null ? null : String(cell.w),
+    formula: typeof cell?.f === "string" ? cell.f : null,
+  };
 }
 
 function asNumber(value: unknown): number | null {
@@ -200,6 +214,78 @@ function parseBrandRatePolicies(sheet: XLSX.WorkSheet | undefined): WorkbookBran
   return policies;
 }
 
+function parseOperatingLeaseSheetContract(
+  sheet: XLSX.WorkSheet | undefined,
+  vehiclePrograms: WorkbookVehicleProgram[],
+): WorkbookOperatingLeaseSheetContract | null {
+  if (!sheet) {
+    return null;
+  }
+
+  const brand = asText(readCell(sheet, "BD5"));
+  const modelName = asText(readCell(sheet, "BD6"));
+  const actualVehiclePrice = asNumber(readCell(sheet, "BD10")) ?? asNumber(readCell(sheet, "BD9"));
+  const matchedVehicleProgram =
+    vehiclePrograms.find((program) => program.brand === brand && program.modelName === modelName) ?? null;
+  const expectedVehiclePrice = matchedVehicleProgram?.vehiclePrice ?? null;
+  const vehiclePriceMatches =
+    actualVehiclePrice == null || expectedVehiclePrice == null ? false : actualVehiclePrice === expectedVehiclePrice;
+  const consistencyMessage =
+    matchedVehicleProgram == null
+      ? "운용리스 시트의 현재 브랜드/모델이 차량DB에 존재하지 않습니다."
+      : vehiclePriceMatches
+        ? null
+        : `운용리스 시트 저장 차량가(${actualVehiclePrice?.toLocaleString("ko-KR") ?? "-"})와 차량DB 기준값(${expectedVehiclePrice?.toLocaleString("ko-KR") ?? "-"})이 다릅니다.`;
+
+  return {
+    sheetName: "운용리스",
+    consistency: {
+      matchedVehicleProgram: matchedVehicleProgram != null,
+      matchedBrand: matchedVehicleProgram?.brand ?? null,
+      matchedModelName: matchedVehicleProgram?.modelName ?? null,
+      expectedVehiclePrice,
+      actualVehiclePrice,
+      vehiclePriceMatches,
+      message: consistencyMessage,
+    },
+    fields: {
+      brand: readField(sheet, "BD5"),
+      modelName: readField(sheet, "BD6"),
+      vehicleClass: readField(sheet, "BD7"),
+      engineDisplacementCc: readField(sheet, "BD8"),
+      directInputVehiclePrice: readField(sheet, "BD9"),
+      basicVehiclePrice: readField(sheet, "BD10"),
+      optionAmount: readField(sheet, "BD11"),
+      discountMode: readField(sheet, "BD12"),
+      discountAmount: readField(sheet, "CE13"),
+      invoiceVehiclePrice: readField(sheet, "BD14"),
+      ownershipLabel: readField(sheet, "BD15"),
+      publicBondRate: readField(sheet, "BD16"),
+      publicBondAmount: readField(sheet, "BD17"),
+      miscFeeAmount: readField(sheet, "BD18"),
+      deliveryFeeAmount: readField(sheet, "BD20"),
+      acquisitionTaxMode: readField(sheet, "BD19"),
+      acquisitionTaxRate: readField(sheet, "CE21"),
+      leaseTermMonths: readField(sheet, "BD22"),
+      upfrontPaymentAmount: readField(sheet, "BD23"),
+      depositMode: readField(sheet, "BD24"),
+      annualMileageKm: readField(sheet, "BD26"),
+      residualMode: readField(sheet, "BD27"),
+      selectedResidualRate: readField(sheet, "BK27"),
+      minResidualRate: readField(sheet, "BK28"),
+      maxResidualRate: readField(sheet, "BK29"),
+      agFeeRate: readField(sheet, "BD30"),
+      cmFeeRate: readField(sheet, "BD31"),
+      carTaxMode: readField(sheet, "BD32"),
+      insuranceYearlyAmount: readField(sheet, "BD33"),
+      lossDamageAmount: readField(sheet, "BD34"),
+      extraService: readField(sheet, "BD35"),
+      salesOwner: readField(sheet, "BD36"),
+      appliedAnnualRate: readField(sheet, "BD37"),
+    },
+  };
+}
+
 export function parseMgWorkbook(input: ArrayBuffer, options: ParseWorkbookOptions): WorkbookPreview {
   const workbook = XLSX.read(input, {
     type: "array",
@@ -211,6 +297,7 @@ export function parseMgWorkbook(input: ArrayBuffer, options: ParseWorkbookOption
   const vehicleRows = sheetToRows(workbook, "차량DB");
   const residualRows = sheetToRows(workbook, "잔가map");
   const adminSheet = workbook.Sheets["견적관리자용"];
+  const operatingLeaseSheet = workbook.Sheets["운용리스"];
 
   const missingSheets = REQUIRED_SHEETS.filter((sheetName) => !workbook.Sheets[sheetName]);
   if (missingSheets.length > 0) {
@@ -220,6 +307,9 @@ export function parseMgWorkbook(input: ArrayBuffer, options: ParseWorkbookOption
   const vehiclePrograms = parseVehiclePrograms(vehicleRows);
   const residualMatrixRows = parseResidualMatrix(residualRows);
   const brandRatePolicies = parseBrandRatePolicies(adminSheet);
+  const sheetContracts: WorkbookSheetContracts = {
+    operatingLease: parseOperatingLeaseSheetContract(operatingLeaseSheet, vehiclePrograms),
+  };
 
   return {
     lenderCode: options.lenderCode,
@@ -238,5 +328,6 @@ export function parseMgWorkbook(input: ArrayBuffer, options: ParseWorkbookOption
     vehiclePrograms,
     residualMatrixRows,
     brandRatePolicies,
+    sheetContracts,
   };
 }

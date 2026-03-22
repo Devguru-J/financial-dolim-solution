@@ -1,25 +1,31 @@
-import { mgCatalog, mgResidualMatrixLookup } from "@/mg-catalog";
+import { mgResidualMatrixLookup } from "@/mg-catalog";
 
 type PlaygroundCatalogBrand = {
   brand: string;
   modelCount: number;
-  models: Array<{
-    modelName: string;
-    vehiclePrice: number;
-    vehicleClass: string | null;
-    engineDisplacementCc: number | null;
-    highResidualAllowed: boolean | null;
-    hybridAllowed: boolean | null;
-    residualPromotionCode: string | null;
-    snkResidualBand: string | null;
-    residuals?: Partial<Record<12 | 24 | 36 | 48 | 60, number>>;
-    snkResiduals?: Partial<Record<12 | 24 | 36 | 48 | 60, number>>;
-    apsResiduals?: Partial<Record<12 | 24 | 36 | 48 | 60, number>>;
-    chatbotResiduals?: Partial<Record<12 | 24 | 36 | 48 | 60, number>>;
-  }>;
+};
+
+type PlaygroundCatalogModel = {
+  modelName: string;
+  vehiclePrice: number;
+  vehicleClass: string | null;
+  engineDisplacementCc: number | null;
+  highResidualAllowed: boolean | null;
+  hybridAllowed: boolean | null;
+  residualPromotionCode: string | null;
+  snkResidualBand: string | null;
+  residuals?: Partial<Record<12 | 24 | 36 | 48 | 60, number>>;
+  snkResiduals?: Partial<Record<12 | 24 | 36 | 48 | 60, number>>;
+  apsResidualBand?: string | null;
+  apsResiduals?: Partial<Record<12 | 24 | 36 | 48 | 60, number>>;
+  chatbotResiduals?: Partial<Record<12 | 24 | 36 | 48 | 60, number>>;
+  apsPromotionRate?: number | null;
+  snkPromotionRate?: number | null;
+  maxResidualRates?: Partial<Record<12 | 24 | 36 | 48 | 60, number>>;
 };
 
 export function renderPlaygroundHtml() {
+  const residualMatrixLookupJson = JSON.stringify(mgResidualMatrixLookup);
   return `<!doctype html>
 <html lang="ko">
   <head>
@@ -931,6 +937,37 @@ export function renderPlaygroundHtml() {
         font-size: 12px;
       }
 
+      .sheet-source-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 10px;
+        padding: 0 14px 14px;
+      }
+
+      .sheet-source-card {
+        border: 1px solid rgba(116, 119, 125, 0.16);
+        border-radius: 10px;
+        background: rgba(255, 255, 255, 0.82);
+        padding: 10px 12px;
+      }
+
+      .sheet-source-card.warn {
+        border-color: rgba(178, 106, 0, 0.32);
+        background: rgba(178, 106, 0, 0.08);
+      }
+
+      .sheet-source-label {
+        color: var(--muted);
+        font-size: 11px;
+        margin-bottom: 4px;
+      }
+
+      .sheet-source-value {
+        font-size: 15px;
+        font-weight: 800;
+        letter-spacing: -0.02em;
+      }
+
       .advanced-panel {
         border: 1px dashed rgba(116, 119, 125, 0.24);
         border-radius: 12px;
@@ -1233,13 +1270,26 @@ export function renderPlaygroundHtml() {
                                 <select class="sheet-field" id="modelName" name="modelName"></select>
                               </div>
 
+                              <div class="sheet-label">제휴사</div>
+                              <div class="sheet-value">
+                                <select class="sheet-field" id="affiliateType" name="affiliateType">
+                                  <option value="비제휴사">비제휴사</option>
+                                  <option value="KCC오토">KCC오토</option>
+                                  <option value="KCC면제">KCC면제</option>
+                                </select>
+                              </div>
+                              <div class="sheet-label">차종직접입력</div>
+                              <div class="sheet-value">
+                                <label class="sheet-check"><input id="directModelEntry" name="directModelEntry" type="checkbox" /> 사용</label>
+                              </div>
+
                               <div class="sheet-label">차종구분</div>
                               <div class="sheet-value">
-                                <input class="sheet-field readonly" id="sheet-vehicle-class" type="text" readonly value="-" />
+                                <input class="sheet-field" id="manualVehicleClass" name="manualVehicleClass" type="text" value="-" readonly />
                               </div>
                               <div class="sheet-label">배기량</div>
                               <div class="sheet-value">
-                                <input class="sheet-field readonly tabular" id="sheet-engine-cc" type="text" readonly value="-" />
+                                <input class="sheet-field tabular" id="manualEngineDisplacementCc" name="manualEngineDisplacementCc" type="number" value="" readonly />
                               </div>
 
                               <div class="sheet-label">기본차량가</div>
@@ -1261,6 +1311,16 @@ export function renderPlaygroundHtml() {
                               </div>
                             </div>
                             <div class="sheet-note" id="selected-model-meta">선택한 모델의 차종, 배기량, 고잔가 여부와 프로모션 코드가 자동 반영됩니다.</div>
+                            <div class="sheet-source-grid" id="vehicle-price-source-grid">
+                              <div class="sheet-source-card">
+                                <div class="sheet-source-label">차량DB 기본값</div>
+                                <div class="sheet-source-value tabular" id="vehicle-price-source-model">-</div>
+                              </div>
+                              <div class="sheet-source-card">
+                                <div class="sheet-source-label">현재 입력값</div>
+                                <div class="sheet-source-value tabular" id="vehicle-price-source-input">-</div>
+                              </div>
+                            </div>
                           </div>
 
                           <div class="sheet-block">
@@ -1275,7 +1335,10 @@ export function renderPlaygroundHtml() {
                               </div>
                               <div class="sheet-label">공채</div>
                               <div class="sheet-value">
-                                <input class="sheet-field tabular" id="publicBondCost" name="publicBondCost" type="number" value="0" />
+                                <div class="sheet-inline">
+                                  <label class="sheet-check"><input id="includePublicBondCost" name="includePublicBondCost" type="checkbox" checked /> 포함</label>
+                                  <input class="sheet-field tabular" id="publicBondCost" name="publicBondCost" type="number" value="0" />
+                                </div>
                               </div>
 
                               <div class="sheet-label">리스기간(개월)</div>
@@ -1318,11 +1381,17 @@ export function renderPlaygroundHtml() {
 
                               <div class="sheet-label">기타부대비</div>
                               <div class="sheet-value">
-                                <input class="sheet-field readonly tabular" id="sheet-extra-fees" type="text" readonly value="0" />
+                                <div class="sheet-inline">
+                                  <label class="sheet-check"><input id="includeMiscFeeAmount" name="includeMiscFeeAmount" type="checkbox" checked /> 포함</label>
+                                  <input class="sheet-field tabular" id="miscFeeAmount" name="miscFeeAmount" type="number" value="0" />
+                                </div>
                               </div>
                               <div class="sheet-label">탁송료</div>
                               <div class="sheet-value">
-                                <input class="sheet-field readonly tabular" id="sheet-delivery-fee" type="text" readonly value="0" />
+                                <div class="sheet-inline">
+                                  <label class="sheet-check"><input id="includeDeliveryFeeAmount" name="includeDeliveryFeeAmount" type="checkbox" checked /> 포함</label>
+                                  <input class="sheet-field tabular" id="deliveryFeeAmount" name="deliveryFeeAmount" type="number" value="0" />
+                                </div>
                               </div>
 
                               <div class="sheet-label">자동차세</div>
@@ -1331,16 +1400,25 @@ export function renderPlaygroundHtml() {
                               </div>
                               <div class="sheet-label">보험료(年)</div>
                               <div class="sheet-value">
-                                <input class="sheet-field readonly tabular" id="sheet-insurance" type="text" readonly value="-" />
+                                <input class="sheet-field tabular" id="insuranceYearlyAmount" name="insuranceYearlyAmount" type="number" value="0" />
+                              </div>
+
+                              <div class="sheet-label">이손액(수입수수료)</div>
+                              <div class="sheet-value">
+                                <input class="sheet-field tabular" id="lossDamageAmount" name="lossDamageAmount" type="number" value="0" />
+                              </div>
+                              <div class="sheet-label">영업담당자</div>
+                              <div class="sheet-value">
+                                <input class="sheet-field readonly" id="sheet-sales-owner" type="text" readonly value="-" />
                               </div>
 
                               <div class="sheet-label">부가서비스</div>
                               <div class="sheet-value">
                                 <input class="sheet-field readonly" id="sheet-extra-service" type="text" readonly value="-" />
                               </div>
-                              <div class="sheet-label">영업담당자</div>
+                              <div class="sheet-label">보증금률 표시기준</div>
                               <div class="sheet-value">
-                                <input class="sheet-field readonly" id="sheet-sales-owner" type="text" readonly value="-" />
+                                <input class="sheet-field readonly" id="sheet-deposit-basis" type="text" readonly value="차량가 기준" />
                               </div>
                             </div>
                           </div>
@@ -1397,7 +1475,7 @@ export function renderPlaygroundHtml() {
 
                               <div class="sheet-label">인지세</div>
                               <div class="sheet-value">
-                                <input class="sheet-field tabular" id="stampDuty" name="stampDuty" type="number" value="0" />
+                                <input class="sheet-field tabular" id="stampDuty" name="stampDuty" type="number" value="" placeholder="자동(10,000)" />
                               </div>
                               <div class="sheet-label">잔가금액 override</div>
                               <div class="sheet-value">
@@ -1424,7 +1502,7 @@ export function renderPlaygroundHtml() {
                         </div>
                         <div class="form-actions">
                           <button class="btn btn-secondary" id="reset-workbook-defaults" type="button">엑셀 기본값 적용</button>
-                          <button class="btn btn-primary" id="quote-submit-button" type="submit">견적 계산</button>
+                          <button class="btn btn-primary" id="quote-submit-button" type="button">견적 계산</button>
                           <button class="btn btn-secondary" id="reset-selected-residual" type="button">잔가 선택값 지우기</button>
                         </div>
                         <div class="callout warning hidden" id="workbook-diff-warning" style="margin-top: 10px"></div>
@@ -1623,8 +1701,9 @@ export function renderPlaygroundHtml() {
     </div>
 
     <script>
+      const residualMatrixLookup = ${residualMatrixLookupJson};
       const navButtons = Array.from(document.querySelectorAll('.nav-button'));
-      const initialBrands = ${JSON.stringify(mgCatalog)};
+      const initialBrands = [];
       const sections = Array.from(document.querySelectorAll('.section'));
       const jumpButtons = Array.from(document.querySelectorAll('[data-target-jump]'));
 
@@ -1647,8 +1726,14 @@ export function renderPlaygroundHtml() {
       const brandSelect = document.getElementById('brand');
       const modelSelect = document.getElementById('modelName');
       const selectedModelMeta = document.getElementById('selected-model-meta');
-      const sheetVehicleClass = document.getElementById('sheet-vehicle-class');
-      const sheetEngineCc = document.getElementById('sheet-engine-cc');
+      const vehiclePriceSourceModel = document.getElementById('vehicle-price-source-model');
+      const vehiclePriceSourceContract = document.getElementById('vehicle-price-source-contract');
+      const vehiclePriceSourceInput = document.getElementById('vehicle-price-source-input');
+      const vehiclePriceSourceGrid = document.getElementById('vehicle-price-source-grid');
+      const manualVehicleClassInput = document.getElementById('manualVehicleClass');
+      const manualEngineDisplacementCcInput = document.getElementById('manualEngineDisplacementCc');
+      const affiliateTypeInput = document.getElementById('affiliateType');
+      const directModelEntryInput = document.getElementById('directModelEntry');
       const optionAmountDisplay = document.getElementById('optionAmountDisplay');
       const discountedVehiclePriceDisplay = document.getElementById('discountedVehiclePriceDisplay');
       const sheetAcquisitionTaxAmount = document.getElementById('sheet-acquisition-tax-amount');
@@ -1660,12 +1745,14 @@ export function renderPlaygroundHtml() {
       const annualRateHelp = document.getElementById('annual-rate-help');
       const sheetHighResidual = document.getElementById('sheet-high-residual');
       const sheetPromoCode = document.getElementById('sheet-promo-code');
-      const sheetExtraFees = document.getElementById('sheet-extra-fees');
-      const sheetDeliveryFee = document.getElementById('sheet-delivery-fee');
+      const miscFeeAmountInput = document.getElementById('miscFeeAmount');
+      const deliveryFeeAmountInput = document.getElementById('deliveryFeeAmount');
       const sheetCarTax = document.getElementById('sheet-car-tax');
-      const sheetInsurance = document.getElementById('sheet-insurance');
+      const insuranceYearlyAmountInput = document.getElementById('insuranceYearlyAmount');
       const sheetExtraService = document.getElementById('sheet-extra-service');
       const sheetSalesOwner = document.getElementById('sheet-sales-owner');
+      const sheetDepositBasis = document.getElementById('sheet-deposit-basis');
+      const lossDamageAmountInput = document.getElementById('lossDamageAmount');
       const agFeeRateInput = document.getElementById('agFeeRate');
       const cmFeeRateInput = document.getElementById('cmFeeRate');
       const quoteCatalogBrandCount = document.getElementById('quote-catalog-brand-count');
@@ -1695,8 +1782,11 @@ export function renderPlaygroundHtml() {
       const refreshDashboardButton = document.getElementById('refresh-dashboard');
       let activeCatalog = initialBrands;
       let activeModels = [];
+      let activeWorkbookContract = null;
       let autoCalculateTimer = null;
       let quoteRequestController = null;
+      let quoteRequestSequence = 0;
+      let quoteCalculationInFlight = false;
 
       function setSection(target) {
         navButtons.forEach((button) => {
@@ -1727,6 +1817,10 @@ export function renderPlaygroundHtml() {
         }).format(Number(value || 0));
       }
 
+      function roundUpToNearestHundred(value) {
+        return Math.ceil(Number(value || 0) / 100) * 100;
+      }
+
       function minimumResidualRateByTerm(termMonths) {
         const lookup = {
           12: 0.5,
@@ -1742,13 +1836,17 @@ export function renderPlaygroundHtml() {
         if (!model) return null;
 
         const term = Number(termMonths);
+        const apiMaxRate = Number(model.maxResidualRates?.[term]);
+        if (Number.isFinite(apiMaxRate)) {
+          return apiMaxRate;
+        }
         const band = model.snkResidualBand;
         const fromMatrix =
-          band && mgResidualMatrixLookup[band] && mgResidualMatrixLookup[band][term]
+          band && residualMatrixLookup[band] && residualMatrixLookup[band][term]
             ? Number(
-                mgResidualMatrixLookup[band][term]['에스앤케이모터스'] ??
-                  mgResidualMatrixLookup[band][term]['APS'] ??
-                  Object.values(mgResidualMatrixLookup[band][term])[0],
+                residualMatrixLookup[band][term]['에스앤케이모터스'] ??
+                  residualMatrixLookup[band][term]['APS'] ??
+                  Object.values(residualMatrixLookup[band][term])[0],
               )
             : null;
 
@@ -1800,6 +1898,82 @@ export function renderPlaygroundHtml() {
         field.value = value;
       }
 
+      function renderVehiclePriceSources(model) {
+        const modelPrice = model ? Number(model.vehiclePrice) : undefined;
+        const rawContractPrice = contractNumber('basicVehiclePrice');
+        const inputPrice = Number(quoteForm.elements.namedItem('quotedVehiclePrice').value || 0);
+
+        vehiclePriceSourceModel.textContent = modelPrice == null ? '-' : '₩ ' + formatNumber(modelPrice);
+        vehiclePriceSourceInput.textContent = inputPrice > 0 ? '₩ ' + formatNumber(inputPrice) : '-';
+
+        Array.from(vehiclePriceSourceGrid.children).forEach((node) => node.classList.remove('warn'));
+
+        if (inputPrice > 0) {
+          const baseline = modelPrice;
+          if (baseline != null && Number(inputPrice) !== Number(baseline)) {
+            vehiclePriceSourceGrid.children[1].classList.add('warn');
+          }
+        }
+      }
+
+      function contractFieldValue(name) {
+        return activeWorkbookContract && activeWorkbookContract.fields ? activeWorkbookContract.fields[name] : null;
+      }
+
+      function contractNumber(name) {
+        const field = contractFieldValue(name);
+        if (!field) return undefined;
+        const value = field.value;
+        if (typeof value === 'number' && Number.isFinite(value)) return value;
+        if (typeof value === 'string') {
+          const parsed = Number(String(value).replace(/,/g, '').trim());
+          return Number.isFinite(parsed) ? parsed : undefined;
+        }
+        return undefined;
+      }
+
+      function contractText(name) {
+        const field = contractFieldValue(name);
+        if (!field) return undefined;
+        if (typeof field.value === 'string' && field.value.trim()) return field.value.trim();
+        if (field.displayText && field.displayText.trim()) return field.displayText.trim();
+        return undefined;
+      }
+
+      function getContractVehiclePriceForCurrentSelection() {
+        if (
+          activeWorkbookContract &&
+          activeWorkbookContract.consistency &&
+          activeWorkbookContract.consistency.vehiclePriceMatches === false
+        ) {
+          return undefined;
+        }
+
+        const contractBrand = contractText('brand');
+        const contractModel = contractText('modelName');
+        const contractBasicVehiclePrice = contractNumber('basicVehiclePrice');
+
+        if (
+          contractBasicVehiclePrice != null &&
+          contractBrand &&
+          contractModel &&
+          brandSelect.value === contractBrand &&
+          modelSelect.value === contractModel
+        ) {
+          return contractBasicVehiclePrice;
+        }
+
+        return undefined;
+      }
+
+      function canUseWorkbookContractDefaults() {
+        return !(
+          activeWorkbookContract &&
+          activeWorkbookContract.consistency &&
+          activeWorkbookContract.consistency.vehiclePriceMatches === false
+        );
+      }
+
       function updateDiscountedVehiclePriceDisplay() {
         const basePrice = Number(quoteForm.elements.namedItem('quotedVehiclePrice').value || 0);
         const discountAmount = Number(quoteForm.elements.namedItem('discountAmount').value || 0);
@@ -1811,19 +1985,48 @@ export function renderPlaygroundHtml() {
       function resetWorkbookDefaults(options) {
         const preserveResidualSelection = options && options.preserveResidualSelection === true;
         const model = activeModels.find((entry) => entry.modelName === modelSelect.value) || null;
+        const useContractDefaults = canUseWorkbookContractDefaults();
+
+        const contractOwnership = useContractDefaults ? contractText('ownershipLabel') : undefined;
+        const contractLeaseTermMonths = useContractDefaults ? contractNumber('leaseTermMonths') : undefined;
+        const contractAnnualMileageKm = useContractDefaults ? contractNumber('annualMileageKm') : undefined;
+        const contractDiscountAmount = useContractDefaults ? contractNumber('discountAmount') : undefined;
+        const contractPublicBondAmount = useContractDefaults ? contractNumber('publicBondAmount') : undefined;
+        const contractMiscFeeAmount = useContractDefaults ? contractNumber('miscFeeAmount') : undefined;
+        const contractDeliveryFeeAmount = useContractDefaults ? contractNumber('deliveryFeeAmount') : undefined;
+        const contractUpfrontPaymentAmount = useContractDefaults ? contractNumber('upfrontPaymentAmount') : undefined;
+        const contractAcquisitionTaxRate = useContractDefaults ? contractNumber('acquisitionTaxRate') : undefined;
+        const contractInsuranceYearlyAmount = useContractDefaults ? contractNumber('insuranceYearlyAmount') : undefined;
+        const contractLossDamageAmount = useContractDefaults ? contractNumber('lossDamageAmount') : undefined;
+        const contractCmFeeRate = useContractDefaults ? contractNumber('cmFeeRate') : undefined;
+        const contractSelectedResidualRate = useContractDefaults ? contractNumber('selectedResidualRate') : undefined;
+        const contractAppliedAnnualRate = useContractDefaults ? contractNumber('appliedAnnualRate') : undefined;
 
         if (model) {
           quoteForm.elements.namedItem('quotedVehiclePrice').value = String(model.vehiclePrice);
         }
 
-        quoteForm.elements.namedItem('discountAmount').value = '0';
-        quoteForm.elements.namedItem('publicBondCost').value = '0';
-        quoteForm.elements.namedItem('upfrontPayment').value = '0';
+        quoteForm.elements.namedItem('ownershipType').value =
+          contractOwnership && contractOwnership.includes('고객') ? 'customer' : 'company';
+        quoteForm.elements.namedItem('leaseTermMonths').value = String(contractLeaseTermMonths ?? 36);
+        quoteForm.elements.namedItem('annualMileageKm').value = String(contractAnnualMileageKm ?? 20000);
+        quoteForm.elements.namedItem('discountAmount').value = String(contractDiscountAmount ?? 0);
+        quoteForm.elements.namedItem('includePublicBondCost').checked = true;
+        quoteForm.elements.namedItem('publicBondCost').value = String(contractPublicBondAmount ?? 0);
+        quoteForm.elements.namedItem('includeMiscFeeAmount').checked = true;
+        quoteForm.elements.namedItem('miscFeeAmount').value = String(contractMiscFeeAmount ?? 0);
+        quoteForm.elements.namedItem('includeDeliveryFeeAmount').checked = true;
+        quoteForm.elements.namedItem('deliveryFeeAmount').value = String(contractDeliveryFeeAmount ?? 0);
+        quoteForm.elements.namedItem('upfrontPayment').value = String(contractUpfrontPaymentAmount ?? 0);
         quoteForm.elements.namedItem('depositAmount').value = '0';
-        quoteForm.elements.namedItem('acquisitionTaxRateOverride').value = '0.07';
-        quoteForm.elements.namedItem('stampDuty').value = '0';
+        quoteForm.elements.namedItem('acquisitionTaxRateOverride').value = String(contractAcquisitionTaxRate ?? 0.07);
+        quoteForm.elements.namedItem('stampDuty').value = '';
+        quoteForm.elements.namedItem('insuranceYearlyAmount').value = String(contractInsuranceYearlyAmount ?? 0);
+        quoteForm.elements.namedItem('lossDamageAmount').value = String(contractLossDamageAmount ?? 0);
+        quoteForm.elements.namedItem('affiliateType').value = '비제휴사';
+        quoteForm.elements.namedItem('directModelEntry').checked = false;
         agFeeRateInput.value = '0%';
-        cmFeeRateInput.value = '0%';
+        cmFeeRateInput.value = formatPercentInputValue(contractCmFeeRate ?? 0) + '%';
 
         if (!preserveResidualSelection) {
           quoteForm.elements.namedItem('selectedResidualRateOverride').value = '';
@@ -1832,18 +2035,43 @@ export function renderPlaygroundHtml() {
 
         annualIrrRateInput.dataset.manual = 'false';
         annualIrrRateInput.value = '';
+        if (contractAppliedAnnualRate != null) {
+          setAnnualRateAutoDisplay(contractAppliedAnnualRate);
+        } else {
+          setAnnualRateAutoDisplay(undefined);
+        }
+        manualVehicleClassInput.readOnly = true;
+        manualEngineDisplacementCcInput.readOnly = true;
         updateDiscountedVehiclePriceDisplay();
+        renderVehiclePriceSources(model);
       }
 
       function updateWorkbookDiffWarning() {
         const model = activeModels.find((entry) => entry.modelName === modelSelect.value) || null;
         const diffs = [];
+        const contractVehiclePrice = getContractVehiclePriceForCurrentSelection();
+        const currentVehiclePrice = Number(quoteForm.elements.namedItem('quotedVehiclePrice').value || 0);
 
         if (model) {
-          const currentVehiclePrice = Number(quoteForm.elements.namedItem('quotedVehiclePrice').value || 0);
           if (currentVehiclePrice !== Number(model.vehiclePrice)) {
-            diffs.push('기본차량가가 활성 워크북 값(₩ ' + formatNumber(model.vehiclePrice) + ')과 다릅니다.');
+            diffs.push('기본차량가가 차량DB 기준값(₩ ' + formatNumber(model.vehiclePrice) + ')과 다릅니다.');
           }
+        }
+
+        if (
+          activeWorkbookContract &&
+          activeWorkbookContract.consistency &&
+          activeWorkbookContract.consistency.message
+        ) {
+          diffs.push(activeWorkbookContract.consistency.message);
+        }
+
+        if (contractVehiclePrice != null && model && Number(contractVehiclePrice) !== Number(model.vehiclePrice)) {
+          diffs.push(
+            '현재 운용리스 시트 저장값(₩ ' +
+              formatNumber(contractVehiclePrice) +
+              ')이 차량DB 기준값과 다릅니다. 이 값은 비교용 참고값이며 자동 기본차량가로는 사용하지 않습니다.',
+          );
         }
 
         const agFeeRate = parsePercentInput(agFeeRateInput.value) ?? 0;
@@ -1858,8 +2086,37 @@ export function renderPlaygroundHtml() {
         }
 
         const publicBondCost = Number(quoteForm.elements.namedItem('publicBondCost').value || 0);
-        if (publicBondCost !== 0) {
+        const includePublicBondCost = quoteForm.elements.namedItem('includePublicBondCost').checked;
+        if (!includePublicBondCost) {
+          diffs.push('공채 포함 체크가 해제되어 있습니다.');
+        } else if (publicBondCost !== 0) {
           diffs.push('공채 값이 수동 입력 상태입니다.');
+        }
+
+        const miscFeeAmount = Number(quoteForm.elements.namedItem('miscFeeAmount').value || 0);
+        const includeMiscFeeAmount = quoteForm.elements.namedItem('includeMiscFeeAmount').checked;
+        if (!includeMiscFeeAmount) {
+          diffs.push('기타부대비 포함 체크가 해제되어 있습니다.');
+        } else if (miscFeeAmount !== 0) {
+          diffs.push('기타부대비가 엑셀 기본값 0원과 다릅니다.');
+        }
+
+        const deliveryFeeAmount = Number(quoteForm.elements.namedItem('deliveryFeeAmount').value || 0);
+        const includeDeliveryFeeAmount = quoteForm.elements.namedItem('includeDeliveryFeeAmount').checked;
+        if (!includeDeliveryFeeAmount) {
+          diffs.push('탁송료 포함 체크가 해제되어 있습니다.');
+        } else if (deliveryFeeAmount !== 0) {
+          diffs.push('탁송료가 엑셀 기본값 0원과 다릅니다.');
+        }
+
+        const insuranceYearlyAmount = Number(quoteForm.elements.namedItem('insuranceYearlyAmount').value || 0);
+        if (insuranceYearlyAmount !== 0) {
+          diffs.push('보험료(年)가 엑셀 기본값 0원과 다릅니다.');
+        }
+
+        const lossDamageAmount = Number(quoteForm.elements.namedItem('lossDamageAmount').value || 0);
+        if (lossDamageAmount !== 0) {
+          diffs.push('이손액이 엑셀 기본값 0원과 다릅니다.');
         }
 
         if (diffs.length === 0) {
@@ -1874,8 +2131,10 @@ export function renderPlaygroundHtml() {
       }
 
       function setAutoSummaryFromModel(model) {
-        setFieldValue(sheetEngineCc, model && model.engineDisplacementCc ? formatNumber(model.engineDisplacementCc) + 'cc' : '-');
-        setFieldValue(sheetVehicleClass, model && model.vehicleClass ? model.vehicleClass : '-');
+        if (!directModelEntryInput.checked) {
+          setFieldValue(manualEngineDisplacementCcInput, model && model.engineDisplacementCc ? model.engineDisplacementCc : '');
+          setFieldValue(manualVehicleClassInput, model && model.vehicleClass ? model.vehicleClass : '-');
+        }
         setFieldValue(sheetHighResidual, model ? (model.highResidualAllowed ? '가능' : '기본') : '-');
         setFieldValue(sheetPromoCode, model && model.residualPromotionCode ? model.residualPromotionCode : '-');
         optionAmountDisplay.value = '0';
@@ -1891,12 +2150,11 @@ export function renderPlaygroundHtml() {
           setFieldValue(sheetAcquisitionTaxAmount, '-');
           setFieldValue(sheetMinResidualRate, '-');
           setFieldValue(sheetMaxResidualRate, '-');
-          setFieldValue(sheetExtraFees, '0');
-          setFieldValue(sheetDeliveryFee, '0');
           setFieldValue(sheetCarTax, '미포함');
-          setFieldValue(sheetInsurance, '-');
           setFieldValue(sheetExtraService, '-');
           setFieldValue(sheetSalesOwner, '-');
+          setFieldValue(sheetDepositBasis, '차량가 기준');
+          renderVehiclePriceSources(activeModels.find((entry) => entry.modelName === modelSelect.value) || null);
           return;
         }
 
@@ -1908,17 +2166,24 @@ export function renderPlaygroundHtml() {
         setFieldValue(sheetAcquisitionTaxAmount, '₩ ' + formatNumber(quote.feesAndTaxes.acquisitionTax));
         setFieldValue(sheetMinResidualRate, quote.residual.minRateDecimal == null ? '-' : formatPercent(quote.residual.minRateDecimal));
         setFieldValue(sheetMaxResidualRate, quote.residual.maxRateDecimal == null ? '-' : formatPercent(quote.residual.maxRateDecimal));
-        setFieldValue(sheetExtraFees, formatNumber(quote.feesAndTaxes.extraFees || 0));
+        setFieldValue(sheetDepositBasis, '차량가 기준');
+        renderVehiclePriceSources(activeModels.find((entry) => entry.modelName === modelSelect.value) || null);
       }
 
       function scheduleAutoCalculate() {
         if (autoCalculateTimer) {
           clearTimeout(autoCalculateTimer);
+          autoCalculateTimer = null;
         }
+
         autoCalculateTimer = setTimeout(() => {
-          if (!brandSelect.value || !modelSelect.value) return;
-          quoteForm.requestSubmit();
-        }, 180);
+          autoCalculateTimer = null;
+          if (quoteCalculationInFlight) {
+            scheduleAutoCalculate();
+            return;
+          }
+          void runQuoteCalculation();
+        }, 250);
       }
 
       function renderCatalogBrands(brands) {
@@ -1943,8 +2208,26 @@ export function renderPlaygroundHtml() {
           return;
         }
 
-        const brandEntry = activeCatalog.find((entry) => entry.brand === brand) || null;
-        activeModels = brandEntry ? brandEntry.models : [];
+        modelSelect.innerHTML = '<option value="">모델 불러오는 중</option>';
+        modelSelect.disabled = true;
+
+        try {
+          const response = await fetch('/api/catalog/models?lenderCode=mg-capital&brand=' + encodeURIComponent(brand));
+          const json = await response.json();
+
+          if (!response.ok || !json.ok) {
+            throw new Error(json.error || '모델 카탈로그를 불러오지 못했습니다.');
+          }
+
+          activeModels = Array.isArray(json.models) ? json.models : [];
+        } catch (error) {
+          activeModels = [];
+          modelSelect.innerHTML = '<option value="">모델 없음</option>';
+          modelSelect.disabled = true;
+          selectedModelMeta.textContent =
+            error instanceof Error ? error.message : '선택한 브랜드의 모델을 불러오지 못했습니다.';
+          return;
+        }
 
         if (activeModels.length === 0) {
           modelSelect.innerHTML = '<option value="">모델 없음</option>';
@@ -1974,6 +2257,7 @@ export function renderPlaygroundHtml() {
         if (!model) {
           selectedModelMeta.textContent = '현재 선택된 모델의 메타데이터가 없습니다.';
           setAutoSummaryFromModel(null);
+          renderVehiclePriceSources(null);
           return;
         }
 
@@ -1991,6 +2275,7 @@ export function renderPlaygroundHtml() {
         quoteForm.elements.namedItem('quotedVehiclePrice').value = String(model.vehiclePrice);
         setAutoSummaryFromModel(model);
         updateWorkbookDiffWarning();
+        renderVehiclePriceSources(model);
       }
 
       function renderCatalogList(brands) {
@@ -2017,6 +2302,13 @@ export function renderPlaygroundHtml() {
         const value = data.get(key);
         if (value === null || value === '') return undefined;
         return Number(value);
+      }
+
+      function readText(data, key) {
+        const value = data.get(key);
+        if (value == null) return undefined;
+        const normalized = String(value).trim();
+        return normalized ? normalized : undefined;
       }
 
       function parsePercentInput(rawValue) {
@@ -2074,11 +2366,18 @@ export function renderPlaygroundHtml() {
 
       function readQuotePayload() {
         const data = new FormData(quoteForm);
+        const annualIrrRateOverride = isManualAnnualRateOverride()
+          ? parsePercentInput(data.get('annualIrrRateOverride'))
+          : undefined;
         const payload = {
           lenderCode: 'mg-capital',
           productType: 'operating_lease',
           brand: String(data.get('brand')),
           modelName: String(data.get('modelName')),
+          affiliateType: String(data.get('affiliateType') || '비제휴사'),
+          directModelEntry: data.get('directModelEntry') != null,
+          manualVehicleClass: readText(data, 'manualVehicleClass'),
+          manualEngineDisplacementCc: readNumber(data, 'manualEngineDisplacementCc'),
           ownershipType: String(data.get('ownershipType')),
           leaseTermMonths: Number(data.get('leaseTermMonths')),
           annualMileageKm: Number(data.get('annualMileageKm')),
@@ -2086,8 +2385,13 @@ export function renderPlaygroundHtml() {
           depositAmount: Number(data.get('depositAmount') || 0),
           quotedVehiclePrice: readNumber(data, 'quotedVehiclePrice'),
           discountAmount: readNumber(data, 'discountAmount'),
+          includePublicBondCost: data.get('includePublicBondCost') != null,
           publicBondCost: readNumber(data, 'publicBondCost'),
-          annualIrrRateOverride: parsePercentInput(data.get('annualIrrRateOverride')),
+          includeMiscFeeAmount: data.get('includeMiscFeeAmount') != null,
+          miscFeeAmount: readNumber(data, 'miscFeeAmount'),
+          includeDeliveryFeeAmount: data.get('includeDeliveryFeeAmount') != null,
+          deliveryFeeAmount: readNumber(data, 'deliveryFeeAmount'),
+          annualIrrRateOverride,
           annualEffectiveRateOverride: readNumber(data, 'annualEffectiveRateOverride'),
           paymentRateOverride: readNumber(data, 'paymentRateOverride'),
           selectedResidualRateOverride: parsePercentInput(data.get('selectedResidualRateOverride')),
@@ -2096,6 +2400,8 @@ export function renderPlaygroundHtml() {
           stampDuty: readNumber(data, 'stampDuty'),
           agFeeRate: parsePercentInput(data.get('agFeeRate')),
           cmFeeRate: parsePercentInput(data.get('cmFeeRate')),
+          insuranceYearlyAmount: readNumber(data, 'insuranceYearlyAmount'),
+          lossDamageAmount: readNumber(data, 'lossDamageAmount'),
         };
 
         return payload;
@@ -2174,7 +2480,7 @@ export function renderPlaygroundHtml() {
           button.textContent = '이 잔가율로 재계산';
           button.addEventListener('click', () => {
             quoteForm.elements.namedItem('selectedResidualRateOverride').value = formatPercentInputValue(candidate.boostedRate) + '%';
-            quoteForm.requestSubmit();
+            void runQuoteCalculation();
           });
           card.appendChild(button);
           candidateList.appendChild(card);
@@ -2189,6 +2495,7 @@ export function renderPlaygroundHtml() {
 
         const workbookLabel = quote.workbookImport ? quote.workbookImport.versionLabel : '-';
         const matrixGroup = quote.residual && quote.residual.matrixGroup ? quote.residual.matrixGroup : '미지정';
+        const displayMonthlyPayment = roundUpToNearestHundred(quote.monthlyPayment);
         const currentInputSummary =
           quote.resolvedVehicle.brand +
           ' · ' +
@@ -2202,9 +2509,10 @@ export function renderPlaygroundHtml() {
         quoteSummary.innerHTML =
           '<div class="result-card primary">' +
           '<div class="label">월 납입금</div>' +
-          '<div class="result-value tabular">₩ ' + formatNumber(quote.monthlyPayment) + '</div>' +
+          '<div class="result-value tabular">₩ ' + formatNumber(displayMonthlyPayment) + '</div>' +
           '<div class="card-subtitle" style="color: rgba(255,255,255,0.7); margin-top: 8px;">' + workbookLabel + ' 기준 · ' + matrixGroup + '</div>' +
           '<div class="card-subtitle" style="color: rgba(255,255,255,0.82); margin-top: 6px;">' + currentInputSummary + '</div>' +
+          '<div class="card-subtitle" style="color: rgba(255,255,255,0.62); margin-top: 4px;">내부 계산값 ₩ ' + formatNumber(quote.monthlyPayment) + '</div>' +
           '</div>' +
           '<div class="result-card"><div class="label">적용 잔가율</div><div class="result-value tabular">' + formatPercent(quote.residual.rateDecimal) + '</div></div>' +
           '<div class="result-card"><div class="label">잔가금액</div><div class="result-value tabular">₩ ' + formatNumber(quote.residual.amount) + '</div></div>' +
@@ -2215,35 +2523,73 @@ export function renderPlaygroundHtml() {
           '<div class="result-card"><div class="label">인지세</div><div class="result-value tabular">₩ ' + formatNumber(quote.feesAndTaxes.stampDuty) + '</div></div>';
       }
 
+      async function requestQuoteCalculation(payload, requestId) {
+        if (quoteRequestController) {
+          quoteRequestController.abort();
+        }
+
+        const controller = new AbortController();
+        quoteRequestController = controller;
+
+        let timeoutId = null;
+        const timeoutPromise = new Promise((_, reject) => {
+          timeoutId = setTimeout(() => {
+            controller.abort();
+            reject(new Error('계산 요청 시간이 초과되었습니다.'));
+          }, 8000);
+        });
+
+        try {
+          const response = await Promise.race([
+            fetch('/api/quotes/calculate', {
+              method: 'POST',
+              headers: {
+                'content-type': 'application/json',
+              },
+              body: JSON.stringify(payload),
+              signal: controller.signal,
+            }),
+            timeoutPromise,
+          ]);
+
+          const rawText = await Promise.race([response.text(), timeoutPromise]);
+          return {
+            response,
+            rawText,
+            json: parseJsonSafely(rawText),
+          };
+        } finally {
+          if (timeoutId) {
+            clearTimeout(timeoutId);
+          }
+          if (quoteRequestController === controller) {
+            quoteRequestController = null;
+          }
+        }
+      }
+
       async function runQuoteCalculation() {
+        if (quoteCalculationInFlight) {
+          setQuoteSubmitState('loading', '이전 계산 요청을 처리 중입니다. 잠시만 기다려주세요...');
+          return;
+        }
+
+        quoteCalculationInFlight = true;
+        const requestId = ++quoteRequestSequence;
         const payload = readQuotePayload();
         setQuoteSubmitState('loading', '견적 계산 요청을 보내는 중입니다...');
         quoteSummary.innerHTML = '<div class="empty-state">견적 계산 중입니다. 잠시만 기다려주세요.</div>';
+        quoteWarnings.innerHTML = '';
+        renderSelectionGuide(null);
+        renderCandidateList(null);
 
         try {
-          if (quoteRequestController) {
-            quoteRequestController.abort();
+          const { response, rawText, json } = await requestQuoteCalculation(payload, requestId);
+
+          if (requestId !== quoteRequestSequence) {
+            return;
           }
 
-          quoteRequestController = new AbortController();
-          const timeoutId = setTimeout(() => {
-            if (quoteRequestController) {
-              quoteRequestController.abort();
-            }
-          }, 8000);
-
-          const response = await fetch('/api/quotes/calculate', {
-            method: 'POST',
-            headers: {
-              'content-type': 'application/json',
-            },
-            body: JSON.stringify(payload),
-            signal: quoteRequestController.signal,
-          });
-          clearTimeout(timeoutId);
-
-          const rawText = await response.text();
-          const json = parseJsonSafely(rawText);
           setRawResponse(json ?? { ok: false, rawText });
 
           if (!json) {
@@ -2274,6 +2620,10 @@ export function renderPlaygroundHtml() {
           setAutoSummaryFromQuote(json.quote);
           setQuoteSubmitState('success', '계산이 완료되었습니다. 결과 카드와 잔가 후보를 확인해주세요.');
         } catch (error) {
+          if (requestId !== quoteRequestSequence) {
+            return;
+          }
+
           renderQuoteSummary(null);
           renderSelectionGuide(null);
           renderCandidateList(null);
@@ -2288,13 +2638,19 @@ export function renderPlaygroundHtml() {
           setRawResponse({ ok: false, error: message });
           setQuoteSubmitState('error', '요청이 지연되었거나 실패했습니다. 입력값과 로컬 서버 로그를 확인해주세요.');
         } finally {
-          quoteRequestController = null;
+          if (requestId === quoteRequestSequence) {
+            quoteCalculationInFlight = false;
+          }
         }
       }
 
-      quoteForm.addEventListener('submit', async (event) => {
+      quoteForm.addEventListener('submit', (event) => {
         event.preventDefault();
-        await runQuoteCalculation();
+        void runQuoteCalculation();
+      });
+
+      quoteSubmitButton.addEventListener('click', () => {
+        void runQuoteCalculation();
       });
 
       brandSelect.addEventListener('change', () => {
@@ -2313,6 +2669,25 @@ export function renderPlaygroundHtml() {
         }
         syncSelectedModelMeta();
         resetWorkbookDefaults({ preserveResidualSelection: false });
+        updateWorkbookDiffWarning();
+        scheduleAutoCalculate();
+      });
+
+      directModelEntryInput.addEventListener('change', () => {
+        const enabled = directModelEntryInput.checked;
+        manualVehicleClassInput.readOnly = !enabled;
+        manualEngineDisplacementCcInput.readOnly = !enabled;
+        if (!enabled) {
+          syncSelectedModelMeta();
+        }
+        updateWorkbookDiffWarning();
+        scheduleAutoCalculate();
+      });
+
+      affiliateTypeInput.addEventListener('change', () => {
+        if (!isManualAnnualRateOverride()) {
+          annualIrrRateInput.value = '';
+        }
         updateWorkbookDiffWarning();
         scheduleAutoCalculate();
       });
@@ -2383,7 +2758,7 @@ export function renderPlaygroundHtml() {
         });
       });
 
-      ['ownershipType', 'leaseTermMonths', 'annualMileageKm', 'quotedVehiclePrice', 'discountAmount', 'upfrontPayment', 'depositAmount', 'publicBondCost', 'acquisitionTaxRateOverride', 'stampDuty'].forEach((name) => {
+      ['ownershipType', 'leaseTermMonths', 'annualMileageKm', 'quotedVehiclePrice', 'discountAmount', 'upfrontPayment', 'depositAmount', 'publicBondCost', 'miscFeeAmount', 'deliveryFeeAmount', 'insuranceYearlyAmount', 'lossDamageAmount', 'acquisitionTaxRateOverride', 'stampDuty', 'includePublicBondCost', 'includeMiscFeeAmount', 'includeDeliveryFeeAmount'].forEach((name) => {
         const field = quoteForm.elements.namedItem(name);
         if (field) {
           field.addEventListener('change', () => {
@@ -2396,11 +2771,17 @@ export function renderPlaygroundHtml() {
             }
             updateDiscountedVehiclePriceDisplay();
             updateWorkbookDiffWarning();
+            if (name === 'quotedVehiclePrice') {
+              renderVehiclePriceSources(activeModels.find((entry) => entry.modelName === modelSelect.value) || null);
+            }
             scheduleAutoCalculate();
           });
           field.addEventListener('input', () => {
             updateDiscountedVehiclePriceDisplay();
             updateWorkbookDiffWarning();
+            if (name === 'quotedVehiclePrice') {
+              renderVehiclePriceSources(activeModels.find((entry) => entry.modelName === modelSelect.value) || null);
+            }
             scheduleAutoCalculate();
           });
         }
@@ -2513,7 +2894,30 @@ export function renderPlaygroundHtml() {
       }
 
       async function refreshCatalog() {
-        activeCatalog = initialBrands;
+        try {
+          const response = await fetch('/api/catalog/brands?lenderCode=mg-capital');
+          const json = await response.json();
+
+          if (!response.ok || !json.ok) {
+            throw new Error(json.error || '브랜드 카탈로그를 불러오지 못했습니다.');
+          }
+
+          activeCatalog = Array.isArray(json.brands) ? json.brands : [];
+        } catch (error) {
+          activeCatalog = [];
+          catalogBrandCount.textContent = '0';
+          catalogModelCount.textContent = '0';
+          quoteCatalogBrandCount.textContent = '0';
+          quoteCatalogModelCount.textContent = '0';
+          renderCatalogList([]);
+          renderCatalogBrands([]);
+          modelSelect.innerHTML = '<option value="">모델 없음</option>';
+          modelSelect.disabled = true;
+          activeModels = [];
+          selectedModelMeta.textContent =
+            error instanceof Error ? error.message : '활성 워크북 카탈로그를 불러오지 못했습니다.';
+          return;
+        }
 
         const totalModels = activeCatalog.reduce((sum, entry) => sum + entry.modelCount, 0);
 
@@ -2542,15 +2946,21 @@ export function renderPlaygroundHtml() {
       }
 
       async function refreshDashboard() {
-        const [healthRes, lenderRes, importsRes] = await Promise.all([
+        const [healthRes, lenderRes, importsRes, contractRes] = await Promise.all([
           fetch('/health'),
           fetch('/api/lenders'),
           fetch('/api/imports?lenderCode=mg-capital'),
+          fetch('/api/workbook-contract?lenderCode=mg-capital'),
         ]);
 
         const healthJson = await healthRes.json();
         const lenderJson = await lenderRes.json();
         const importsJson = await importsRes.json();
+        const contractJson = await contractRes.json();
+        activeWorkbookContract =
+          contractJson && contractJson.ok && contractJson.sheetContracts && contractJson.sheetContracts.operatingLease
+            ? contractJson.sheetContracts.operatingLease
+            : null;
 
         healthStatus.textContent = healthJson.ok ? '정상' : '장애';
         healthSubtext.textContent = 'APP_ENV=' + (healthJson.env || 'unknown') + ' · ' + healthJson.timestamp;
@@ -2581,18 +2991,10 @@ export function renderPlaygroundHtml() {
       }
 
       refreshDashboardButton.addEventListener('click', refreshDashboard);
-      if (activeCatalog.length > 0) {
-        renderCatalogBrands(activeCatalog);
-        brandSelect.value = activeCatalog[0].brand;
-        modelSelect.innerHTML = '<option value="">모델 불러오는 중</option>';
-        modelSelect.disabled = true;
-        void renderCatalogModels(activeCatalog[0].brand);
-      } else {
-        brandSelect.innerHTML = '<option value="">브랜드 불러오는 중</option>';
-        brandSelect.disabled = true;
-        modelSelect.innerHTML = '<option value="">모델 불러오는 중</option>';
-        modelSelect.disabled = true;
-      }
+      brandSelect.innerHTML = '<option value="">브랜드 불러오는 중</option>';
+      brandSelect.disabled = true;
+      modelSelect.innerHTML = '<option value="">모델 불러오는 중</option>';
+      modelSelect.disabled = true;
       updateDiscountedVehiclePriceDisplay();
       setAutoSummaryFromQuote(null);
       updateWorkbookDiffWarning();

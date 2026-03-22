@@ -4,7 +4,7 @@ import { zValidator } from "@hono/zod-validator";
 import { z } from "zod";
 
 import { persistWorkbookImport } from "@/domain/imports/import-service";
-import { listWorkbookImports } from "@/domain/imports/import-queries";
+import { getActiveWorkbookSheetContracts, listWorkbookImports } from "@/domain/imports/import-queries";
 import { getActiveWorkbookBrands, getActiveWorkbookModels } from "@/domain/imports/catalog-queries";
 import { getLenderAdapter } from "@/domain/imports/lender-registry";
 import { calculateMgOperatingLeaseQuote } from "@/domain/lenders/mg-capital/operating-lease-service";
@@ -26,6 +26,10 @@ const calculateQuoteSchema = z.object({
   productType: z.literal("operating_lease").default("operating_lease"),
   brand: z.string().min(1),
   modelName: z.string().min(1),
+  affiliateType: z.enum(["비제휴사", "KCC오토", "KCC면제"]).optional(),
+  directModelEntry: z.boolean().optional(),
+  manualVehicleClass: z.string().min(1).optional(),
+  manualEngineDisplacementCc: z.number().positive().optional(),
   ownershipType: z.enum(["company", "customer"]),
   leaseTermMonths: z.union([z.literal(12), z.literal(24), z.literal(36), z.literal(48), z.literal(60)]),
   annualMileageKm: z.union([z.literal(10000), z.literal(20000), z.literal(30000), z.literal(35000)]).optional(),
@@ -43,10 +47,17 @@ const calculateQuoteSchema = z.object({
   residualValueRatio: z.number().min(0).optional(),
   residualAmountOverride: z.number().min(0).optional(),
   acquisitionTaxRateOverride: z.number().min(0).max(1).optional(),
+  includePublicBondCost: z.boolean().optional(),
   publicBondCost: z.number().min(0).optional(),
+  includeMiscFeeAmount: z.boolean().optional(),
+  miscFeeAmount: z.number().min(0).optional(),
+  includeDeliveryFeeAmount: z.boolean().optional(),
+  deliveryFeeAmount: z.number().min(0).optional(),
   stampDuty: z.number().min(0).optional(),
   agFeeRate: z.number().min(0).optional(),
   cmFeeRate: z.number().min(0).optional(),
+  insuranceYearlyAmount: z.number().min(0).optional(),
+  lossDamageAmount: z.number().min(0).optional(),
 });
 
 export const app = new Hono<{ Bindings: Bindings }>();
@@ -91,6 +102,19 @@ app.get("/api/lenders", (c) => {
 app.get("/api/imports", zValidator("query", previewQuerySchema), async (c) => {
   const lenderCode = c.req.valid("query").lenderCode;
   const result = await listWorkbookImports({
+    databaseUrl: c.env.DATABASE_URL,
+    lenderCode,
+  });
+
+  return c.json({
+    ok: true,
+    ...result,
+  });
+});
+
+app.get("/api/workbook-contract", zValidator("query", previewQuerySchema), async (c) => {
+  const lenderCode = c.req.valid("query").lenderCode;
+  const result = await getActiveWorkbookSheetContracts({
     databaseUrl: c.env.DATABASE_URL,
     lenderCode,
   });
@@ -195,10 +219,11 @@ app.post("/api/imports", zValidator("query", previewQuerySchema), async (c) => {
 
 app.post("/api/quotes/calculate", zValidator("json", calculateQuoteSchema), async (c) => {
   const input = c.req.valid("json");
+  const databaseUrl = c.env.DATABASE_URL;
 
   try {
     const quote = await calculateMgOperatingLeaseQuote({
-      databaseUrl: c.env.DATABASE_URL,
+      databaseUrl,
       input,
     });
 

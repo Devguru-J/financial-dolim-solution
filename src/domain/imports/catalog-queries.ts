@@ -1,6 +1,6 @@
 import { asc, desc, eq } from "drizzle-orm";
 
-import { vehiclePrograms, workbookImports } from "@/db/schema";
+import { residualMatrixRows, vehiclePrograms, workbookImports } from "@/db/schema";
 import { createDbClient } from "@/lib/db/client";
 
 type ActiveWorkbookRef = {
@@ -47,6 +47,25 @@ async function getActiveWorkbookRef(params: {
   } finally {
     await dispose();
   }
+}
+
+function parsePromotionRate(rawRow: Record<string, unknown> | null, key: "apsPromotionRate" | "snkPromotionRate"): number {
+  const value = rawRow?.[key];
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return value;
+  }
+  const parsed = Number(String(value ?? "").replace(/,/g, "").trim());
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function promotionRateForMatrixGroup(rawRow: Record<string, unknown> | null, matrixGroup: string): number {
+  if (matrixGroup === "에스앤케이모터스" || matrixGroup === "SNK") {
+    return parsePromotionRate(rawRow, "snkPromotionRate");
+  }
+  if (matrixGroup === "APS") {
+    return parsePromotionRate(rawRow, "apsPromotionRate");
+  }
+  return 0;
 }
 
 export async function getActiveWorkbookBrands(params: {
@@ -114,6 +133,15 @@ export async function getActiveWorkbookModels(params: {
     highResidualAllowed: boolean | null;
     hybridAllowed: boolean | null;
     residualPromotionCode: string | null;
+    snkResidualBand: string | null;
+    residuals: Partial<Record<12 | 24 | 36 | 48 | 60, number>>;
+    snkResiduals: Partial<Record<12 | 24 | 36 | 48 | 60, number>>;
+    apsResidualBand: string | null;
+    apsResiduals: Partial<Record<12 | 24 | 36 | 48 | 60, number>>;
+    chatbotResiduals: Partial<Record<12 | 24 | 36 | 48 | 60, number>>;
+    apsPromotionRate: number | null;
+    snkPromotionRate: number | null;
+    maxResidualRates: Partial<Record<12 | 24 | 36 | 48 | 60, number>>;
   }>;
 }> {
   const workbookResult = await getActiveWorkbookRef(params);
@@ -129,6 +157,16 @@ export async function getActiveWorkbookModels(params: {
   const { db, dispose } = createDbClient(params.databaseUrl!);
 
   try {
+    const matrixRows = await db
+      .select({
+        matrixGroup: residualMatrixRows.matrixGroup,
+        gradeCode: residualMatrixRows.gradeCode,
+        leaseTermMonths: residualMatrixRows.leaseTermMonths,
+        residualRate: residualMatrixRows.residualRate,
+      })
+      .from(residualMatrixRows)
+      .where(eq(residualMatrixRows.workbookImportId, workbookResult.workbookImport.id));
+
     const rows = await db
       .select({
         brand: vehiclePrograms.brand,
@@ -139,6 +177,13 @@ export async function getActiveWorkbookModels(params: {
         highResidualAllowed: vehiclePrograms.highResidualAllowed,
         hybridAllowed: vehiclePrograms.hybridAllowed,
         residualPromotionCode: vehiclePrograms.residualPromotionCode,
+        snkResidualBand: vehiclePrograms.snkResidualBand,
+        term12Residual: vehiclePrograms.term12Residual,
+        term24Residual: vehiclePrograms.term24Residual,
+        term36Residual: vehiclePrograms.term36Residual,
+        term48Residual: vehiclePrograms.term48Residual,
+        term60Residual: vehiclePrograms.term60Residual,
+        rawRow: vehiclePrograms.rawRow,
       })
       .from(vehiclePrograms)
       .where(eq(vehiclePrograms.workbookImportId, workbookResult.workbookImport.id))
@@ -157,6 +202,53 @@ export async function getActiveWorkbookModels(params: {
           highResidualAllowed: row.highResidualAllowed,
           hybridAllowed: row.hybridAllowed,
           residualPromotionCode: row.residualPromotionCode,
+          snkResidualBand: row.snkResidualBand,
+          residuals: {
+            12: row.term12Residual == null ? undefined : Number(row.term12Residual),
+            24: row.term24Residual == null ? undefined : Number(row.term24Residual),
+            36: row.term36Residual == null ? undefined : Number(row.term36Residual),
+            48: row.term48Residual == null ? undefined : Number(row.term48Residual),
+            60: row.term60Residual == null ? undefined : Number(row.term60Residual),
+          },
+          snkResiduals: ((row.rawRow as Record<string, unknown> | null)?.snkResiduals as
+            | Partial<Record<12 | 24 | 36 | 48 | 60, number>>
+            | undefined) ?? {},
+          apsResidualBand:
+            ((row.rawRow as Record<string, unknown> | null)?.apsResidualBand as string | null | undefined) ?? null,
+          apsResiduals: ((row.rawRow as Record<string, unknown> | null)?.apsResiduals as
+            | Partial<Record<12 | 24 | 36 | 48 | 60, number>>
+            | undefined) ?? {},
+          chatbotResiduals: ((row.rawRow as Record<string, unknown> | null)?.chatbotResiduals as
+            | Partial<Record<12 | 24 | 36 | 48 | 60, number>>
+            | undefined) ?? {},
+          apsPromotionRate:
+            ((row.rawRow as Record<string, unknown> | null)?.apsPromotionRate as number | null | undefined) ?? null,
+          snkPromotionRate:
+            ((row.rawRow as Record<string, unknown> | null)?.snkPromotionRate as number | null | undefined) ?? null,
+          maxResidualRates: ([12, 24, 36, 48, 60] as const).reduce<Partial<Record<12 | 24 | 36 | 48 | 60, number>>>(
+            (acc, term) => {
+              const grade = row.snkResidualBand;
+              if (!grade) {
+                return acc;
+              }
+              const matchingRows = matrixRows.filter((matrixRow) => matrixRow.gradeCode === grade && matrixRow.leaseTermMonths === term);
+              if (matchingRows.length === 0) {
+                return acc;
+              }
+              const rawRow = (row.rawRow as Record<string, unknown> | null) ?? null;
+              acc[term] = Math.max(
+                ...matchingRows.map((matrixRow) => {
+                  const baseRate = Number(matrixRow.residualRate);
+                  if (!Number.isFinite(baseRate)) {
+                    return 0;
+                  }
+                  return baseRate + promotionRateForMatrixGroup(rawRow, matrixRow.matrixGroup) + (row.highResidualAllowed ? 0.08 : 0);
+                }),
+              );
+              return acc;
+            },
+            {},
+          ),
         }))
         .filter((row) => row.brand === params.brand)
         .map(({ brand: _brand, ...row }) => row),

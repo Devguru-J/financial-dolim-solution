@@ -78,6 +78,7 @@ export async function persistWorkbookImport(params: {
           meta: {
             sheetNames: workbook.sheetNames,
             analysis: workbook.analysis,
+            sheetContracts: workbook.sheetContracts,
           },
         })
         .returning({ id: workbookImports.id });

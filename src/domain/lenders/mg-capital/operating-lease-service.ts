@@ -36,8 +36,10 @@ type CalculateFromResolvedInputParams = {
   workbookImport: ActiveWorkbookContext;
   input: CanonicalQuoteInput;
   vehicle: ResolvedVehicle;
+  matrixRows?: MgResidualMatrixLookupRow[];
   displayedAnnualRateRaw: number;
   residualRateRaw: number;
+  maximumResidualRateRaw?: number | null;
   residualSource: CanonicalQuoteResult["residual"]["source"];
   resolvedMatrixGroup: string | null;
 };
@@ -103,6 +105,15 @@ function roundToDecimals(value: number, digits: number): number {
   return Math.round(value * factor) / factor;
 }
 
+function roundUp(value: number, digits: number): number {
+  const factor = 10 ** Math.abs(digits);
+  if (digits < 0) {
+    return Math.ceil(value / factor) * factor;
+  }
+
+  return Math.ceil(value * factor) / factor;
+}
+
 function readRawRowRate(
   rawRow: Record<string, unknown> | null,
   key: string,
@@ -115,6 +126,24 @@ function readRawRowRate(
 
   const rate = (value as Record<string, unknown>)[String(leaseTermMonths)];
   return typeof rate === "number" && Number.isFinite(rate) ? rate : null;
+}
+
+function readRawPromotionRate(rawRow: Record<string, unknown> | null, key: "apsPromotionRate" | "snkPromotionRate"): number {
+  const value = rawRow?.[key];
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return value;
+  }
+  return parseNumeric(String(value ?? "")) ?? 0;
+}
+
+function promotionRateForMatrixGroup(rawRow: Record<string, unknown> | null, matrixGroup: string | null): number {
+  if (matrixGroup === "에스앤케이모터스" || matrixGroup === "SNK") {
+    return readRawPromotionRate(rawRow, "snkPromotionRate");
+  }
+  if (matrixGroup === "APS") {
+    return readRawPromotionRate(rawRow, "apsPromotionRate");
+  }
+  return 0;
 }
 
 function resolveMileageAdjustedRate(params: {
@@ -141,15 +170,15 @@ function resolveMileageAdjustedRate(params: {
 
   if (source === "aps") {
     if (annualMileageKm === 35000) {
-      return baseRate - 0.02;
+      return baseRate - 0.02 + promo;
     }
     if (annualMileageKm === 30000) {
-      return baseRate - 0.09;
+      return baseRate - 0.09 + promo;
     }
     if (annualMileageKm === 10000) {
-      return baseRate + 0.01;
+      return baseRate + 0.01 + promo;
     }
-    return baseRate;
+    return baseRate + promo;
   }
 
   if (annualMileageKm === 20000) {
@@ -168,6 +197,8 @@ export function summarizeMgResidualCandidates(params: {
   input: Pick<CanonicalQuoteInput, "leaseTermMonths" | "ownershipType">;
   vehicle: Pick<ResolvedVehicle, "highResidualAllowed" | "rawRow">;
   annualMileageKm?: number;
+  matrixRows?: MgResidualMatrixLookupRow[];
+  selectedResidualRateDecimal?: number | null;
 }): MgResidualCandidateSummary {
   const annualMileageKm = params.annualMileageKm ?? 20000;
   const rawRow = params.vehicle.rawRow;
@@ -178,10 +209,8 @@ export function summarizeMgResidualCandidates(params: {
     readRawRowRate(rawRow, "residuals", params.input.leaseTermMonths);
   const apsBaseRate = readRawRowRate(rawRow, "apsResiduals", params.input.leaseTermMonths);
   const chatbotBaseRate = readRawRowRate(rawRow, "chatbotResiduals", params.input.leaseTermMonths);
-  const apsPromotionRate =
-    typeof rawRow?.apsPromotionRate === "number" ? rawRow.apsPromotionRate : parseNumeric(String(rawRow?.apsPromotionRate ?? "")) ?? 0;
-  const snkPromotionRate =
-    typeof rawRow?.snkPromotionRate === "number" ? rawRow.snkPromotionRate : parseNumeric(String(rawRow?.snkPromotionRate ?? "")) ?? 0;
+  const apsPromotionRate = readRawPromotionRate(rawRow, "apsPromotionRate");
+  const snkPromotionRate = readRawPromotionRate(rawRow, "snkPromotionRate");
 
   const candidates: MgResidualCandidate[] = [];
 
@@ -229,11 +258,64 @@ export function summarizeMgResidualCandidates(params: {
     });
   }
 
+  if (candidates.length === 0 && params.matrixRows && params.matrixRows.length > 0) {
+    for (const row of params.matrixRows) {
+      const baseRate = normalizeRate(parseNumeric(String(row.residualRate)) ?? 0);
+      if (!Number.isFinite(baseRate) || baseRate <= 0) {
+        continue;
+      }
+
+      const matrixGroup = row.matrixGroup;
+      const candidateName =
+        matrixGroup === "에스앤케이모터스" || matrixGroup === "SNK"
+          ? "에스앤케이모터스"
+          : matrixGroup === "APS"
+            ? "APS"
+            : null;
+
+      if (!candidateName) {
+        continue;
+      }
+
+      const source = candidateName === "에스앤케이모터스" ? "snk" : "aps";
+      const promotionRate = promotionRateForMatrixGroup(rawRow, matrixGroup);
+      const mileageAdjustedRate = resolveMileageAdjustedRate({
+        baseRate,
+        annualMileageKm,
+        source,
+        promotionRate,
+      });
+      candidates.push({
+        name: candidateName,
+        baseRate,
+        mileageAdjustedRate,
+        boostedRate: mileageAdjustedRate + highResidualBoost,
+      });
+    }
+  }
+
   const selectedCandidate = candidates.reduce<MgResidualCandidate | null>((current, candidate) => {
     if (!current || candidate.boostedRate > current.boostedRate) {
       return candidate;
     }
     if (current && candidate.boostedRate === current.boostedRate) {
+      if (
+        params.selectedResidualRateDecimal != null &&
+        (candidate.name === "에스앤케이모터스" || candidate.name === "APS") &&
+        (current.name === "에스앤케이모터스" || current.name === "APS")
+      ) {
+        const candidateFeeRate = lookupResidualGapFeeRate(
+          Math.max(0, candidate.boostedRate - params.selectedResidualRateDecimal),
+          candidate.name === "에스앤케이모터스" ? "에스앤케이모터스" : "APS",
+        );
+        const currentFeeRate = lookupResidualGapFeeRate(
+          Math.max(0, current.boostedRate - params.selectedResidualRateDecimal),
+          current.name === "에스앤케이모터스" ? "에스앤케이모터스" : "APS",
+        );
+        if (candidateFeeRate !== currentFeeRate) {
+          return candidateFeeRate < currentFeeRate ? candidate : current;
+        }
+      }
       return mgResidualTieBreakPriority[candidate.name] < mgResidualTieBreakPriority[current.name] ? candidate : current;
     }
     return current;
@@ -340,6 +422,59 @@ function resolveMinimumResidualRateByTerm(leaseTermMonths: CanonicalQuoteInput["
   return minimumRateByTerm[leaseTermMonths];
 }
 
+function lookupResidualGapFeeRate(
+  residualGapRateDecimal: number,
+  matrixGroup?: string | null,
+): number {
+  const apsTable: Array<{ gap: number; feeRate: number }> = [
+    { gap: 0, feeRate: 0.011 },
+    { gap: 0.01, feeRate: 0.0099 },
+    { gap: 0.02, feeRate: 0.0077 },
+    { gap: 0.03, feeRate: 0.0066 },
+    { gap: 0.04, feeRate: 0.0055 },
+    { gap: 0.05, feeRate: 0.0044 },
+    { gap: 0.06, feeRate: 0.0022 },
+    { gap: 0.07, feeRate: 0 },
+    { gap: 0.08, feeRate: 0 },
+  ];
+  const snkTable: Array<{ gap: number; feeRate: number }> = [
+    { gap: 0, feeRate: 0.0132 },
+    { gap: 0.01, feeRate: 0.0121 },
+    { gap: 0.02, feeRate: 0.011 },
+    { gap: 0.03, feeRate: 0.0099 },
+    { gap: 0.04, feeRate: 0.0088 },
+    { gap: 0.05, feeRate: 0.0077 },
+    { gap: 0.06, feeRate: 0.0066 },
+    { gap: 0.07, feeRate: 0.0055 },
+    { gap: 0.08, feeRate: 0 },
+  ];
+  const lookupTable =
+    matrixGroup === "에스앤케이모터스" || matrixGroup === "SNK" ? snkTable : apsTable;
+
+  let matched = lookupTable[0].feeRate;
+  for (const row of lookupTable) {
+    if (residualGapRateDecimal >= row.gap) {
+      matched = row.feeRate;
+      continue;
+    }
+    break;
+  }
+
+  return matched;
+}
+
+function residualGuaranteeMatrixGroupFromCandidateName(
+  candidateName: string | null,
+): string | null {
+  if (candidateName === "에스앤케이모터스") {
+    return "에스앤케이모터스";
+  }
+  if (candidateName === "APS") {
+    return "APS";
+  }
+  return null;
+}
+
 export function resolveWorkbookDisplayedAnnualRate(params: {
   input: CanonicalQuoteInput;
   baseIrrRateRaw: number | null;
@@ -356,14 +491,10 @@ export function resolveWorkbookDisplayedAnnualRate(params: {
     };
   }
 
-  // Workbook parity note:
-  // The MG workbook's visible "적용금리" is not always the raw brand policy rate.
-  // For verified AUDI company / 60-month operating lease scenarios, Excel shows 5.018%
-  // even though the normalized admin sheet brand policy is 4.70%.
-  if (input.brand === "AUDI" && input.ownershipType === "company" && input.leaseTermMonths === 60) {
+  if (input.affiliateType === "KCC오토" || input.affiliateType === "KCC면제") {
     return {
-      displayedAnnualRateRaw: 0.05018,
-      source: "workbook-heuristic",
+      displayedAnnualRateRaw: (baseIrrRateRaw ?? 0) + 0.015,
+      source: "brand-policy",
     };
   }
 
@@ -371,6 +502,76 @@ export function resolveWorkbookDisplayedAnnualRate(params: {
     displayedAnnualRateRaw: baseIrrRateRaw,
     source: "brand-policy",
   };
+}
+
+function computeWorkbookDisplayedAnnualRateFromFormula(params: {
+  input: CanonicalQuoteInput;
+  baseAnnualRateDecimal: number;
+  discountedVehiclePrice: number;
+  acquisitionTax: number;
+  publicBondCost: number;
+  miscFeeAmount: number;
+  deliveryFeeAmount: number;
+  residualAmount: number;
+  maximumResidualRateDecimal: number;
+  ownershipType: CanonicalQuoteInput["ownershipType"];
+  residualGuaranteeMatrixGroup?: string | null;
+}): number {
+  const {
+    input,
+    baseAnnualRateDecimal,
+    discountedVehiclePrice,
+    acquisitionTax,
+    publicBondCost,
+    miscFeeAmount,
+    deliveryFeeAmount,
+    residualAmount,
+    maximumResidualRateDecimal,
+    ownershipType,
+    residualGuaranteeMatrixGroup,
+  } = params;
+
+  const acquisitionCostBase =
+    discountedVehiclePrice + acquisitionTax + publicBondCost + miscFeeAmount + deliveryFeeAmount;
+  const upfrontPayment = Math.max(0, input.upfrontPayment);
+  const depositAmount = Math.max(0, input.depositAmount ?? 0);
+  const customerOffsetBase = Math.round((discountedVehiclePrice / 1.1) / 10);
+  const cq22 = upfrontPayment + depositAmount;
+  const selectedResidualAmount = roundDown(
+    input.residualAmountOverride ??
+      (input.selectedResidualRateOverride != null
+        ? discountedVehiclePrice * input.selectedResidualRateOverride
+        : input.residualValueRatio != null
+          ? discountedVehiclePrice * input.residualValueRatio
+          : residualAmount),
+    -3,
+  );
+  const maximumResidualAmount = roundDown(discountedVehiclePrice * maximumResidualRateDecimal, -1);
+  const residualGapRateDecimal =
+    discountedVehiclePrice > 0 ? Math.max(0, maximumResidualAmount - selectedResidualAmount) / discountedVehiclePrice : 0;
+  const residualGuaranteeFeeRate = lookupResidualGapFeeRate(residualGapRateDecimal, residualGuaranteeMatrixGroup);
+  const residualGuaranteeFeeAmount = roundDown(discountedVehiclePrice * residualGuaranteeFeeRate, 0);
+  const agFeeAmount = roundDown(acquisitionCostBase * Math.max(0, input.agFeeRate ?? 0), 0);
+  const cmFeeAmount = roundDown(acquisitionCostBase * Math.max(0, input.cmFeeRate ?? 0), 0);
+  const stampDuty = Math.max(0, input.stampDuty ?? 10000);
+
+  const cq8 = ownershipType === "customer" ? Math.max(acquisitionCostBase - customerOffsetBase, 0) : acquisitionCostBase;
+  const cq17 = cq8 + agFeeAmount + cmFeeAmount + residualGuaranteeFeeAmount + stampDuty;
+  const cq24 = residualAmount;
+  const cq26 = computeLeaseMonthlyPaymentRaw({
+    presentValue: Math.max(cq17 - cq22, 0),
+    futureValue: Math.max(cq24 - depositAmount, 0),
+    monthlyRateDecimal: baseAnnualRateDecimal / 12,
+    leaseTermMonths: input.leaseTermMonths,
+  });
+  const cq27 = solveAnnualRateFromPayment({
+    periods: input.leaseTermMonths,
+    payment: cq26,
+    presentValue: Math.max(cq8 - upfrontPayment, 0),
+    futureValue: cq24,
+  });
+
+  return roundToDecimals(cq27, 5);
 }
 
 function resolveDiscountAmount(params: {
@@ -483,7 +684,7 @@ export function resolveMgOperatingLeaseResidualRate(params: {
   input: CanonicalQuoteInput;
   vehicle: Pick<
     ResolvedVehicle,
-    "snkResidualBand" | "term12Residual" | "term24Residual" | "term36Residual" | "term48Residual" | "term60Residual"
+    "snkResidualBand" | "term12Residual" | "term24Residual" | "term36Residual" | "term48Residual" | "term60Residual" | "rawRow"
   >;
   matrixRows?: MgResidualMatrixLookupRow[];
 }): ResolvedResidualRate {
@@ -518,7 +719,9 @@ export function resolveMgOperatingLeaseResidualRate(params: {
     );
   }
 
-  const residualRateRaw = parseNumeric(String(preferredMatrixRow.residualRate));
+  const residualRateRaw =
+    (parseNumeric(String(preferredMatrixRow.residualRate)) ?? 0) +
+    promotionRateForMatrixGroup(input.directModelEntry ? null : vehicle.rawRow, preferredMatrixRow.matrixGroup);
   if (residualRateRaw == null) {
     throw new Error("Residual rate could not be resolved.");
   }
@@ -533,7 +736,17 @@ export function resolveMgOperatingLeaseResidualRate(params: {
 export function calculateMgOperatingLeaseQuoteFromResolvedInput(
   params: CalculateFromResolvedInputParams,
 ): CanonicalQuoteResult {
-  const { workbookImport, input, vehicle, displayedAnnualRateRaw, residualRateRaw, residualSource, resolvedMatrixGroup } =
+  const {
+    workbookImport,
+    input,
+    vehicle,
+    matrixRows = [],
+    displayedAnnualRateRaw,
+    residualRateRaw,
+    maximumResidualRateRaw,
+    residualSource,
+    resolvedMatrixGroup,
+  } =
     params;
 
   const warnings: string[] = [];
@@ -552,6 +765,15 @@ export function calculateMgOperatingLeaseQuoteFromResolvedInput(
       rawRow: vehicle.rawRow,
     },
     annualMileageKm: input.annualMileageKm,
+    matrixRows,
+    selectedResidualRateDecimal:
+      input.selectedResidualRateOverride != null
+        ? normalizeRate(input.selectedResidualRateOverride)
+        : input.residualRateOverride != null
+          ? normalizeRate(input.residualRateOverride)
+          : input.residualValueRatio != null
+            ? normalizeRate(input.residualValueRatio)
+            : normalizeRate(residualRateRaw),
   });
   const baseVehiclePrice = input.quotedVehiclePrice ?? parseNumeric(vehicle.vehiclePrice);
 
@@ -567,8 +789,10 @@ export function calculateMgOperatingLeaseQuoteFromResolvedInput(
     publicBondPurchaseAmount,
   });
   const discountedVehiclePrice = Math.max(vehiclePrice - discountAmount, 0);
+  const vehicleClass = input.manualVehicleClass ?? vehicle.vehicleClass;
+  const engineDisplacementCc = input.manualEngineDisplacementCc ?? vehicle.engineDisplacementCc;
   const acquisitionTaxRate = resolveAcquisitionTaxRate({
-    vehicleClass: vehicle.vehicleClass,
+    vehicleClass,
     override: input.acquisitionTaxRateOverride,
   });
   const automaticAcquisitionTax = roundDown((discountedVehiclePrice / 1.1) * acquisitionTaxRate, -1);
@@ -577,27 +801,50 @@ export function calculateMgOperatingLeaseQuoteFromResolvedInput(
     discountedVehiclePrice,
     automaticAcquisitionTax,
   });
-  const publicBondCost = Math.max(0, input.publicBondCost ?? 0);
+  const publicBondCost = input.includePublicBondCost === false ? 0 : Math.max(0, input.publicBondCost ?? 0);
+  const miscFeeAmount = input.includeMiscFeeAmount === false ? 0 : Math.max(0, input.miscFeeAmount ?? 0);
+  const deliveryFeeAmount = input.includeDeliveryFeeAmount === false ? 0 : Math.max(0, input.deliveryFeeAmount ?? 0);
   const stampDuty = Math.max(0, input.stampDuty ?? 10000);
   const residualRateDecimal = normalizeRate(residualRateRaw);
-  const acquisitionCostBase = discountedVehiclePrice + acquisitionTax + publicBondCost;
-  const agFeeAmount = roundDown(acquisitionCostBase * Math.max(0, input.agFeeRate ?? 0), 0);
-  const cmFeeAmount = roundDown(acquisitionCostBase * Math.max(0, input.cmFeeRate ?? 0), 0);
-  const extraFees = agFeeAmount + cmFeeAmount;
-  const acquisitionCostBeforeStamp = acquisitionCostBase + extraFees;
-  const acquisitionCost = acquisitionCostBeforeStamp + stampDuty;
+  const paymentBasePrincipal = discountedVehiclePrice + acquisitionTax + miscFeeAmount;
+  const agFeeAmount = roundDown(paymentBasePrincipal * Math.max(0, input.agFeeRate ?? 0), 0);
+  const cmFeeAmount = roundDown(paymentBasePrincipal * Math.max(0, input.cmFeeRate ?? 0), 0);
+  const residualCandidateMaximumRateDecimal =
+    (maximumResidualRateRaw != null ? normalizeRate(maximumResidualRateRaw) : null) ??
+    residualCandidateSummary.maxBoostedRate ??
+    (vehicle.highResidualAllowed ? residualRateDecimal + 0.08 : residualRateDecimal);
+  const residualGuaranteeMatrixGroup =
+    input.residualMatrixGroup ??
+    residualGuaranteeMatrixGroupFromCandidateName(residualCandidateSummary.selectedCandidateName) ??
+    resolvedMatrixGroup;
   const residualAmount = resolveResidualAmount({
     input,
     discountedVehiclePrice,
-    acquisitionCost,
+    acquisitionCost: paymentBasePrincipal + publicBondCost + deliveryFeeAmount + agFeeAmount + cmFeeAmount + stampDuty,
     residualRateDecimal,
   });
   const appliedResidualRateDecimal = discountedVehiclePrice > 0 ? residualAmount / discountedVehiclePrice : 0;
   const minimumResidualRateDecimal = resolveMinimumResidualRateByTerm(input.leaseTermMonths);
-  const maximumResidualRateDecimal =
-    residualCandidateSummary.maxBoostedRate ??
-    (vehicle.highResidualAllowed ? residualRateDecimal + 0.08 : residualRateDecimal);
-  const annualRateDecimal = normalizeRate(displayedAnnualRateRaw);
+  const maximumResidualRateDecimal = residualCandidateMaximumRateDecimal;
+  const annualRateDecimal =
+    input.annualIrrRateOverride != null
+      ? normalizeRate(displayedAnnualRateRaw)
+        : computeWorkbookDisplayedAnnualRateFromFormula({
+          input,
+          baseAnnualRateDecimal: normalizeRate(displayedAnnualRateRaw),
+          discountedVehiclePrice,
+          acquisitionTax,
+          publicBondCost,
+          miscFeeAmount,
+          deliveryFeeAmount,
+          residualAmount,
+          maximumResidualRateDecimal,
+          ownershipType: input.ownershipType,
+          residualGuaranteeMatrixGroup,
+        });
+  const extraFees = publicBondCost + deliveryFeeAmount + agFeeAmount + cmFeeAmount;
+  const acquisitionCostBeforeStamp = paymentBasePrincipal + extraFees;
+  const acquisitionCost = acquisitionCostBeforeStamp + stampDuty;
   const depositAmount = Math.max(0, input.depositAmount ?? 0);
   const upfrontPayment = Math.max(0, input.upfrontPayment);
   const financedPrincipal = Math.max(acquisitionCost - upfrontPayment, 0);
@@ -614,10 +861,10 @@ export function calculateMgOperatingLeaseQuoteFromResolvedInput(
     presentValue: Math.max(acquisitionCostBeforeStamp - upfrontPayment, 0),
     futureValue: residualAmount,
   });
-  const roundedRateAnnual = input.paymentRateOverride ?? roundToDecimals(rateOneAnnual, 5);
+  const roundedRateAnnual = input.paymentRateOverride ?? annualRateDecimal;
   const paymentTwo = roundDown(
     computeLeaseMonthlyPaymentRaw({
-      presentValue: acquisitionCostBeforeStamp,
+      presentValue: paymentBasePrincipal,
       futureValue: residualAmount,
       monthlyRateDecimal: roundedRateAnnual / 12,
       leaseTermMonths: input.leaseTermMonths,
@@ -625,13 +872,19 @@ export function calculateMgOperatingLeaseQuoteFromResolvedInput(
     0,
   );
   const monthlyUpfront = input.leaseTermMonths > 0 ? roundDown(upfrontPayment / input.leaseTermMonths, 0) : 0;
-  const monthlyPayment = roundCurrency((upfrontPayment > 0 ? paymentOne + monthlyUpfront : paymentTwo) + (input.insuranceMonthly ?? 0));
-  const effectiveAnnualRateDecimal = normalizeRate(input.annualEffectiveRateOverride ?? solveAnnualRateFromPayment({
-    periods: input.leaseTermMonths,
-    payment: monthlyPayment - (input.insuranceMonthly ?? 0),
-    presentValue: acquisitionCostBeforeStamp,
-    futureValue: residualAmount,
-  }));
+  const insuranceMonthly =
+    input.insuranceMonthly ??
+    (input.insuranceYearlyAmount != null ? roundUp(Math.max(0, input.insuranceYearlyAmount) / 12, -2) : 0);
+  const monthlyPayment = roundCurrency((upfrontPayment > 0 ? paymentOne + monthlyUpfront : paymentTwo) + insuranceMonthly);
+  const effectiveAnnualRateDecimal = normalizeRate(
+    input.annualEffectiveRateOverride ??
+      solveAnnualRateFromPayment({
+        periods: input.leaseTermMonths,
+        payment: monthlyPayment - insuranceMonthly,
+        presentValue: upfrontPayment > 0 ? Math.max(acquisitionCost - plusAmount, 0) : paymentBasePrincipal,
+        futureValue: Math.max(residualAmount - (upfrontPayment > 0 ? depositAmount : 0), 0),
+      }),
+  );
   const monthlyRateDecimal = effectiveAnnualRateDecimal / 12;
 
   if (discountAmount > 0) {
@@ -669,7 +922,7 @@ export function calculateMgOperatingLeaseQuoteFromResolvedInput(
     warnings.push("Deposit amount defaults to 0 unless explicitly provided.");
   }
 
-  if (input.insuranceMonthly != null || input.lossDamageAmount != null) {
+  if (input.insuranceMonthly != null || input.insuranceYearlyAmount != null || input.lossDamageAmount != null) {
     warnings.push("Insurance and loss-damage values are partially modeled; additional workbook-specific cases may still remain.");
   }
 
@@ -681,8 +934,8 @@ export function calculateMgOperatingLeaseQuoteFromResolvedInput(
       brand: vehicle.brand,
       modelName: vehicle.modelName,
       vehiclePrice,
-      vehicleClass: vehicle.vehicleClass,
-      engineDisplacementCc: vehicle.engineDisplacementCc,
+      vehicleClass,
+      engineDisplacementCc,
       highResidualAllowed: vehicle.highResidualAllowed,
       hybridAllowed: vehicle.hybridAllowed,
       snkResidualBand: vehicle.snkResidualBand,
@@ -731,7 +984,7 @@ export function calculateMgOperatingLeaseQuoteFromResolvedInput(
           : undefined,
     },
     rates: {
-      source: input.annualIrrRateOverride != null ? "override" : "brand-policy",
+      source: input.annualIrrRateOverride != null ? "override" : "workbook-formula",
       annualRateDecimal,
       effectiveAnnualRateDecimal,
       monthlyRateDecimal,
@@ -836,6 +1089,16 @@ export async function calculateMgOperatingLeaseQuote(params: {
       vehicle,
       matrixRows,
     });
+    const maximumResidualRateRaw =
+      matrixRows.length > 0
+        ? Math.max(
+            ...matrixRows.map((row) => {
+              const baseRate = normalizeRate(parseNumeric(String(row.residualRate)) ?? 0);
+              const promotionRate = promotionRateForMatrixGroup(vehicle.rawRow, row.matrixGroup);
+              return baseRate + promotionRate + (vehicle.highResidualAllowed ? 0.08 : 0);
+            }),
+          )
+        : null;
 
     const resolvedAnnualRate = resolveWorkbookDisplayedAnnualRate({
       input,
@@ -850,19 +1113,15 @@ export async function calculateMgOperatingLeaseQuote(params: {
       workbookImport,
       input,
       vehicle,
+      matrixRows,
       displayedAnnualRateRaw,
       residualRateRaw,
+      maximumResidualRateRaw,
       residualSource,
       resolvedMatrixGroup,
     });
 
     quote.rates.source = resolvedAnnualRate.source;
-
-    if (resolvedAnnualRate.source === "workbook-heuristic") {
-      quote.warnings.push(
-        "Applied annual rate uses a workbook parity heuristic for the verified AUDI 60-month operating lease path.",
-      );
-    }
 
     return quote;
   } finally {

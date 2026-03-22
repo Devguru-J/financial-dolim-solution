@@ -33,6 +33,65 @@ export type WorkbookBrandRatePolicy = {
   baseIrrRate: number;
 };
 
+export type WorkbookSheetFieldSnapshot = {
+  cell: string;
+  value: string | number | boolean | null;
+  displayText: string | null;
+  formula: string | null;
+};
+
+export type WorkbookOperatingLeaseSheetContract = {
+  sheetName: "운용리스";
+  consistency: {
+    matchedVehicleProgram: boolean;
+    matchedBrand: string | null;
+    matchedModelName: string | null;
+    expectedVehiclePrice: number | null;
+    actualVehiclePrice: number | null;
+    vehiclePriceMatches: boolean;
+    message: string | null;
+  };
+  fields: {
+    brand: WorkbookSheetFieldSnapshot;
+    modelName: WorkbookSheetFieldSnapshot;
+    vehicleClass: WorkbookSheetFieldSnapshot;
+    engineDisplacementCc: WorkbookSheetFieldSnapshot;
+    directInputVehiclePrice: WorkbookSheetFieldSnapshot;
+    basicVehiclePrice: WorkbookSheetFieldSnapshot;
+    optionAmount: WorkbookSheetFieldSnapshot;
+    discountMode: WorkbookSheetFieldSnapshot;
+    discountAmount: WorkbookSheetFieldSnapshot;
+    invoiceVehiclePrice: WorkbookSheetFieldSnapshot;
+    ownershipLabel: WorkbookSheetFieldSnapshot;
+    publicBondRate: WorkbookSheetFieldSnapshot;
+    publicBondAmount: WorkbookSheetFieldSnapshot;
+    miscFeeAmount: WorkbookSheetFieldSnapshot;
+    deliveryFeeAmount: WorkbookSheetFieldSnapshot;
+    acquisitionTaxMode: WorkbookSheetFieldSnapshot;
+    acquisitionTaxRate: WorkbookSheetFieldSnapshot;
+    leaseTermMonths: WorkbookSheetFieldSnapshot;
+    upfrontPaymentAmount: WorkbookSheetFieldSnapshot;
+    depositMode: WorkbookSheetFieldSnapshot;
+    annualMileageKm: WorkbookSheetFieldSnapshot;
+    residualMode: WorkbookSheetFieldSnapshot;
+    selectedResidualRate: WorkbookSheetFieldSnapshot;
+    minResidualRate: WorkbookSheetFieldSnapshot;
+    maxResidualRate: WorkbookSheetFieldSnapshot;
+    agFeeRate: WorkbookSheetFieldSnapshot;
+    cmFeeRate: WorkbookSheetFieldSnapshot;
+    carTaxMode: WorkbookSheetFieldSnapshot;
+    insuranceYearlyAmount: WorkbookSheetFieldSnapshot;
+    lossDamageAmount: WorkbookSheetFieldSnapshot;
+    extraService: WorkbookSheetFieldSnapshot;
+    salesOwner: WorkbookSheetFieldSnapshot;
+    appliedAnnualRate: WorkbookSheetFieldSnapshot;
+  };
+};
+
+export type WorkbookSheetContracts = {
+  operatingLease: WorkbookOperatingLeaseSheetContract | null;
+};
+
 export type WorkbookPreview = {
   lenderCode: string;
   lenderName: string;
@@ -50,6 +109,7 @@ export type WorkbookPreview = {
   vehiclePrograms: WorkbookVehicleProgram[];
   residualMatrixRows: WorkbookResidualMatrixRow[];
   brandRatePolicies: WorkbookBrandRatePolicy[];
+  sheetContracts: WorkbookSheetContracts;
 };
 
 export type PersistWorkbookImportResult = {

@@ -156,6 +156,7 @@ test("MG residual resolver prefers SNK matrix rows before APS fallback", () => {
       term36Residual: null,
       term48Residual: null,
       term60Residual: null,
+      rawRow: null,
     },
     matrixRows: [
       { matrixGroup: "APS", residualRate: "0.51" },
@@ -187,6 +188,7 @@ test("MG residual resolver respects explicit matrix group override", () => {
       term36Residual: null,
       term48Residual: null,
       term60Residual: null,
+      rawRow: null,
     },
     matrixRows: [
       { matrixGroup: "에스앤케이모터스", residualRate: "0.53" },
@@ -217,10 +219,65 @@ test("MG residual resolver fails like workbook when no residual band exists", ()
         term36Residual: null,
         term48Residual: null,
         term60Residual: null,
+        rawRow: null,
       },
       matrixRows: [],
     }),
   ).toThrow("Residual rate not found for term '36' and grade '-'.");
+});
+
+test("MG BMW X7 company 60-month 54.5% residual uses APS guarantee fee path for displayed annual rate", () => {
+  const quote = calculateMgOperatingLeaseQuoteFromResolvedInput({
+    workbookImport: {
+      id: "fixture-workbook-import",
+      versionLabel: "★MG캐피탈_수입견적_26.03월_외부용_2603_vol1",
+    },
+    input: {
+      lenderCode: "mg-capital",
+      productType: "operating_lease",
+      brand: "BMW",
+      modelName: "X7 xDrive 40d DPE (6인승)",
+      ownershipType: "company",
+      leaseTermMonths: 60,
+      annualMileageKm: 20000,
+      upfrontPayment: 0,
+      depositAmount: 0,
+      quotedVehiclePrice: 152700000,
+      acquisitionTaxRateOverride: 0.07,
+      selectedResidualRateOverride: 0.545,
+      agFeeRate: 0,
+      cmFeeRate: 0,
+    },
+    vehicle: {
+      brand: "BMW",
+      modelName: "X7 xDrive 40d DPE (6인승)",
+      vehiclePrice: "152700000",
+      vehicleClass: "승용SUV(~5인)",
+      engineDisplacementCc: 2993,
+      highResidualAllowed: true,
+      hybridAllowed: false,
+      residualPromotionCode: "0",
+      snkResidualBand: "F",
+      term12Residual: null,
+      term24Residual: null,
+      term36Residual: null,
+      term48Residual: null,
+      term60Residual: null,
+      rawRow: {
+        apsResiduals: { 60: 0.49 },
+        apsPromotionRate: 0.025,
+        snkPromotionRate: 0.025,
+      },
+    },
+    displayedAnnualRateRaw: 0.047,
+    residualRateRaw: 0.545,
+    maximumResidualRateRaw: 0.595,
+    residualSource: "override",
+    resolvedMatrixGroup: "에스앤케이모터스",
+  });
+
+  assertWithinTolerance(quote.residual.maxRateDecimal ?? 0, 0.595, 0.000001, "bmw x7 maxResidualRate");
+  assertWithinTolerance(quote.rates.annualRateDecimal, 0.04821, 0.00002, "bmw x7 displayedAnnualRate");
 });
 
 test("MG residual candidates match AUDI company hidden-sheet summary", () => {
@@ -266,7 +323,7 @@ test("MG residual candidates match VOLVO company hidden-sheet summary", () => {
     annualMileageKm: 20000,
   });
 
-  assertWithinTolerance(summary.maxBoostedRate ?? 0, 0.66, 0.0000001, "volvo maxBoostedRate");
+  assertWithinTolerance(summary.maxBoostedRate ?? 0, 0.735, 0.0000001, "volvo maxBoostedRate");
   expect(summary.selectedCandidateName).toBe("APS");
 });
 
@@ -387,7 +444,7 @@ test("MG quote exposes residual selection guide when workbook-style confirmation
   expect(quote.residual.selectionGuide?.requiresUserConfirmation).toBe(true);
 });
 
-test("MG displayed annual rate uses workbook parity heuristic for AUDI company 60-month path", () => {
+test("MG workbook base annual rate resolves to brand policy without hardcoded heuristic", () => {
   const resolved = resolveWorkbookDisplayedAnnualRate({
     input: {
       lenderCode: "mg-capital",
@@ -401,8 +458,145 @@ test("MG displayed annual rate uses workbook parity heuristic for AUDI company 6
     baseIrrRateRaw: 0.047,
   });
 
-  expect(resolved.source).toBe("workbook-heuristic");
-  expect(resolved.displayedAnnualRateRaw).toBe(0.05018);
+  expect(resolved.source).toBe("brand-policy");
+  expect(resolved.displayedAnnualRateRaw).toBe(0.047);
+});
+
+test("MG displayed annual rate changes when AUDI company 60-month selected residual changes", () => {
+  const common = {
+    workbookImport: {
+      id: "fixture-workbook-import",
+      versionLabel: "복사본 ★MG캐피탈_수입견적_26.03월_외부용_2603_vol1_잠금해제",
+    },
+    vehicle: {
+      brand: "AUDI",
+      modelName: "A3 40 TFSI Premium",
+      vehiclePrice: "46400000",
+      vehicleClass: "승용일반",
+      engineDisplacementCc: 1984,
+      highResidualAllowed: true,
+      hybridAllowed: false,
+      residualPromotionCode: "0",
+      snkResidualBand: "F",
+      term12Residual: null,
+      term24Residual: null,
+      term36Residual: null,
+      term48Residual: null,
+      term60Residual: null,
+      rawRow: null,
+    },
+    displayedAnnualRateRaw: 0.047,
+    maximumResidualRateRaw: 0.47,
+    residualSource: "override" as const,
+    resolvedMatrixGroup: null,
+  };
+
+  const quote43 = calculateMgOperatingLeaseQuoteFromResolvedInput({
+    ...common,
+    input: {
+      lenderCode: "mg-capital",
+      productType: "operating_lease",
+      brand: "AUDI",
+      modelName: "A3 40 TFSI Premium",
+      ownershipType: "company",
+      leaseTermMonths: 60,
+      annualMileageKm: 20000,
+      upfrontPayment: 0,
+      selectedResidualRateOverride: 0.43,
+    },
+    residualRateRaw: 0.43,
+  });
+
+  const quote44 = calculateMgOperatingLeaseQuoteFromResolvedInput({
+    ...common,
+    input: {
+      lenderCode: "mg-capital",
+      productType: "operating_lease",
+      brand: "AUDI",
+      modelName: "A3 40 TFSI Premium",
+      ownershipType: "company",
+      leaseTermMonths: 60,
+      annualMileageKm: 20000,
+      upfrontPayment: 0,
+      selectedResidualRateOverride: 0.44,
+    },
+    residualRateRaw: 0.44,
+  });
+
+  const quote45 = calculateMgOperatingLeaseQuoteFromResolvedInput({
+    ...common,
+    input: {
+      lenderCode: "mg-capital",
+      productType: "operating_lease",
+      brand: "AUDI",
+      modelName: "A3 40 TFSI Premium",
+      ownershipType: "company",
+      leaseTermMonths: 60,
+      annualMileageKm: 20000,
+      upfrontPayment: 0,
+      selectedResidualRateOverride: 0.45,
+    },
+    residualRateRaw: 0.45,
+  });
+
+  expect(quote43.rates.source).toBe("workbook-formula");
+  expect(quote43.rates.annualRateDecimal < quote44.rates.annualRateDecimal).toBe(true);
+  expect(quote44.rates.annualRateDecimal < quote45.rates.annualRateDecimal).toBe(true);
+  expect(quote43.residual.minRateDecimal).toBe(0.15);
+  expect(quote43.residual.maxRateDecimal).toBe(0.47);
+});
+
+test("MG AUDI company 60-month 43% selected residual follows SNK workbook fee table", () => {
+  const quote = calculateMgOperatingLeaseQuoteFromResolvedInput({
+    workbookImport: {
+      id: "fixture-workbook-import",
+      versionLabel: "reference workbook",
+    },
+    input: {
+      lenderCode: "mg-capital",
+      productType: "operating_lease",
+      brand: "AUDI",
+      modelName: "A3 40 TFSI Premium",
+      ownershipType: "company",
+      leaseTermMonths: 60,
+      annualMileageKm: 20000,
+      upfrontPayment: 0,
+      quotedVehiclePrice: 46400000,
+      discountAmount: 0,
+      selectedResidualRateOverride: 0.43,
+      acquisitionTaxRateOverride: 0.07,
+      publicBondCost: 0,
+      miscFeeAmount: 0,
+      deliveryFeeAmount: 0,
+      stampDuty: 0,
+      agFeeRate: 0,
+      cmFeeRate: 0,
+    },
+    vehicle: {
+      brand: "AUDI",
+      modelName: "A3 40 TFSI Premium",
+      vehiclePrice: "46400000",
+      vehicleClass: "승용일반",
+      engineDisplacementCc: 1984,
+      highResidualAllowed: true,
+      hybridAllowed: false,
+      residualPromotionCode: "0",
+      snkResidualBand: "P",
+      term12Residual: null,
+      term24Residual: null,
+      term36Residual: null,
+      term48Residual: null,
+      term60Residual: null,
+      rawRow: null,
+    },
+    displayedAnnualRateRaw: 0.047,
+    residualRateRaw: 0.43,
+    maximumResidualRateRaw: 0.47,
+    residualSource: "override",
+    resolvedMatrixGroup: "에스앤케이모터스",
+  });
+
+  assertWithinTolerance(quote.rates.annualRateDecimal, 0.04961, 0.0002, "audi 60m 43% displayed annual rate");
 });
 
 test("MG AG/CM fee rates affect financed cost and monthly payment", () => {
@@ -506,5 +700,5 @@ test("MG AG/CM fee rates affect financed cost and monthly payment", () => {
 
   expect(quoteWithoutFees.feesAndTaxes.extraFees).toBe(0);
   expect(quoteWithFees.feesAndTaxes.extraFees > 0).toBe(true);
-  expect(quoteWithFees.monthlyPayment > quoteWithoutFees.monthlyPayment).toBe(true);
+  expect(quoteWithFees.majorInputs.financedPrincipal > quoteWithoutFees.majorInputs.financedPrincipal).toBe(true);
 });

@@ -1,6 +1,7 @@
 import type { QuoteProductType } from "@/domain/imports/types";
 
 export type QuoteOwnershipType = "company" | "customer";
+export type QuoteAffiliateType = "비제휴사" | "KCC오토" | "KCC면제";
 export type QuoteDiscountMode = "amount" | "rate";
 export type QuoteAcquisitionTaxMode = "automatic" | "ratio" | "reduction" | "amount";
 export type QuoteResidualValueMode = "vehicle-price-ratio" | "acquisition-cost-ratio" | "amount";
@@ -10,6 +11,10 @@ export type CanonicalQuoteInput = {
   productType: QuoteProductType;
   brand: string;
   modelName: string;
+  affiliateType?: QuoteAffiliateType;
+  directModelEntry?: boolean;
+  manualVehicleClass?: string;
+  manualEngineDisplacementCc?: number;
   ownershipType: QuoteOwnershipType;
   leaseTermMonths: 12 | 24 | 36 | 48 | 60;
   annualMileageKm?: 10000 | 20000 | 30000 | 35000;
@@ -34,10 +39,16 @@ export type CanonicalQuoteInput = {
   acquisitionTaxRatioInput?: number;
   acquisitionTaxReduction?: number;
   acquisitionTaxAmountOverride?: number;
+  includePublicBondCost?: boolean;
   publicBondCost?: number;
+  includeMiscFeeAmount?: boolean;
+  miscFeeAmount?: number;
+  includeDeliveryFeeAmount?: boolean;
+  deliveryFeeAmount?: number;
   stampDuty?: number;
   agFeeRate?: number;
   cmFeeRate?: number;
+  insuranceYearlyAmount?: number;
   insuranceMonthly?: number;
   lossDamageAmount?: number;
 };
@@ -100,7 +111,7 @@ export type CanonicalQuoteResult = {
     };
   };
   rates: {
-    source: "override" | "brand-policy" | "workbook-heuristic";
+    source: "override" | "brand-policy" | "workbook-heuristic" | "workbook-formula" | "excel-workbook";
     annualRateDecimal: number;
     effectiveAnnualRateDecimal: number;
     monthlyRateDecimal: number;

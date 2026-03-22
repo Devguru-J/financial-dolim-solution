@@ -114,7 +114,7 @@ Recommended split:
 
 ## 5. Migration strategy from Excel formulas to code
 
-We should not try to mirror every worksheet cell 1:1 in the app. Instead:
+We should not execute Excel at runtime in the web product. Instead:
 
 1. Preserve Excel as source-of-truth for monthly data
 2. Rebuild the calculator as explicit TypeScript domain functions
@@ -154,6 +154,9 @@ Already implemented:
 11. hidden residual candidate summary for `에스앤케이`, `APS`, and `차봇`
 12. `selectedResidualRateOverride` / `residualAmountOverride` path for exact workbook parity
 13. local `/playground` page for manual quote testing
+14. removed Excel automation from the normal API calculation path
+15. shared residual-company selection path for `SNK` and `APS` with matrix fallback
+16. workbook-style `ROUNDUP(...,-2)` display for monthly payment
 
 Verified findings from the provided MG workbook:
 
@@ -169,7 +172,7 @@ Current verified behavior with DB connection:
 4. current calculator resolves vehicle price, residual candidates, applied residual, base IRR, and monthly payment
 5. `/playground` lets us test quote inputs, inspect hidden residual candidates, and re-run with final selected residual input
 
-Important current conclusion:
+Important current conclusions:
 
 1. workbook cell `BK27` behaves like a user-selected final residual input rather than a purely derived value
 2. because of that, exact parity should be modeled as:
@@ -177,11 +180,22 @@ Important current conclusion:
    - UI or API consumer confirms final residual selection
    - request passes `selectedResidualRateOverride` or `residualAmountOverride`
 3. this is more accurate than forcing a fully automatic guess
+4. workbook residual-company selection is not globally fixed per lender or per brand; models can resolve through different residual-company paths such as `SNK` or `APS`
+5. for production, the runtime must use DB-backed normalized data and code-derived formulas, not open Microsoft Excel during quote calculation
+
+Current gap we are actively closing:
+
+1. some representative models now match Excel on residual bounds and displayed annual rate
+2. some other models still diverge because the hidden fee/rate chain and residual-company selection need more fixture coverage
+3. all-model verification is not complete yet
 
 ## 8. Immediate next build slice
 
-1. add fixture-based validation using workbook scenarios
-2. wire `candidateSummary` and `selectionGuide` into a real quote UI
-3. model taxes, registration, and extra fee rules from the workbook
-4. capture scattered exception logic from hidden quote sheets
+1. add representative fixtures for models that resolve to different residual companies
+   - example: `BENZ Maybach GLS 600 4Matic`
+   - example: `BENZ E 200 Avantgarde Limited`
+   - example: `BMW X7 xDrive 40d DPE (6인승)`
+2. continue extracting hidden fee and PMT-chain rules that still cause monthly-payment deltas
+3. wire `candidateSummary` and `selectionGuide` into the quote UI more clearly
+4. capture remaining scattered exception logic from hidden quote sheets
 5. start `금융리스` implementation
