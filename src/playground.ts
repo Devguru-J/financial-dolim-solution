@@ -1850,6 +1850,29 @@ export function renderPlaygroundHtml() {
         return model.highResidualAllowed ? baseRate + 0.08 : baseRate;
       }
 
+      function previewBaseResidualRate(model, termMonths) {
+        if (!model) return null;
+        const term = Number(termMonths);
+        const apiMaxRate = Number(model.maxResidualRates?.[term]);
+        if (Number.isFinite(apiMaxRate)) {
+          // maxResidualRates는 이미 최종 최대 잔가율을 저장 — +0.08 없이 반환하므로 base와 동일
+          return apiMaxRate;
+        }
+        const band = model.snkResidualBand;
+        const fromMatrix =
+          band && residualMatrixLookup[band] && residualMatrixLookup[band][term]
+            ? Number(
+                residualMatrixLookup[band][term]['에스앤케이모터스'] ??
+                  residualMatrixLookup[band][term]['APS'] ??
+                  Object.values(residualMatrixLookup[band][term])[0],
+              )
+            : null;
+        const directRate =
+          Number(model.residuals?.[term] ?? model.snkResiduals?.[term] ?? model.apsResiduals?.[term] ?? model.chatbotResiduals?.[term]);
+        const baseRate = Number.isFinite(fromMatrix) ? fromMatrix : Number.isFinite(directRate) ? directRate : null;
+        return baseRate; // highResidual +0.08 없이 순수 base rate
+      }
+
       function updateResidualPreviewFromInputs(model) {
         const term = Number(quoteForm.elements.namedItem('leaseTermMonths').value || 0);
         const minimumRate = minimumResidualRateByTerm(term);
@@ -1890,22 +1913,22 @@ export function renderPlaygroundHtml() {
         field.value = value;
       }
 
-      function renderVehiclePriceSources(model) {
-        const modelPrice = model ? Number(model.vehiclePrice) : undefined;
-        const rawContractPrice = contractNumber('basicVehiclePrice');
+      function renderVehicleSummaryRow(model) {
         const inputPrice = Number(quoteForm.elements.namedItem('quotedVehiclePrice').value || 0);
+        const discount = Number(quoteForm.elements.namedItem('discountAmount').value || 0);
+        const finalPrice = inputPrice - discount;
+        const term = Number(quoteForm.elements.namedItem('leaseTermMonths').value || 36);
 
-        vehiclePriceSourceModel.textContent = modelPrice == null ? '-' : '₩ ' + formatNumber(modelPrice);
-        vehiclePriceSourceInput.textContent = inputPrice > 0 ? '₩ ' + formatNumber(inputPrice) : '-';
+        summaryFinalPrice.textContent = finalPrice > 0 ? '₩ ' + formatNumber(finalPrice) : '-';
 
-        Array.from(vehiclePriceSourceGrid.children).forEach((node) => node.classList.remove('warn'));
+        const baseRate = previewBaseResidualRate(model, term);
+        const maxRate = previewMaximumResidualRate(model, term);
 
-        if (inputPrice > 0) {
-          const baseline = modelPrice;
-          if (baseline != null && Number(inputPrice) !== Number(baseline)) {
-            vehiclePriceSourceGrid.children[1].classList.add('warn');
-          }
-        }
+        summaryBaseResidual.textContent = baseRate != null ? '₩ ' + formatNumber(Math.round(finalPrice * baseRate)) : '-';
+        summaryBaseResidualPct.textContent = baseRate != null ? '(' + formatPercent(baseRate) + ')' : '';
+
+        summaryMaxResidual.textContent = maxRate != null ? '₩ ' + formatNumber(Math.round(finalPrice * maxRate)) : '-';
+        summaryMaxResidualPct.textContent = maxRate != null ? '(' + formatPercent(maxRate) + ')' : '';
       }
 
       function contractFieldValue(name) {
@@ -2035,7 +2058,7 @@ export function renderPlaygroundHtml() {
         manualVehicleClassInput.readOnly = true;
         manualEngineDisplacementCcInput.readOnly = true;
         updateDiscountedVehiclePriceDisplay();
-        renderVehiclePriceSources(model);
+        renderVehicleSummaryRow(model);
       }
 
       function updateWorkbookDiffWarning() {
@@ -2146,7 +2169,7 @@ export function renderPlaygroundHtml() {
           setFieldValue(sheetExtraService, '-');
           setFieldValue(sheetSalesOwner, '-');
           setFieldValue(sheetDepositBasis, '차량가 기준');
-          renderVehiclePriceSources(activeModels.find((entry) => entry.modelName === modelSelect.value) || null);
+          renderVehicleSummaryRow(activeModels.find((entry) => entry.modelName === modelSelect.value) || null);
           return;
         }
 
@@ -2159,7 +2182,7 @@ export function renderPlaygroundHtml() {
         setFieldValue(sheetMinResidualRate, quote.residual.minRateDecimal == null ? '-' : formatPercent(quote.residual.minRateDecimal));
         setFieldValue(sheetMaxResidualRate, quote.residual.maxRateDecimal == null ? '-' : formatPercent(quote.residual.maxRateDecimal));
         setFieldValue(sheetDepositBasis, '차량가 기준');
-        renderVehiclePriceSources(activeModels.find((entry) => entry.modelName === modelSelect.value) || null);
+        renderVehicleSummaryRow(activeModels.find((entry) => entry.modelName === modelSelect.value) || null);
       }
 
       function scheduleAutoCalculate() {
@@ -2249,7 +2272,7 @@ export function renderPlaygroundHtml() {
         if (!model) {
           selectedModelMeta.textContent = '현재 선택된 모델의 메타데이터가 없습니다.';
           setAutoSummaryFromModel(null);
-          renderVehiclePriceSources(null);
+          renderVehicleSummaryRow(null);
           return;
         }
 
@@ -2267,7 +2290,7 @@ export function renderPlaygroundHtml() {
         quoteForm.elements.namedItem('quotedVehiclePrice').value = String(model.vehiclePrice);
         setAutoSummaryFromModel(model);
         updateWorkbookDiffWarning();
-        renderVehiclePriceSources(model);
+        renderVehicleSummaryRow(model);
       }
 
       function renderCatalogList(brands) {
@@ -2764,7 +2787,7 @@ export function renderPlaygroundHtml() {
             updateDiscountedVehiclePriceDisplay();
             updateWorkbookDiffWarning();
             if (name === 'quotedVehiclePrice') {
-              renderVehiclePriceSources(activeModels.find((entry) => entry.modelName === modelSelect.value) || null);
+              renderVehicleSummaryRow(activeModels.find((entry) => entry.modelName === modelSelect.value) || null);
             }
             scheduleAutoCalculate();
           });
@@ -2772,7 +2795,7 @@ export function renderPlaygroundHtml() {
             updateDiscountedVehiclePriceDisplay();
             updateWorkbookDiffWarning();
             if (name === 'quotedVehiclePrice') {
-              renderVehiclePriceSources(activeModels.find((entry) => entry.modelName === modelSelect.value) || null);
+              renderVehicleSummaryRow(activeModels.find((entry) => entry.modelName === modelSelect.value) || null);
             }
             scheduleAutoCalculate();
           });
