@@ -1715,15 +1715,16 @@ export function renderPlaygroundHtml() {
 
       const quoteForm = document.getElementById('quote-form');
       const brandSelect = document.getElementById('brand');
-      const modelSelect = document.getElementById('modelName');
+      const modelSelect = document.getElementById('modelName'); // disabled, 미래 확장용
+      const trimSelect = document.getElementById('trimName');   // 현재 실제 모델 선택
       const selectedModelMeta = document.getElementById('selected-model-meta');
-      const vehiclePriceSourceModel = document.getElementById('vehicle-price-source-model');
-      const vehiclePriceSourceContract = document.getElementById('vehicle-price-source-contract');
-      const vehiclePriceSourceInput = document.getElementById('vehicle-price-source-input');
-      const vehiclePriceSourceGrid = document.getElementById('vehicle-price-source-grid');
+      const summaryFinalPrice = document.getElementById('summary-final-price');
+      const summaryBaseResidual = document.getElementById('summary-base-residual');
+      const summaryBaseResidualPct = document.getElementById('summary-base-residual-pct');
+      const summaryMaxResidual = document.getElementById('summary-max-residual');
+      const summaryMaxResidualPct = document.getElementById('summary-max-residual-pct');
       const manualVehicleClassInput = document.getElementById('manualVehicleClass');
       const manualEngineDisplacementCcInput = document.getElementById('manualEngineDisplacementCc');
-      const affiliateTypeInput = document.getElementById('affiliateType');
       const directModelEntryInput = document.getElementById('directModelEntry');
       const optionAmountDisplay = document.getElementById('optionAmountDisplay');
       const discountedVehiclePriceDisplay = document.getElementById('discountedVehiclePriceDisplay');
