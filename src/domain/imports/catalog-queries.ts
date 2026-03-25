@@ -1,6 +1,7 @@
 import { asc, desc, eq } from "drizzle-orm";
 
 import { residualMatrixRows, vehiclePrograms, workbookImports } from "@/db/schema";
+import { summarizeMgResidualCandidates } from "@/domain/lenders/mg-capital/operating-lease-service";
 import { createDbClient } from "@/lib/db/client";
 
 type ActiveWorkbookRef = {
@@ -66,6 +67,37 @@ function promotionRateForMatrixGroup(rawRow: Record<string, unknown> | null, mat
     return parsePromotionRate(rawRow, "apsPromotionRate");
   }
   return 0;
+}
+
+function readRawRowText(rawRow: Record<string, unknown> | null, key: string): string | null {
+  const value = rawRow?.[key];
+  if (typeof value !== "string") {
+    return null;
+  }
+  const trimmed = value.trim();
+  return trimmed ? trimmed : null;
+}
+
+function matrixRowMatchesVehicleResidualSource(
+  matrixGroup: string,
+  gradeCode: string,
+  params: {
+    snkResidualBand: string | null;
+    apsResidualBand: string | null;
+  },
+): boolean {
+  if (matrixGroup === "에스앤케이모터스" || matrixGroup === "SNK") {
+    return params.snkResidualBand != null && gradeCode === params.snkResidualBand;
+  }
+
+  if (matrixGroup === "APS") {
+    return params.apsResidualBand != null && gradeCode === params.apsResidualBand;
+  }
+
+  return (
+    (params.snkResidualBand != null && gradeCode === params.snkResidualBand) ||
+    (params.apsResidualBand != null && gradeCode === params.apsResidualBand)
+  );
 }
 
 export async function getActiveWorkbookBrands(params: {
@@ -227,24 +259,55 @@ export async function getActiveWorkbookModels(params: {
             ((row.rawRow as Record<string, unknown> | null)?.snkPromotionRate as number | null | undefined) ?? null,
           maxResidualRates: ([12, 24, 36, 48, 60] as const).reduce<Partial<Record<12 | 24 | 36 | 48 | 60, number>>>(
             (acc, term) => {
-              const grade = row.snkResidualBand;
-              if (!grade) {
-                return acc;
-              }
-              const matchingRows = matrixRows.filter((matrixRow) => matrixRow.gradeCode === grade && matrixRow.leaseTermMonths === term);
-              if (matchingRows.length === 0) {
-                return acc;
-              }
               const rawRow = (row.rawRow as Record<string, unknown> | null) ?? null;
-              acc[term] = Math.max(
-                ...matchingRows.map((matrixRow) => {
-                  const baseRate = Number(matrixRow.residualRate);
-                  if (!Number.isFinite(baseRate)) {
-                    return 0;
-                  }
-                  return baseRate + promotionRateForMatrixGroup(rawRow, matrixRow.matrixGroup) + (row.highResidualAllowed ? 0.08 : 0);
-                }),
+              const apsResidualBand = readRawRowText(rawRow, "apsResidualBand");
+              const matchingRows = matrixRows
+                .filter((matrixRow) => matrixRow.leaseTermMonths === term)
+                .filter((matrixRow) =>
+                  matrixRowMatchesVehicleResidualSource(matrixRow.matrixGroup, matrixRow.gradeCode, {
+                    snkResidualBand: row.snkResidualBand,
+                    apsResidualBand,
+                  }),
+                )
+                .map((matrixRow) => ({
+                  matrixGroup: matrixRow.matrixGroup,
+                  residualRate: matrixRow.residualRate,
+                }));
+
+              const summary = summarizeMgResidualCandidates({
+                input: {
+                  leaseTermMonths: term,
+                  ownershipType: "company",
+                },
+                vehicle: {
+                  highResidualAllowed: row.highResidualAllowed,
+                  rawRow,
+                },
+                annualMileageKm: 20000,
+                matrixRows: matchingRows,
+              });
+
+              if (summary.maxBoostedRate != null) {
+                acc[term] = summary.maxBoostedRate;
+                return acc;
+              }
+
+              const directRate = Number(
+                row.term12Residual && term === 12
+                  ? row.term12Residual
+                  : row.term24Residual && term === 24
+                    ? row.term24Residual
+                    : row.term36Residual && term === 36
+                      ? row.term36Residual
+                      : row.term48Residual && term === 48
+                        ? row.term48Residual
+                        : row.term60Residual && term === 60
+                          ? row.term60Residual
+                          : NaN,
               );
+              if (Number.isFinite(directRate)) {
+                acc[term] = directRate + (row.highResidualAllowed ? 0.08 : 0);
+              }
               return acc;
             },
             {},

@@ -1051,7 +1051,7 @@ export function renderPlaygroundHtml() {
           <div class="brand-mark">
             <div class="brand-badge">DL</div>
             <div>
-              <div class="brand-title">도림 자동차 견적 솔루션</div>
+              <div class="brand-title">도림 자동차 견적 해결표</div>
               <div class="brand-subtitle">Precision Ledger · 한국어 운영 콘솔</div>
             </div>
           </div>

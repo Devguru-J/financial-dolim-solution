@@ -83,6 +83,15 @@ function parseNumeric(value: string | null): number | null {
   return Number.isFinite(parsed) ? parsed : null;
 }
 
+function readRawRowText(rawRow: Record<string, unknown> | null, key: string): string | null {
+  const value = rawRow?.[key];
+  if (typeof value !== "string") {
+    return null;
+  }
+  const trimmed = value.trim();
+  return trimmed ? trimmed : null;
+}
+
 function normalizeRate(rate: number): number {
   return rate > 1 ? rate / 100 : rate;
 }
@@ -258,7 +267,7 @@ export function summarizeMgResidualCandidates(params: {
     });
   }
 
-  if (candidates.length === 0 && params.matrixRows && params.matrixRows.length > 0) {
+  if (params.matrixRows && params.matrixRows.length > 0) {
     for (const row of params.matrixRows) {
       const baseRate = normalizeRate(parseNumeric(String(row.residualRate)) ?? 0);
       if (!Number.isFinite(baseRate) || baseRate <= 0) {
@@ -274,6 +283,10 @@ export function summarizeMgResidualCandidates(params: {
             : null;
 
       if (!candidateName) {
+        continue;
+      }
+
+      if (candidates.some((candidate) => candidate.name === candidateName)) {
         continue;
       }
 
@@ -473,6 +486,28 @@ function residualGuaranteeMatrixGroupFromCandidateName(
     return "APS";
   }
   return null;
+}
+
+function matrixRowMatchesVehicleResidualSource(
+  matrixGroup: string,
+  gradeCode: string,
+  params: {
+    snkResidualBand: string | null;
+    apsResidualBand: string | null;
+  },
+): boolean {
+  if (matrixGroup === "에스앤케이모터스" || matrixGroup === "SNK") {
+    return params.snkResidualBand != null && gradeCode === params.snkResidualBand;
+  }
+
+  if (matrixGroup === "APS") {
+    return params.apsResidualBand != null && gradeCode === params.apsResidualBand;
+  }
+
+  return (
+    (params.snkResidualBand != null && gradeCode === params.snkResidualBand) ||
+    (params.apsResidualBand != null && gradeCode === params.apsResidualBand)
+  );
 }
 
 export function resolveWorkbookDisplayedAnnualRate(params: {
@@ -1067,22 +1102,35 @@ export async function calculateMgOperatingLeaseQuote(params: {
       throw new Error(`Base IRR policy not found for brand '${input.brand}' and ownership '${input.ownershipType}'.`);
     }
 
+    const apsResidualBand = readRawRowText(vehicle.rawRow, "apsResidualBand");
     const matrixRows =
-      vehicle.snkResidualBand == null
+      vehicle.snkResidualBand == null && apsResidualBand == null
         ? []
-        : await db
-            .select({
-              matrixGroup: residualMatrixRows.matrixGroup,
-              residualRate: residualMatrixRows.residualRate,
-            })
-            .from(residualMatrixRows)
-            .where(
-              and(
-                eq(residualMatrixRows.workbookImportId, workbookImport.id),
-                eq(residualMatrixRows.gradeCode, vehicle.snkResidualBand),
-                eq(residualMatrixRows.leaseTermMonths, input.leaseTermMonths),
-              ),
-            );
+        : (
+            await db
+              .select({
+                matrixGroup: residualMatrixRows.matrixGroup,
+                gradeCode: residualMatrixRows.gradeCode,
+                residualRate: residualMatrixRows.residualRate,
+              })
+              .from(residualMatrixRows)
+              .where(
+                and(
+                  eq(residualMatrixRows.workbookImportId, workbookImport.id),
+                  eq(residualMatrixRows.leaseTermMonths, input.leaseTermMonths),
+                ),
+              )
+          )
+            .filter((row) =>
+              matrixRowMatchesVehicleResidualSource(row.matrixGroup, row.gradeCode, {
+                snkResidualBand: vehicle.snkResidualBand,
+                apsResidualBand,
+              }),
+            )
+            .map((row) => ({
+              matrixGroup: row.matrixGroup,
+              residualRate: row.residualRate,
+            }));
 
     const { residualRateRaw, residualSource, resolvedMatrixGroup } = resolveMgOperatingLeaseResidualRate({
       input,

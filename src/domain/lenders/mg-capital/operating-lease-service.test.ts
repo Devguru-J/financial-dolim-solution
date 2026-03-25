@@ -327,6 +327,178 @@ test("MG residual candidates match VOLVO company hidden-sheet summary", () => {
   expect(summary.selectedCandidateName).toBe("APS");
 });
 
+test("MG residual candidates supplement missing SNK data from matrix rows", () => {
+  const summary = summarizeMgResidualCandidates({
+    input: {
+      leaseTermMonths: 60,
+      ownershipType: "company",
+    },
+    vehicle: {
+      highResidualAllowed: true,
+      rawRow: {
+        snkResiduals: {},
+        apsResiduals: { 60: 0.36 },
+        chatbotResiduals: {},
+        apsResidualBand: "M",
+      },
+    },
+    annualMileageKm: 20000,
+    matrixRows: [
+      { matrixGroup: "에스앤케이모터스", residualRate: "0.38" },
+      { matrixGroup: "APS", residualRate: "0.36" },
+    ],
+    selectedResidualRateDecimal: 0.36,
+  });
+
+  expect(summary.candidates.map((candidate) => candidate.name).sort().join("|")).toBe("APS|에스앤케이모터스");
+  assertWithinTolerance(summary.maxBoostedRate ?? 0, 0.46, 0.0000001, "maybach maxBoostedRate");
+  expect(summary.selectedCandidateName).toBe("에스앤케이모터스");
+});
+
+test("MG residual candidates choose APS on equal boosted residual when APS fee is lower", () => {
+  const summary = summarizeMgResidualCandidates({
+    input: {
+      leaseTermMonths: 60,
+      ownershipType: "company",
+    },
+    vehicle: {
+      highResidualAllowed: true,
+      rawRow: {
+        snkResiduals: { 60: 0.5 },
+        apsResiduals: { 60: 0.495 },
+        chatbotResiduals: {},
+        apsPromotionRate: 0.005,
+        snkPromotionRate: 0,
+      },
+    },
+    annualMileageKm: 20000,
+    selectedResidualRateDecimal: 0.5,
+  });
+
+  assertWithinTolerance(summary.maxBoostedRate ?? 0, 0.58, 0.0000001, "e200 maxBoostedRate");
+  expect(summary.selectedCandidateName).toBe("APS");
+});
+
+test("MG BENZ Maybach GLS 600 4Matic 60-month candidate path keeps SNK as selected company", () => {
+  const quote = calculateMgOperatingLeaseQuoteFromResolvedInput({
+    workbookImport: {
+      id: "fixture-workbook-import",
+      versionLabel: "★MG캐피탈_수입견적_26.03월_외부용_2603_vol1",
+    },
+    input: {
+      lenderCode: "mg-capital",
+      productType: "operating_lease",
+      brand: "BENZ",
+      modelName: "Maybach GLS 600 4Matic",
+      ownershipType: "company",
+      leaseTermMonths: 60,
+      annualMileageKm: 20000,
+      upfrontPayment: 0,
+      depositAmount: 0,
+      quotedVehiclePrice: 280700000,
+      selectedResidualRateOverride: 0.36,
+      agFeeRate: 0,
+      cmFeeRate: 0,
+      acquisitionTaxRateOverride: 0.07,
+    },
+    vehicle: {
+      brand: "BENZ",
+      modelName: "Maybach GLS 600 4Matic",
+      vehiclePrice: "280700000",
+      vehicleClass: "승용SUV(7~10인)",
+      engineDisplacementCc: 3982,
+      highResidualAllowed: true,
+      hybridAllowed: false,
+      residualPromotionCode: null,
+      snkResidualBand: "Q",
+      term12Residual: null,
+      term24Residual: null,
+      term36Residual: null,
+      term48Residual: null,
+      term60Residual: null,
+      rawRow: {
+        apsResidualBand: "M",
+        apsResiduals: { 60: 0.36 },
+        snkResiduals: {},
+        chatbotResiduals: {},
+      },
+    },
+    matrixRows: [
+      { matrixGroup: "에스앤케이모터스", residualRate: "0.38" },
+      { matrixGroup: "APS", residualRate: "0.36" },
+    ],
+    displayedAnnualRateRaw: 0.047,
+    residualRateRaw: 0.38,
+    maximumResidualRateRaw: 0.46,
+    residualSource: "residual-matrix",
+    resolvedMatrixGroup: "에스앤케이모터스",
+  });
+
+  expect(quote.residual.candidateSummary?.selectedCandidateName).toBe("에스앤케이모터스");
+  assertWithinTolerance(quote.residual.maxRateDecimal ?? 0, 0.46, 0.0000001, "maybach max residual");
+});
+
+test("MG BENZ E 200 Avantgarde Limited 60-month candidate path selects APS on equal boosted residual", () => {
+  const quote = calculateMgOperatingLeaseQuoteFromResolvedInput({
+    workbookImport: {
+      id: "fixture-workbook-import",
+      versionLabel: "★MG캐피탈_수입견적_26.03월_외부용_2603_vol1",
+    },
+    input: {
+      lenderCode: "mg-capital",
+      productType: "operating_lease",
+      brand: "BENZ",
+      modelName: "E 200 Avantgarde Limited",
+      ownershipType: "company",
+      leaseTermMonths: 60,
+      annualMileageKm: 20000,
+      upfrontPayment: 0,
+      depositAmount: 0,
+      quotedVehiclePrice: 69000000,
+      selectedResidualRateOverride: 0.5,
+      agFeeRate: 0,
+      cmFeeRate: 0,
+      acquisitionTaxRateOverride: 0.07,
+    },
+    vehicle: {
+      brand: "BENZ",
+      modelName: "E 200 Avantgarde Limited",
+      vehiclePrice: "69000000",
+      vehicleClass: "승용일반",
+      engineDisplacementCc: 1999,
+      highResidualAllowed: true,
+      hybridAllowed: false,
+      residualPromotionCode: null,
+      snkResidualBand: "E",
+      term12Residual: null,
+      term24Residual: null,
+      term36Residual: null,
+      term48Residual: null,
+      term60Residual: null,
+      rawRow: {
+        apsResidualBand: "SA1",
+        apsResiduals: { 60: 0.495 },
+        apsPromotionRate: 0.005,
+        snkResiduals: { 60: 0.5 },
+        snkPromotionRate: 0,
+        chatbotResiduals: {},
+      },
+    },
+    matrixRows: [
+      { matrixGroup: "에스앤케이모터스", residualRate: "0.50" },
+      { matrixGroup: "APS", residualRate: "0.495" },
+    ],
+    displayedAnnualRateRaw: 0.047,
+    residualRateRaw: 0.5,
+    maximumResidualRateRaw: 0.58,
+    residualSource: "residual-matrix",
+    resolvedMatrixGroup: "에스앤케이모터스",
+  });
+
+  expect(quote.residual.candidateSummary?.selectedCandidateName).toBe("APS");
+  assertWithinTolerance(quote.residual.maxRateDecimal ?? 0, 0.58, 0.0000001, "e200 max residual");
+});
+
 test("MG selectedResidualRateOverride reproduces workbook-selected residual without amount override", () => {
   const quote = calculateMgOperatingLeaseQuoteFromResolvedInput({
     workbookImport: {
