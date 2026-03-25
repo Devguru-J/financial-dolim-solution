@@ -1973,7 +1973,7 @@ export function renderPlaygroundHtml() {
           contractBrand &&
           contractModel &&
           brandSelect.value === contractBrand &&
-          modelSelect.value === contractModel
+          trimSelect.value === contractModel
         ) {
           return contractBasicVehiclePrice;
         }
@@ -1999,7 +1999,7 @@ export function renderPlaygroundHtml() {
 
       function resetWorkbookDefaults(options) {
         const preserveResidualSelection = options && options.preserveResidualSelection === true;
-        const model = activeModels.find((entry) => entry.modelName === modelSelect.value) || null;
+        const model = activeModels.find((entry) => entry.modelName === trimSelect.value) || null;
         const useContractDefaults = canUseWorkbookContractDefaults();
 
         const contractOwnership = useContractDefaults ? contractText('ownershipLabel') : undefined;
@@ -2062,7 +2062,7 @@ export function renderPlaygroundHtml() {
       }
 
       function updateWorkbookDiffWarning() {
-        const model = activeModels.find((entry) => entry.modelName === modelSelect.value) || null;
+        const model = activeModels.find((entry) => entry.modelName === trimSelect.value) || null;
         const diffs = [];
         const contractVehiclePrice = getContractVehiclePriceForCurrentSelection();
         const currentVehiclePrice = Number(quoteForm.elements.namedItem('quotedVehiclePrice').value || 0);
@@ -2169,7 +2169,7 @@ export function renderPlaygroundHtml() {
           setFieldValue(sheetExtraService, '-');
           setFieldValue(sheetSalesOwner, '-');
           setFieldValue(sheetDepositBasis, '차량가 기준');
-          renderVehicleSummaryRow(activeModels.find((entry) => entry.modelName === modelSelect.value) || null);
+          renderVehicleSummaryRow(activeModels.find((entry) => entry.modelName === trimSelect.value) || null);
           return;
         }
 
@@ -2182,7 +2182,7 @@ export function renderPlaygroundHtml() {
         setFieldValue(sheetMinResidualRate, quote.residual.minRateDecimal == null ? '-' : formatPercent(quote.residual.minRateDecimal));
         setFieldValue(sheetMaxResidualRate, quote.residual.maxRateDecimal == null ? '-' : formatPercent(quote.residual.maxRateDecimal));
         setFieldValue(sheetDepositBasis, '차량가 기준');
-        renderVehicleSummaryRow(activeModels.find((entry) => entry.modelName === modelSelect.value) || null);
+        renderVehicleSummaryRow(activeModels.find((entry) => entry.modelName === trimSelect.value) || null);
       }
 
       function scheduleAutoCalculate() {
@@ -2217,14 +2217,14 @@ export function renderPlaygroundHtml() {
       async function renderCatalogModels(brand, preferredModelName) {
         if (!brand) {
           activeModels = [];
-          modelSelect.innerHTML = '<option value="">모델 없음</option>';
-          modelSelect.disabled = true;
+          trimSelect.innerHTML = '<option value="">모델 없음</option>';
+          trimSelect.disabled = true;
           selectedModelMeta.textContent = '활성 워크북에서 브랜드를 먼저 선택해주세요.';
           return;
         }
 
-        modelSelect.innerHTML = '<option value="">모델 불러오는 중</option>';
-        modelSelect.disabled = true;
+        trimSelect.innerHTML = '<option value="">모델 불러오는 중</option>';
+        trimSelect.disabled = true;
 
         try {
           const response = await fetch('/api/catalog/models?lenderCode=mg-capital&brand=' + encodeURIComponent(brand));
@@ -2237,37 +2237,37 @@ export function renderPlaygroundHtml() {
           activeModels = Array.isArray(json.models) ? json.models : [];
         } catch (error) {
           activeModels = [];
-          modelSelect.innerHTML = '<option value="">모델 없음</option>';
-          modelSelect.disabled = true;
+          trimSelect.innerHTML = '<option value="">모델 없음</option>';
+          trimSelect.disabled = true;
           selectedModelMeta.textContent =
             error instanceof Error ? error.message : '선택한 브랜드의 모델을 불러오지 못했습니다.';
           return;
         }
 
         if (activeModels.length === 0) {
-          modelSelect.innerHTML = '<option value="">모델 없음</option>';
-          modelSelect.disabled = true;
+          trimSelect.innerHTML = '<option value="">모델 없음</option>';
+          trimSelect.disabled = true;
           selectedModelMeta.textContent = '선택한 브랜드의 모델을 불러오지 못했습니다.';
           return;
         }
 
-        modelSelect.disabled = false;
+        trimSelect.disabled = false;
 
-        modelSelect.innerHTML = activeModels
+        trimSelect.innerHTML = activeModels
           .map((model) => '<option value="' + model.modelName + '">' + model.modelName + '</option>')
           .join('');
 
         if (preferredModelName && activeModels.some((model) => model.modelName === preferredModelName)) {
-          modelSelect.value = preferredModelName;
+          trimSelect.value = preferredModelName;
         } else if (activeModels[0]) {
-          modelSelect.value = activeModels[0].modelName;
+          trimSelect.value = activeModels[0].modelName;
         }
 
         syncSelectedModelMeta();
       }
 
       function syncSelectedModelMeta() {
-        const model = activeModels.find((entry) => entry.modelName === modelSelect.value) || null;
+        const model = activeModels.find((entry) => entry.modelName === trimSelect.value) || null;
 
         if (!model) {
           selectedModelMeta.textContent = '현재 선택된 모델의 메타데이터가 없습니다.';
@@ -2678,6 +2678,12 @@ export function renderPlaygroundHtml() {
         scheduleAutoCalculate();
       });
 
+      trimSelect.addEventListener('change', () => {
+        syncSelectedModelMeta();
+        updateResidualPreviewFromInputs(activeModels.find((entry) => entry.modelName === trimSelect.value) || null);
+        scheduleAutoCalculate();
+      });
+
       modelSelect.addEventListener('change', () => {
         if (!isManualAnnualRateOverride()) {
           annualIrrRateInput.value = '';
@@ -2781,13 +2787,13 @@ export function renderPlaygroundHtml() {
               annualIrrRateInput.value = '';
             }
             if (name === 'leaseTermMonths') {
-              const model = activeModels.find((entry) => entry.modelName === modelSelect.value) || null;
+              const model = activeModels.find((entry) => entry.modelName === trimSelect.value) || null;
               updateResidualPreviewFromInputs(model);
             }
             updateDiscountedVehiclePriceDisplay();
             updateWorkbookDiffWarning();
             if (name === 'quotedVehiclePrice') {
-              renderVehicleSummaryRow(activeModels.find((entry) => entry.modelName === modelSelect.value) || null);
+              renderVehicleSummaryRow(activeModels.find((entry) => entry.modelName === trimSelect.value) || null);
             }
             scheduleAutoCalculate();
           });
@@ -2795,7 +2801,7 @@ export function renderPlaygroundHtml() {
             updateDiscountedVehiclePriceDisplay();
             updateWorkbookDiffWarning();
             if (name === 'quotedVehiclePrice') {
-              renderVehicleSummaryRow(activeModels.find((entry) => entry.modelName === modelSelect.value) || null);
+              renderVehicleSummaryRow(activeModels.find((entry) => entry.modelName === trimSelect.value) || null);
             }
             scheduleAutoCalculate();
           });
@@ -2957,7 +2963,7 @@ export function renderPlaygroundHtml() {
         const hasCurrentBrand = activeCatalog.some((entry) => entry.brand === currentBrand);
         const nextBrand = hasCurrentBrand ? currentBrand : activeCatalog[0].brand;
         brandSelect.value = nextBrand;
-        await renderCatalogModels(nextBrand, modelSelect.value || undefined);
+        await renderCatalogModels(nextBrand, trimSelect.value || undefined);
       }
 
       async function refreshDashboard() {
