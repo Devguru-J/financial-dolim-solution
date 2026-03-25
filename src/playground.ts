@@ -1265,60 +1265,51 @@ export function renderPlaygroundHtml() {
                               <div class="sheet-value">
                                 <select class="sheet-field" id="brand" name="brand"></select>
                               </div>
-                              <div class="sheet-label">Model</div>
-                              <div class="sheet-value">
-                                <select class="sheet-field" id="modelName" name="modelName"></select>
-                              </div>
-
-                              <div class="sheet-label">제휴사</div>
-                              <div class="sheet-value">
-                                <select class="sheet-field" id="affiliateType" name="affiliateType">
-                                  <option value="비제휴사">비제휴사</option>
-                                  <option value="KCC오토">KCC오토</option>
-                                  <option value="KCC면제">KCC면제</option>
-                                </select>
-                              </div>
-                              <div class="sheet-label">차종직접입력</div>
-                              <div class="sheet-value">
-                                <label class="sheet-check"><input id="directModelEntry" name="directModelEntry" type="checkbox" /> 사용</label>
-                              </div>
-
-                              <div class="sheet-label">차종구분</div>
-                              <div class="sheet-value">
-                                <input class="sheet-field" id="manualVehicleClass" name="manualVehicleClass" type="text" value="-" readonly />
-                              </div>
-                              <div class="sheet-label">배기량</div>
-                              <div class="sheet-value">
-                                <input class="sheet-field tabular" id="manualEngineDisplacementCc" name="manualEngineDisplacementCc" type="number" value="" readonly />
-                              </div>
-
-                              <div class="sheet-label">기본차량가</div>
+                              <div class="sheet-label">차량 가격</div>
                               <div class="sheet-value">
                                 <input class="sheet-field tabular" id="quotedVehiclePrice" name="quotedVehiclePrice" type="number" />
                               </div>
-                              <div class="sheet-label">옵션</div>
+
+                              <div class="sheet-label">Model</div>
+                              <div class="sheet-value">
+                                <select class="sheet-field" id="modelName" disabled style="opacity:0.4;cursor:not-allowed"></select>
+                              </div>
+                              <div class="sheet-label">옵션 가격</div>
                               <div class="sheet-value">
                                 <input class="sheet-field readonly tabular" id="optionAmountDisplay" type="text" readonly value="0" />
                               </div>
 
-                              <div class="sheet-label">할인</div>
+                              <div class="sheet-label">Trim</div>
+                              <div class="sheet-value">
+                                <select class="sheet-field" id="trimName" name="modelName"></select>
+                              </div>
+                              <div class="sheet-label">할인 가격</div>
                               <div class="sheet-value">
                                 <input class="sheet-field tabular" id="discountAmount" name="discountAmount" type="number" value="0" />
                               </div>
-                              <div class="sheet-label">차량가계(계산서가)</div>
-                              <div class="sheet-value">
-                                <input class="sheet-field readonly tabular" id="discountedVehiclePriceDisplay" type="text" readonly value="-" />
-                              </div>
                             </div>
+
+                            <!-- hidden inputs: 계산에 사용되지만 화면에 표시 안 함 -->
+                            <input type="hidden" id="affiliateType" name="affiliateType" value="비제휴사" />
+                            <input type="hidden" id="directModelEntry" name="directModelEntry" value="" />
+                            <input type="hidden" id="manualVehicleClass" name="manualVehicleClass" />
+                            <input type="hidden" id="manualEngineDisplacementCc" name="manualEngineDisplacementCc" />
+
                             <div class="sheet-note" id="selected-model-meta">선택한 모델의 차종, 배기량, 고잔가 여부와 프로모션 코드가 자동 반영됩니다.</div>
-                            <div class="sheet-source-grid" id="vehicle-price-source-grid">
+
+                            <!-- 하단 요약 행 -->
+                            <div class="sheet-source-grid" id="vehicle-summary-row" style="grid-template-columns: repeat(3, 1fr)">
                               <div class="sheet-source-card">
-                                <div class="sheet-source-label">차량DB 기본값</div>
-                                <div class="sheet-source-value tabular" id="vehicle-price-source-model">-</div>
+                                <div class="sheet-source-label">최종차량가</div>
+                                <div class="sheet-source-value tabular" id="summary-final-price">-</div>
                               </div>
                               <div class="sheet-source-card">
-                                <div class="sheet-source-label">현재 입력값</div>
-                                <div class="sheet-source-value tabular" id="vehicle-price-source-input">-</div>
+                                <div class="sheet-source-label">일반잔가 <span id="summary-base-residual-pct" style="font-weight:400"></span></div>
+                                <div class="sheet-source-value tabular" id="summary-base-residual">-</div>
+                              </div>
+                              <div class="sheet-source-card">
+                                <div class="sheet-source-label">최대(고)잔가 <span id="summary-max-residual-pct" style="font-weight:400"></span></div>
+                                <div class="sheet-source-value tabular" id="summary-max-residual">-</div>
                               </div>
                             </div>
                           </div>
