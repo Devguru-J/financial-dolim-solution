@@ -2039,7 +2039,7 @@ export function renderPlaygroundHtml() {
         quoteForm.elements.namedItem('insuranceYearlyAmount').value = String(contractInsuranceYearlyAmount ?? 0);
         quoteForm.elements.namedItem('lossDamageAmount').value = String(contractLossDamageAmount ?? 0);
         quoteForm.elements.namedItem('affiliateType').value = '비제휴사';
-        quoteForm.elements.namedItem('directModelEntry').checked = false;
+        quoteForm.elements.namedItem('directModelEntry').value = '';
         agFeeRateInput.value = '0%';
         cmFeeRateInput.value = formatPercentInputValue(contractCmFeeRate ?? 0) + '%';
 
@@ -2146,7 +2146,7 @@ export function renderPlaygroundHtml() {
       }
 
       function setAutoSummaryFromModel(model) {
-        if (!directModelEntryInput.checked) {
+        if (directModelEntryInput.value !== 'true') {
           setFieldValue(manualEngineDisplacementCcInput, model && model.engineDisplacementCc ? model.engineDisplacementCc : '');
           setFieldValue(manualVehicleClassInput, model && model.vehicleClass ? model.vehicleClass : '-');
         }
@@ -2390,7 +2390,7 @@ export function renderPlaygroundHtml() {
           brand: String(data.get('brand')),
           modelName: String(data.get('modelName')),
           affiliateType: String(data.get('affiliateType') || '비제휴사'),
-          directModelEntry: data.get('directModelEntry') != null,
+          directModelEntry: false,
           manualVehicleClass: readText(data, 'manualVehicleClass'),
           manualEngineDisplacementCc: readNumber(data, 'manualEngineDisplacementCc'),
           ownershipType: String(data.get('ownershipType')),
@@ -2690,25 +2690,6 @@ export function renderPlaygroundHtml() {
         }
         syncSelectedModelMeta();
         resetWorkbookDefaults({ preserveResidualSelection: false });
-        updateWorkbookDiffWarning();
-        scheduleAutoCalculate();
-      });
-
-      directModelEntryInput.addEventListener('change', () => {
-        const enabled = directModelEntryInput.checked;
-        manualVehicleClassInput.readOnly = !enabled;
-        manualEngineDisplacementCcInput.readOnly = !enabled;
-        if (!enabled) {
-          syncSelectedModelMeta();
-        }
-        updateWorkbookDiffWarning();
-        scheduleAutoCalculate();
-      });
-
-      affiliateTypeInput.addEventListener('change', () => {
-        if (!isManualAnnualRateOverride()) {
-          annualIrrRateInput.value = '';
-        }
         updateWorkbookDiffWarning();
         scheduleAutoCalculate();
       });
