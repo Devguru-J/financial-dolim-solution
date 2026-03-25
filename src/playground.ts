@@ -1727,7 +1727,6 @@ export function renderPlaygroundHtml() {
       const manualEngineDisplacementCcInput = document.getElementById('manualEngineDisplacementCc');
       const directModelEntryInput = document.getElementById('directModelEntry');
       const optionAmountDisplay = document.getElementById('optionAmountDisplay');
-      const discountedVehiclePriceDisplay = document.getElementById('discountedVehiclePriceDisplay');
       const sheetAcquisitionTaxAmount = document.getElementById('sheet-acquisition-tax-amount');
       const sheetAppliedResidualRate = document.getElementById('sheet-applied-residual-rate');
       const sheetMinResidualRate = document.getElementById('sheet-min-residual-rate');
@@ -1991,11 +1990,7 @@ export function renderPlaygroundHtml() {
       }
 
       function updateDiscountedVehiclePriceDisplay() {
-        const basePrice = Number(quoteForm.elements.namedItem('quotedVehiclePrice').value || 0);
-        const discountAmount = Number(quoteForm.elements.namedItem('discountAmount').value || 0);
-        const optionAmount = Number(optionAmountDisplay.value || 0);
-        const discountedVehiclePrice = Math.max(0, basePrice + optionAmount - discountAmount);
-        discountedVehiclePriceDisplay.value = discountedVehiclePrice > 0 ? '₩ ' + formatNumber(discountedVehiclePrice) : '-';
+        // 이 필드는 renderVehicleSummaryRow()로 대체됨 — no-op
       }
 
       function resetWorkbookDefaults(options) {
