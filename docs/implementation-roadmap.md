@@ -37,6 +37,7 @@ What is ready:
 7. documentation for continuing in a fresh thread
 8. production API path no longer depends on launching Microsoft Excel
 9. residual-company selection logic is moving toward a shared SNK/APS comparison path
+10. quote engine and catalog preview now use closer residual-company selection logic for maximum residual display
 
 What is not done yet:
 
@@ -95,13 +96,15 @@ Completed:
 8. local `/playground` page for manual quote testing
 9. removed Excel automation from the normal API calculation path
 10. generalized `SNK/APS` residual-company candidate comparison for more models
-11. monthly payment display now follows Excel quote-sheet `ROUNDUP(...,-2)` style output
+11. catalog-side `max residual` preview now follows the same candidate-summary direction more closely
+12. representative BENZ/BMW cases added to residual-company selection regression tests
+13. monthly payment display now follows Excel quote-sheet `ROUNDUP(...,-2)` style output
 
 Remaining:
 
-1. verify representative models across BMW, BENZ, AUDI, VOLVO and others with saved Excel outputs
+1. verify more representative models across BMW, BENZ, AUDI, VOLVO and others with saved Excel outputs
 2. model remaining hidden fee and exception rules that still create small payment deltas
-3. complete the all-model residual-company selection verification path
+3. complete the all-model residual-company selection verification path, especially where workbook hidden cells pick SNK vs APS differently by model
 4. build UI flow that lets users confirm workbook-style final residual selection when needed
 
 Deliverable:
@@ -213,7 +216,7 @@ Safe monthly production workflow.
 
 If work resumes in a fresh thread, do this in order:
 
-1. add representative BENZ/BMW/AUDI/VOLVO fixtures for residual-company selection verification
+1. continue adding representative BENZ/BMW/AUDI/VOLVO fixtures for residual-company selection verification
 2. finish hidden fee and PMT-chain parity for monthly payment
 3. model remaining workbook exception rules in the MG calculator
 4. start `financial_lease`

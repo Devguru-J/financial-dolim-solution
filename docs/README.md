@@ -26,7 +26,7 @@ These documents are the long-term planning baseline for the lease calculator pla
 
 ## Current project status summary
 
-As of 2026-03-22, the project already has:
+As of 2026-03-25, the project already has:
 
 1. repository root normalized to `financial-dolim-solution`
 2. Bun + Hono + Drizzle + Cloudflare Pages scaffold in the repository root
@@ -42,7 +42,8 @@ As of 2026-03-22, the project already has:
 12. `/playground` page for local quote testing and residual selection verification
 13. normal web calculation path no longer launches Microsoft Excel
 14. shared residual-company selection logic being hardened across models
-15. Korean README and planning docs for handoff continuity
+15. representative BENZ/BMW residual-company regression coverage
+16. Korean README and planning docs for handoff continuity
 
 ## How to use these docs
 

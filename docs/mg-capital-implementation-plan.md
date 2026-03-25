@@ -156,7 +156,9 @@ Already implemented:
 13. local `/playground` page for manual quote testing
 14. removed Excel automation from the normal API calculation path
 15. shared residual-company selection path for `SNK` and `APS` with matrix fallback
-16. workbook-style `ROUNDUP(...,-2)` display for monthly payment
+16. catalog-side maximum residual preview aligned more closely with quote-engine candidate logic
+17. representative `BENZ` and `BMW` residual-company regression cases added
+18. workbook-style `ROUNDUP(...,-2)` display for monthly payment
 
 Verified findings from the provided MG workbook:
 
@@ -187,14 +189,16 @@ Current gap we are actively closing:
 
 1. some representative models now match Excel on residual bounds and displayed annual rate
 2. some other models still diverge because the hidden fee/rate chain and residual-company selection need more fixture coverage
-3. all-model verification is not complete yet
+3. models can still diverge when workbook hidden cells pick a different residual company than our current generalized path
+4. all-model verification is not complete yet
 
 ## 8. Immediate next build slice
 
-1. add representative fixtures for models that resolve to different residual companies
-   - example: `BENZ Maybach GLS 600 4Matic`
-   - example: `BENZ E 200 Avantgarde Limited`
-   - example: `BMW X7 xDrive 40d DPE (6인승)`
+1. continue adding representative fixtures for models that resolve to different residual companies
+   - verified direction now includes `BENZ Maybach GLS 600 4Matic`
+   - verified direction now includes `BENZ E 200 Avantgarde Limited`
+   - verified direction now includes `BMW X7 xDrive 40d DPE (6인승)`
+   - next useful addition is `BMW Z4 M40i` and more `AUDI`/`VOLVO` edge cases
 2. continue extracting hidden fee and PMT-chain rules that still cause monthly-payment deltas
 3. wire `candidateSummary` and `selectionGuide` into the quote UI more clearly
 4. capture remaining scattered exception logic from hidden quote sheets
