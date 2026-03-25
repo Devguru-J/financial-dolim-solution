@@ -1883,6 +1883,7 @@ export function renderPlaygroundHtml() {
         }
         setFieldValue(sheetMinResidualRate, minimumRate == null ? '-' : formatPercent(minimumRate));
         setFieldValue(sheetMaxResidualRate, maximumRate == null ? '-' : formatPercent(maximumRate));
+        renderVehicleSummaryRow(model); // 추가
       }
 
       function setRawResponse(value) {
@@ -2773,7 +2774,7 @@ export function renderPlaygroundHtml() {
             }
             updateDiscountedVehiclePriceDisplay();
             updateWorkbookDiffWarning();
-            if (name === 'quotedVehiclePrice') {
+            if (name === 'quotedVehiclePrice' || name === 'discountAmount') {
               renderVehicleSummaryRow(activeModels.find((entry) => entry.modelName === trimSelect.value) || null);
             }
             scheduleAutoCalculate();
@@ -2781,7 +2782,7 @@ export function renderPlaygroundHtml() {
           field.addEventListener('input', () => {
             updateDiscountedVehiclePriceDisplay();
             updateWorkbookDiffWarning();
-            if (name === 'quotedVehiclePrice') {
+            if (name === 'quotedVehiclePrice' || name === 'discountAmount') {
               renderVehicleSummaryRow(activeModels.find((entry) => entry.modelName === trimSelect.value) || null);
             }
             scheduleAutoCalculate();
