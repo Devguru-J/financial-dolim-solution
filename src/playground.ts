@@ -1315,67 +1315,13 @@ export function renderPlaygroundHtml() {
                           </div>
 
                           <div class="sheet-block">
-                            <div class="sheet-block-title">계약 및 부대비용</div>
-                            <div class="sheet-grid">
-                              <div class="sheet-label">차량명의</div>
+                            <div class="sheet-block-title">취득원가 산출</div>
+                            <div class="sheet-grid" style="grid-template-columns: auto 1fr auto 1fr">
+                              <div class="sheet-label">취득세 감면 여부</div>
                               <div class="sheet-value">
-                                <select class="sheet-field" id="ownershipType" name="ownershipType">
-                                  <option value="company">법인</option>
-                                  <option value="customer">고객명의</option>
+                                <select class="sheet-field" id="acquisitionTaxExemption">
+                                  <option value="none">해당없음</option>
                                 </select>
-                              </div>
-                              <div class="sheet-label">공채</div>
-                              <div class="sheet-value">
-                                <div class="sheet-inline">
-                                  <label class="sheet-check"><input id="includePublicBondCost" name="includePublicBondCost" type="checkbox" checked /> 포함</label>
-                                  <input class="sheet-field tabular" id="publicBondCost" name="publicBondCost" type="number" value="0" />
-                                </div>
-                              </div>
-
-                              <div class="sheet-label">리스기간(개월)</div>
-                              <div class="sheet-value">
-                                <select class="sheet-field" id="leaseTermMonths" name="leaseTermMonths">
-                                  <option value="12">12</option>
-                                  <option value="24">24</option>
-                                  <option value="36" selected>36</option>
-                                  <option value="48">48</option>
-                                  <option value="60">60</option>
-                                </select>
-                              </div>
-                              <div class="sheet-label">장기선수금</div>
-                              <div class="sheet-value">
-                                <input class="sheet-field tabular" id="upfrontPayment" name="upfrontPayment" type="number" value="0" />
-                              </div>
-
-                              <div class="sheet-label">보증금</div>
-                              <div class="sheet-value">
-                                <input class="sheet-field tabular" id="depositAmount" name="depositAmount" type="number" value="0" />
-                              </div>
-                              <div class="sheet-label">약정주행거리</div>
-                              <div class="sheet-value">
-                                <select class="sheet-field" id="annualMileageKm" name="annualMileageKm">
-                                  <option value="10000">10,000km</option>
-                                  <option value="20000" selected>20,000km</option>
-                                  <option value="30000">30,000km</option>
-                                  <option value="35000">35,000km</option>
-                                </select>
-                              </div>
-
-                              <div class="sheet-label">취득세율</div>
-                              <div class="sheet-value">
-                                <input class="sheet-field tabular" id="acquisitionTaxRateOverride" name="acquisitionTaxRateOverride" type="number" step="0.0001" value="0.07" />
-                              </div>
-                              <div class="sheet-label">취득세</div>
-                              <div class="sheet-value">
-                                <input class="sheet-field readonly tabular" id="sheet-acquisition-tax-amount" type="text" readonly value="-" />
-                              </div>
-
-                              <div class="sheet-label">기타부대비</div>
-                              <div class="sheet-value">
-                                <div class="sheet-inline">
-                                  <label class="sheet-check"><input id="includeMiscFeeAmount" name="includeMiscFeeAmount" type="checkbox" checked /> 포함</label>
-                                  <input class="sheet-field tabular" id="miscFeeAmount" name="miscFeeAmount" type="number" value="0" />
-                                </div>
                               </div>
                               <div class="sheet-label">탁송료</div>
                               <div class="sheet-value">
@@ -1385,33 +1331,46 @@ export function renderPlaygroundHtml() {
                                 </div>
                               </div>
 
-                              <div class="sheet-label">자동차세</div>
+                              <div class="sheet-label">취득세 포함 여부</div>
                               <div class="sheet-value">
-                                <input class="sheet-field readonly" id="sheet-car-tax" type="text" readonly value="미포함" />
+                                <div class="sheet-inline">
+                                  <label class="sheet-check"><input id="includeAcquisitionTax" type="checkbox" checked /> 포함</label>
+                                  <input class="sheet-field readonly tabular" id="sheet-acquisition-tax-amount" type="text" readonly value="-" />
+                                </div>
                               </div>
-                              <div class="sheet-label">보험료(年)</div>
+                              <div class="sheet-label">부대비용</div>
                               <div class="sheet-value">
-                                <input class="sheet-field tabular" id="insuranceYearlyAmount" name="insuranceYearlyAmount" type="number" value="0" />
-                              </div>
-
-                              <div class="sheet-label">이손액(수입수수료)</div>
-                              <div class="sheet-value">
-                                <input class="sheet-field tabular" id="lossDamageAmount" name="lossDamageAmount" type="number" value="0" />
-                              </div>
-                              <div class="sheet-label">영업담당자</div>
-                              <div class="sheet-value">
-                                <input class="sheet-field readonly" id="sheet-sales-owner" type="text" readonly value="-" />
+                                <div class="sheet-inline">
+                                  <label class="sheet-check"><input id="includeMiscFeeAmount" name="includeMiscFeeAmount" type="checkbox" checked /> 포함</label>
+                                  <input class="sheet-field tabular" id="miscFeeAmount" name="miscFeeAmount" type="number" value="0" />
+                                </div>
                               </div>
 
-                              <div class="sheet-label">부가서비스</div>
+                              <div class="sheet-label">공채 할인 여부</div>
                               <div class="sheet-value">
-                                <input class="sheet-field readonly" id="sheet-extra-service" type="text" readonly value="-" />
+                                <div class="sheet-inline">
+                                  <label class="sheet-check"><input id="includePublicBondCost" name="includePublicBondCost" type="checkbox" checked /> 포함</label>
+                                  <input class="sheet-field tabular" id="publicBondCost" name="publicBondCost" type="number" value="0" />
+                                </div>
                               </div>
-                              <div class="sheet-label">보증금률 표시기준</div>
+                              <div class="sheet-label">취득원가</div>
                               <div class="sheet-value">
-                                <input class="sheet-field readonly" id="sheet-deposit-basis" type="text" readonly value="차량가 기준" />
+                                <input class="sheet-field readonly tabular" id="sheet-acquisition-cost" type="text" readonly value="-" />
                               </div>
                             </div>
+
+                            <input type="hidden" id="ownershipType" name="ownershipType" value="company" />
+                            <input type="hidden" id="leaseTermMonths" name="leaseTermMonths" value="36" />
+                            <input type="hidden" id="upfrontPayment" name="upfrontPayment" value="0" />
+                            <input type="hidden" id="depositAmount" name="depositAmount" value="0" />
+                            <input type="hidden" id="annualMileageKm" name="annualMileageKm" value="20000" />
+                            <input type="hidden" id="acquisitionTaxRateOverride" name="acquisitionTaxRateOverride" value="0.07" />
+                            <input type="hidden" id="insuranceYearlyAmount" name="insuranceYearlyAmount" value="0" />
+                            <input type="hidden" id="lossDamageAmount" name="lossDamageAmount" value="0" />
+                            <input type="hidden" id="sheet-car-tax" />
+                            <input type="hidden" id="sheet-sales-owner" />
+                            <input type="hidden" id="sheet-extra-service" />
+                            <input type="hidden" id="sheet-deposit-basis" />
                           </div>
 
                           <div class="sheet-block">
@@ -1728,6 +1687,8 @@ export function renderPlaygroundHtml() {
       const directModelEntryInput = document.getElementById('directModelEntry');
       const optionAmountDisplay = document.getElementById('optionAmountDisplay');
       const sheetAcquisitionTaxAmount = document.getElementById('sheet-acquisition-tax-amount');
+      const sheetAcquisitionCost = document.getElementById('sheet-acquisition-cost');
+      const includeAcquisitionTaxInput = document.getElementById('includeAcquisitionTax');
       const sheetAppliedResidualRate = document.getElementById('sheet-applied-residual-rate');
       const sheetMinResidualRate = document.getElementById('sheet-min-residual-rate');
       const sheetMaxResidualRate = document.getElementById('sheet-max-residual-rate');
@@ -2159,6 +2120,7 @@ export function renderPlaygroundHtml() {
           setAnnualRateAutoDisplay(undefined);
           setFieldValue(sheetResidualAmount, '-');
           setFieldValue(sheetAcquisitionTaxAmount, '-');
+          setFieldValue(sheetAcquisitionCost, '-');
           setFieldValue(sheetMinResidualRate, '-');
           setFieldValue(sheetMaxResidualRate, '-');
           setFieldValue(sheetCarTax, '미포함');
@@ -2175,6 +2137,7 @@ export function renderPlaygroundHtml() {
         setAnnualRateAutoDisplay(quote.rates.annualRateDecimal);
         setFieldValue(sheetResidualAmount, '₩ ' + formatNumber(quote.residual.amount));
         setFieldValue(sheetAcquisitionTaxAmount, '₩ ' + formatNumber(quote.feesAndTaxes.acquisitionTax));
+        setFieldValue(sheetAcquisitionCost, '₩ ' + formatNumber(quote.majorInputs.financedPrincipal));
         setFieldValue(sheetMinResidualRate, quote.residual.minRateDecimal == null ? '-' : formatPercent(quote.residual.minRateDecimal));
         setFieldValue(sheetMaxResidualRate, quote.residual.maxRateDecimal == null ? '-' : formatPercent(quote.residual.maxRateDecimal));
         setFieldValue(sheetDepositBasis, '차량가 기준');
@@ -2783,6 +2746,12 @@ export function renderPlaygroundHtml() {
             scheduleAutoCalculate();
           });
         }
+      });
+
+      includeAcquisitionTaxInput.addEventListener('change', () => {
+        const rateInput = quoteForm.elements.namedItem('acquisitionTaxRateOverride');
+        rateInput.value = includeAcquisitionTaxInput.checked ? '0.07' : '0';
+        rateInput.dispatchEvent(new Event('change', { bubbles: true }));
       });
 
       resetSelectedResidualButton.addEventListener('click', () => {
