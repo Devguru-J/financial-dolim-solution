@@ -101,10 +101,12 @@ Completed:
 12. representative BENZ/BMW cases added to residual-company selection regression tests
 13. monthly payment display now follows Excel quote-sheet `ROUNDUP(...,-2)` style output
 14. playground UI rebuilt: 차량 정보 (Brand/Model/Trim 3-level, summary row), 취득원가 산출 (acquisition cost section), 견적 조건 (contract conditions with deposit/upfront mode toggle, auto residual fill) — 2026-03-26
+15. fixture format extended to support end-to-end tests without rate overrides (baseIrrRate, resolvedMatrixGroup, maximumResidualRateOverride fields) — 2026-03-26
+16. BMW X7 76.5M 60M 54.5% scenario verified end-to-end without overrides: CQ27 auto-computes 4.823% from 4.7% base rate via APS guarantee fee path, engine payment 913,092 → UI displays 913,100 matching Excel — 2026-03-26
 
 Remaining:
 
-1. verify more representative models across BMW, BENZ, AUDI, VOLVO and others with saved Excel outputs
+1. verify more representative models across BMW, BENZ, AUDI, VOLVO and others with saved Excel screenshots (one no-override fixture per scenario)
 2. model remaining hidden fee and exception rules that still create small payment deltas
 3. complete the all-model residual-company selection verification path, especially where workbook hidden cells pick SNK vs APS differently by model
 4. build UI flow that lets users confirm workbook-style final residual selection when needed

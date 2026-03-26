@@ -159,6 +159,8 @@ Already implemented:
 16. catalog-side maximum residual preview aligned more closely with quote-engine candidate logic
 17. representative `BENZ` and `BMW` residual-company regression cases added
 18. workbook-style `ROUNDUP(...,-2)` display for monthly payment
+19. fixture format extended to support end-to-end CQ27 auto-calculation tests without rate overrides: `baseIrrRate`, `resolvedMatrixGroup`, `maximumResidualRateOverride` fields
+20. BMW X7 76.5M 60M 54.5% end-to-end verified: CQ27 auto-computes 4.823% from 4.7% base, APS guarantee fee (0.44%) path, engine 913,092 → display 913,100 (ROUNDUP) matching Excel
 
 Verified findings from the provided MG workbook:
 
@@ -194,12 +196,11 @@ Current gap we are actively closing:
 
 ## 8. Immediate next build slice
 
-1. continue adding representative fixtures for models that resolve to different residual companies
-   - verified direction now includes `BENZ Maybach GLS 600 4Matic`
-   - verified direction now includes `BENZ E 200 Avantgarde Limited`
-   - verified direction now includes `BMW X7 xDrive 40d DPE (6인승)`
-   - next useful addition is `BMW Z4 M40i` and more `AUDI`/`VOLVO` edge cases
-2. continue extracting hidden fee and PMT-chain rules that still cause monthly-payment deltas
+1. add no-override end-to-end fixtures for more models using Excel screenshots
+   - fixture format now supports `baseIrrRate` + `resolvedMatrixGroup` + `maximumResidualRateOverride` (no `annualIrrRateOverride`)
+   - priority: BENZ (any model), AUDI, VOLVO, upfront/deposit cases, promo residual cases
+   - each fixture: capture vehicle price, term, residual %, max residual %, applied rate %, monthly payment from Excel
+2. continue extracting hidden fee and PMT-chain rules that still cause monthly-payment deltas for other models
 3. wire `candidateSummary` and `selectionGuide` into the quote UI more clearly
 4. capture remaining scattered exception logic from hidden quote sheets
 5. start `금융리스` implementation

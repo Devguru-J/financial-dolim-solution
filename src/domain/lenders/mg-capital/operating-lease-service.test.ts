@@ -28,6 +28,7 @@ type OperatingLeaseFixture = {
     residualPromotionCode: string | null;
     snkResidualBand: string | null;
   };
+  resolvedMatrixGroup?: string;
   input: {
     lenderCode: "mg-capital";
     productType: "operating_lease";
@@ -39,6 +40,7 @@ type OperatingLeaseFixture = {
     upfrontPayment: number;
     quotedVehiclePrice?: number;
     discountAmount?: number;
+    baseIrrRate?: number;
     annualIrrRateOverride?: number;
     annualEffectiveRateOverride?: number;
     paymentRateOverride?: number;
@@ -46,6 +48,7 @@ type OperatingLeaseFixture = {
     residualValueMode?: "vehicle-price-ratio" | "acquisition-cost-ratio" | "amount";
     residualValueRatio?: number;
     residualAmountOverride?: number;
+    maximumResidualRateOverride?: number;
     publicBondCost?: number;
     stampDuty?: number;
     acquisitionTaxRateOverride?: number;
@@ -64,6 +67,8 @@ type OperatingLeaseFixture = {
     monthlyPayment: number;
     residualAmount: number;
     acquisitionTax: number;
+    displayedAnnualRateDecimal?: number;
+    effectiveAnnualRateDecimal?: number;
   };
 };
 
@@ -105,10 +110,11 @@ for (const fileName of readdirSync(fixtureDir).filter((entry) => entry.endsWith(
         term60Residual: null,
         rawRow: null,
       },
-      displayedAnnualRateRaw: fixture.input.annualIrrRateOverride ?? fixture.expected.displayedAnnualRateDecimal,
+      displayedAnnualRateRaw: fixture.input.annualIrrRateOverride ?? fixture.input.baseIrrRate ?? fixture.expected.displayedAnnualRateDecimal,
       residualRateRaw: fixture.input.residualRateOverride ?? fixture.input.residualValueRatio ?? 0,
+      maximumResidualRateRaw: fixture.input.maximumResidualRateOverride ?? undefined,
       residualSource: "override",
-      resolvedMatrixGroup: null,
+      resolvedMatrixGroup: fixture.resolvedMatrixGroup ?? null,
     });
 
     expect(quote.workbookImport.versionLabel).toBe(fixture.workbookVersion);
@@ -127,8 +133,26 @@ for (const fileName of readdirSync(fixtureDir).filter((entry) => entry.endsWith(
       fixture.tolerance.residualAmount,
       "residualAmount",
     );
-    expect(quote.rates.annualRateDecimal).toBe(fixture.expected.displayedAnnualRateDecimal);
-    expect(quote.rates.effectiveAnnualRateDecimal).toBe(fixture.expected.effectiveAnnualRateDecimal);
+    if ((fixture.tolerance.displayedAnnualRateDecimal ?? 0) > 0) {
+      assertWithinTolerance(
+        quote.rates.annualRateDecimal,
+        fixture.expected.displayedAnnualRateDecimal,
+        fixture.tolerance.displayedAnnualRateDecimal!,
+        "displayedAnnualRateDecimal",
+      );
+    } else {
+      expect(quote.rates.annualRateDecimal).toBe(fixture.expected.displayedAnnualRateDecimal);
+    }
+    if ((fixture.tolerance.effectiveAnnualRateDecimal ?? 0) > 0) {
+      assertWithinTolerance(
+        quote.rates.effectiveAnnualRateDecimal,
+        fixture.expected.effectiveAnnualRateDecimal,
+        fixture.tolerance.effectiveAnnualRateDecimal!,
+        "effectiveAnnualRateDecimal",
+      );
+    } else {
+      expect(quote.rates.effectiveAnnualRateDecimal).toBe(fixture.expected.effectiveAnnualRateDecimal);
+    }
     assertWithinTolerance(
       quote.monthlyPayment,
       fixture.expected.monthlyPayment,

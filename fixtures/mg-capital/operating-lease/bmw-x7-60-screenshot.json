@@ -1,0 +1,48 @@
+{
+  "name": "bmw-x7-60-screenshot",
+  "workbookVersion": "복사본 ★MG캐피탈_수입견적_26.03월_외부용_2603_vol1_잠금해제",
+  "resolvedMatrixGroup": "APS",
+  "vehicle": {
+    "vehiclePrice": "76500000",
+    "vehicleClass": "승용SUV(~5인)",
+    "engineDisplacementCc": 2993,
+    "highResidualAllowed": true,
+    "hybridAllowed": false,
+    "residualPromotionCode": "0",
+    "snkResidualBand": "F"
+  },
+  "input": {
+    "lenderCode": "mg-capital",
+    "productType": "operating_lease",
+    "brand": "BMW",
+    "modelName": "X7 xDrive 40d DPE (6인승)",
+    "ownershipType": "company",
+    "leaseTermMonths": 60,
+    "annualMileageKm": 20000,
+    "upfrontPayment": 0,
+    "quotedVehiclePrice": 76500000,
+    "discountAmount": 0,
+    "baseIrrRate": 0.047,
+    "residualValueMode": "vehicle-price-ratio",
+    "residualValueRatio": 0.545,
+    "maximumResidualRateOverride": 0.595,
+    "acquisitionTaxRateOverride": 0.07,
+    "publicBondCost": 0,
+    "stampDuty": 10000
+  },
+  "expected": {
+    "discountedVehiclePrice": 76500000,
+    "acquisitionTax": 4868180,
+    "stampDuty": 10000,
+    "financedPrincipal": 81378180,
+    "residualAmount": 41692000,
+    "displayedAnnualRateDecimal": 0.04823,
+    "effectiveAnnualRateDecimal": 0.048229920289140346,
+    "monthlyPayment": 913092
+  },
+  "tolerance": {
+    "monthlyPayment": 0,
+    "residualAmount": 0,
+    "acquisitionTax": 0
+  }
+}

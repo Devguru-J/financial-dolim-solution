@@ -125,7 +125,8 @@ docs/
 - ✅ 차량 정보 섹션 Brand/Model/Trim 3단계 UI + 하단 요약 행
 - ✅ 취득원가 산출 섹션 UI (6개 필드 표시, 나머지 hidden)
 - ✅ 견적 조건 섹션 UI (10개 필드 표시, 나머지 hidden) — 기간·보증금·선납금·잔존가치 포함
-- 🟡 Excel 패리티 (일부 모델 불일치)
+- ✅ CQ27 자동금리 계산 경로 픽스처 검증 (BMW X7 76.5M 60M 54.5% → 4.823% / 913,100원 일치)
+- 🟡 Excel 패리티 (BMW X7 표준 케이스 자동계산 확인, 나머지 모델/케이스 미검증)
 - ❌ 금융리스, 할부/오토론 미구현
 - ❌ 두 번째 금융사 미온보딩
 
@@ -145,6 +146,8 @@ bun run db:push      # DB 스키마 마이그레이션
 ## 알아두면 좋은 것들
 
 - `operating-lease-service.ts`의 잔가 계산은 엑셀 셀 BK27 로직을 재현한 것
-- SNK(에스앤케이모터스) vs APS 잔가 선택은 사용자 입력 (자동 선택 아님)
-- 월납입금은 100원 단위 올림 (Excel ROUNDUP 스타일)
+- SNK(에스앤케이모터스) vs APS 잔가 선택: `summarizeMgResidualCandidates`가 잔가보증 수수료가 낮은 쪽 자동 선택 (BMW X7 = APS가 수수료 낮음)
+- 잔가보증 수수료: SNK 5% gap → 0.77%, APS 5% gap → 0.44% — 수수료 차이가 표시금리에 직접 반영
+- 엔진 월납입금은 floor(PMT), UI 표시는 100원 단위 올림 (`roundUpToNearestHundred`) — Excel ROUNDUP(-2) 방식과 동일
+- CQ27 자동계산 픽스처 패턴: `baseIrrRate` + `resolvedMatrixGroup` + `maximumResidualRateOverride` 설정, `annualIrrRateOverride` 미설정
 - 리스기간별 최소잔가율: 12개월 50%, 24개월 40%, 36개월 30%, 48개월 20%, 60개월 15%
