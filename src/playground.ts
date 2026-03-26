@@ -1374,22 +1374,27 @@ export function renderPlaygroundHtml() {
                             <div class="sheet-grid" style="grid-template-columns: auto 1fr auto 1fr">
                               <div class="sheet-label">판매사</div>
                               <div class="sheet-value">
-                                <input class="sheet-field" id="dealerName" type="text" placeholder="-" />
+                                <select class="sheet-field" id="dealerName">
+                                  <option value="">비활성</option>
+                                </select>
                               </div>
                               <div class="sheet-label">기간(개월)</div>
                               <div class="sheet-value">
                                 <select class="sheet-field" id="leaseTermMonths" name="leaseTermMonths">
                                   <option value="12">12</option>
                                   <option value="24">24</option>
-                                  <option value="36" selected>36</option>
+                                  <option value="36">36</option>
                                   <option value="48">48</option>
-                                  <option value="60">60</option>
+                                  <option value="60" selected>60</option>
                                 </select>
                               </div>
 
                               <div class="sheet-label">제휴수수료 면제</div>
                               <div class="sheet-value">
-                                <label class="sheet-check"><input id="affiliateFeeExemption" type="checkbox" /> 해당</label>
+                                <div class="sheet-inline">
+                                  <label class="sheet-check"><input id="affiliateFeeNone" name="affiliateFeeToggle" type="radio" value="none" checked /> 비해당</label>
+                                  <label class="sheet-check"><input id="affiliateFeeApply" name="affiliateFeeToggle" type="radio" value="apply" /> 해당</label>
+                                </div>
                               </div>
                               <div class="sheet-label">약정거리</div>
                               <div class="sheet-value">
@@ -1403,16 +1408,28 @@ export function renderPlaygroundHtml() {
 
                               <div class="sheet-label">보증금</div>
                               <div class="sheet-value">
-                                <input class="sheet-field tabular" id="depositAmount" name="depositAmount" type="number" value="0" />
+                                <div class="sheet-inline">
+                                  <select class="sheet-field" id="depositMode" style="width:auto">
+                                    <option value="amount">금액</option>
+                                    <option value="pct">%</option>
+                                  </select>
+                                  <input class="sheet-field tabular" id="depositDisplay" type="number" value="0" placeholder="0" />
+                                </div>
                               </div>
                               <div class="sheet-label">잔존가치</div>
                               <div class="sheet-value">
-                                <input class="sheet-field tabular" id="selectedResidualRateOverride" name="selectedResidualRateOverride" type="text" inputmode="decimal" placeholder="예: 52 또는 52.5" />
+                                <input class="sheet-field tabular" id="selectedResidualRateOverride" name="selectedResidualRateOverride" type="text" inputmode="decimal" placeholder="최대잔가 자동반영" />
                               </div>
 
                               <div class="sheet-label">선납금</div>
                               <div class="sheet-value">
-                                <input class="sheet-field tabular" id="upfrontPayment" name="upfrontPayment" type="number" value="0" />
+                                <div class="sheet-inline">
+                                  <select class="sheet-field" id="upfrontMode" style="width:auto">
+                                    <option value="amount">금액</option>
+                                    <option value="pct">%</option>
+                                  </select>
+                                  <input class="sheet-field tabular" id="upfrontDisplay" type="number" value="0" placeholder="0" />
+                                </div>
                               </div>
                               <div class="sheet-label">CM수수료</div>
                               <div class="sheet-value">
@@ -1421,7 +1438,11 @@ export function renderPlaygroundHtml() {
 
                               <div class="sheet-label">전기차 보조금</div>
                               <div class="sheet-value">
-                                <input class="sheet-field tabular" id="evSubsidy" type="number" value="0" placeholder="0" />
+                                <div class="sheet-inline">
+                                  <label class="sheet-check"><input id="evSubsidyNone" name="evSubsidyToggle" type="radio" value="none" checked /> 비해당</label>
+                                  <label class="sheet-check"><input id="evSubsidyApply" name="evSubsidyToggle" type="radio" value="apply" /> 해당</label>
+                                  <input class="sheet-field tabular" id="evSubsidy" type="number" value="0" placeholder="0" style="display:none" />
+                                </div>
                               </div>
                               <div class="sheet-label">AG수수료</div>
                               <div class="sheet-value">
@@ -1429,6 +1450,8 @@ export function renderPlaygroundHtml() {
                               </div>
                             </div>
 
+                            <input type="hidden" id="depositAmount" name="depositAmount" value="0" />
+                            <input type="hidden" id="upfrontPayment" name="upfrontPayment" value="0" />
                             <input type="hidden" id="annualIrrRateOverride" name="annualIrrRateOverride" />
                             <input type="hidden" id="stampDuty" name="stampDuty" />
                             <input type="hidden" id="residualAmountOverride" name="residualAmountOverride" />
@@ -1728,6 +1751,10 @@ export function renderPlaygroundHtml() {
       const selectionGuide = document.getElementById('selection-guide');
       const rawResponse = document.getElementById('raw-response');
       const selectedResidualRateInput = document.getElementById('selectedResidualRateOverride');
+      const depositModeSelect = document.getElementById('depositMode');
+      const depositDisplayInput = document.getElementById('depositDisplay');
+      const upfrontModeSelect = document.getElementById('upfrontMode');
+      const upfrontDisplayInput = document.getElementById('upfrontDisplay');
 
       const importForm = document.getElementById('import-form');
       const previewButton = document.getElementById('preview-import');
@@ -1997,7 +2024,11 @@ export function renderPlaygroundHtml() {
         quoteForm.elements.namedItem('includeDeliveryFeeAmount').checked = true;
         quoteForm.elements.namedItem('deliveryFeeAmount').value = String(contractDeliveryFeeAmount ?? 0);
         quoteForm.elements.namedItem('upfrontPayment').value = String(contractUpfrontPaymentAmount ?? 0);
+        upfrontModeSelect.value = 'amount';
+        upfrontDisplayInput.value = String(contractUpfrontPaymentAmount ?? 0);
         quoteForm.elements.namedItem('depositAmount').value = '0';
+        depositModeSelect.value = 'amount';
+        depositDisplayInput.value = '0';
         quoteForm.elements.namedItem('acquisitionTaxRateOverride').value = String(contractAcquisitionTaxRate ?? 0.07);
         quoteForm.elements.namedItem('stampDuty').value = '';
         quoteForm.elements.namedItem('insuranceYearlyAmount').value = String(contractInsuranceYearlyAmount ?? 0);
@@ -2232,6 +2263,34 @@ export function renderPlaygroundHtml() {
         syncSelectedModelMeta();
       }
 
+      function computeDepositAmount() {
+        const mode = depositModeSelect.value;
+        const val = parseFloat(depositDisplayInput.value) || 0;
+        let amount;
+        if (mode === 'pct') {
+          const vehiclePrice = parseFloat(quoteForm.elements.namedItem('quotedVehiclePrice').value) || 0;
+          const discount = parseFloat(quoteForm.elements.namedItem('discountAmount').value) || 0;
+          amount = Math.round((vehiclePrice - discount) * val / 100);
+        } else {
+          amount = val;
+        }
+        quoteForm.elements.namedItem('depositAmount').value = String(amount);
+      }
+
+      function computeUpfrontPayment() {
+        const mode = upfrontModeSelect.value;
+        const val = parseFloat(upfrontDisplayInput.value) || 0;
+        let amount;
+        if (mode === 'pct') {
+          const vehiclePrice = parseFloat(quoteForm.elements.namedItem('quotedVehiclePrice').value) || 0;
+          const discount = parseFloat(quoteForm.elements.namedItem('discountAmount').value) || 0;
+          amount = Math.round((vehiclePrice - discount) * val / 100);
+        } else {
+          amount = val;
+        }
+        quoteForm.elements.namedItem('upfrontPayment').value = String(amount);
+      }
+
       function syncSelectedModelMeta() {
         const model = activeModels.find((entry) => entry.modelName === trimSelect.value) || null;
 
@@ -2255,6 +2314,13 @@ export function renderPlaygroundHtml() {
           (flags.length > 0 ? ' · ' + flags.join(' · ') : '');
         quoteForm.elements.namedItem('quotedVehiclePrice').value = String(model.vehiclePrice);
         setAutoSummaryFromModel(model);
+        if (!selectedResidualRateInput.value.trim()) {
+          const term = Number(quoteForm.elements.namedItem('leaseTermMonths').value || 0);
+          const maxRate = previewMaximumResidualRate(model, term);
+          if (maxRate != null) {
+            selectedResidualRateInput.value = formatPercentInputValue(maxRate) + '%';
+          }
+        }
         updateWorkbookDiffWarning();
         renderVehicleSummaryRow(model);
       }
@@ -2736,11 +2802,18 @@ export function renderPlaygroundHtml() {
             if (name === 'leaseTermMonths') {
               const model = activeModels.find((entry) => entry.modelName === trimSelect.value) || null;
               updateResidualPreviewFromInputs(model);
+              if (!selectedResidualRateInput.value.trim() && model) {
+                const term = Number(quoteForm.elements.namedItem('leaseTermMonths').value || 0);
+                const maxRate = previewMaximumResidualRate(model, term);
+                if (maxRate != null) selectedResidualRateInput.value = formatPercentInputValue(maxRate) + '%';
+              }
             }
             updateDiscountedVehiclePriceDisplay();
             updateWorkbookDiffWarning();
             if (name === 'quotedVehiclePrice' || name === 'discountAmount') {
               renderVehicleSummaryRow(activeModels.find((entry) => entry.modelName === trimSelect.value) || null);
+              computeDepositAmount();
+              computeUpfrontPayment();
             }
             scheduleAutoCalculate();
           });
@@ -2749,6 +2822,8 @@ export function renderPlaygroundHtml() {
             updateWorkbookDiffWarning();
             if (name === 'quotedVehiclePrice' || name === 'discountAmount') {
               renderVehicleSummaryRow(activeModels.find((entry) => entry.modelName === trimSelect.value) || null);
+              computeDepositAmount();
+              computeUpfrontPayment();
             }
             scheduleAutoCalculate();
           });
@@ -2759,6 +2834,20 @@ export function renderPlaygroundHtml() {
         const rateInput = quoteForm.elements.namedItem('acquisitionTaxRateOverride');
         rateInput.value = includeAcquisitionTaxInput.checked ? '0.07' : '0';
         rateInput.dispatchEvent(new Event('change', { bubbles: true }));
+      });
+
+      depositModeSelect.addEventListener('change', () => { computeDepositAmount(); scheduleAutoCalculate(); });
+      depositDisplayInput.addEventListener('input', () => { computeDepositAmount(); scheduleAutoCalculate(); });
+      depositDisplayInput.addEventListener('change', () => { computeDepositAmount(); scheduleAutoCalculate(); });
+
+      upfrontModeSelect.addEventListener('change', () => { computeUpfrontPayment(); scheduleAutoCalculate(); });
+      upfrontDisplayInput.addEventListener('input', () => { computeUpfrontPayment(); scheduleAutoCalculate(); });
+      upfrontDisplayInput.addEventListener('change', () => { computeUpfrontPayment(); scheduleAutoCalculate(); });
+
+      document.querySelectorAll('input[name="evSubsidyToggle"]').forEach((radio) => {
+        radio.addEventListener('change', () => {
+          document.getElementById('evSubsidy').style.display = document.getElementById('evSubsidyApply').checked ? '' : 'none';
+        });
       });
 
       resetSelectedResidualButton.addEventListener('click', () => {
