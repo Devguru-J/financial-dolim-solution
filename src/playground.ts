@@ -1360,10 +1360,6 @@ export function renderPlaygroundHtml() {
                             </div>
 
                             <input type="hidden" id="ownershipType" name="ownershipType" value="company" />
-                            <input type="hidden" id="leaseTermMonths" name="leaseTermMonths" value="36" />
-                            <input type="hidden" id="upfrontPayment" name="upfrontPayment" value="0" />
-                            <input type="hidden" id="depositAmount" name="depositAmount" value="0" />
-                            <input type="hidden" id="annualMileageKm" name="annualMileageKm" value="20000" />
                             <input type="hidden" id="acquisitionTaxRateOverride" name="acquisitionTaxRateOverride" value="0.07" />
                             <input type="hidden" id="insuranceYearlyAmount" name="insuranceYearlyAmount" value="0" />
                             <input type="hidden" id="lossDamageAmount" name="lossDamageAmount" value="0" />
@@ -1374,64 +1370,75 @@ export function renderPlaygroundHtml() {
                           </div>
 
                           <div class="sheet-block">
-                            <div class="sheet-block-title">잔가 및 금리</div>
-                            <div class="sheet-grid">
-                              <div class="sheet-label">최종 잔가율(BK27)</div>
+                            <div class="sheet-block-title">견적 조건</div>
+                            <div class="sheet-grid" style="grid-template-columns: auto 1fr auto 1fr">
+                              <div class="sheet-label">판매사</div>
+                              <div class="sheet-value">
+                                <input class="sheet-field" id="dealerName" type="text" placeholder="-" />
+                              </div>
+                              <div class="sheet-label">기간(개월)</div>
+                              <div class="sheet-value">
+                                <select class="sheet-field" id="leaseTermMonths" name="leaseTermMonths">
+                                  <option value="12">12</option>
+                                  <option value="24">24</option>
+                                  <option value="36" selected>36</option>
+                                  <option value="48">48</option>
+                                  <option value="60">60</option>
+                                </select>
+                              </div>
+
+                              <div class="sheet-label">제휴수수료 면제</div>
+                              <div class="sheet-value">
+                                <label class="sheet-check"><input id="affiliateFeeExemption" type="checkbox" /> 해당</label>
+                              </div>
+                              <div class="sheet-label">약정거리</div>
+                              <div class="sheet-value">
+                                <select class="sheet-field" id="annualMileageKm" name="annualMileageKm">
+                                  <option value="10000">10,000km</option>
+                                  <option value="20000" selected>20,000km</option>
+                                  <option value="30000">30,000km</option>
+                                  <option value="35000">35,000km</option>
+                                </select>
+                              </div>
+
+                              <div class="sheet-label">보증금</div>
+                              <div class="sheet-value">
+                                <input class="sheet-field tabular" id="depositAmount" name="depositAmount" type="number" value="0" />
+                              </div>
+                              <div class="sheet-label">잔존가치</div>
                               <div class="sheet-value">
                                 <input class="sheet-field tabular" id="selectedResidualRateOverride" name="selectedResidualRateOverride" type="text" inputmode="decimal" placeholder="예: 52 또는 52.5" />
-                                <span class="sheet-help">선택하지 않으면 후보 잔가 기준으로 계산합니다.</span>
-                              </div>
-                              <div class="sheet-label">적용 잔가율</div>
-                              <div class="sheet-value">
-                                <input class="sheet-field readonly tabular" id="sheet-applied-residual-rate" type="text" readonly value="-" />
                               </div>
 
-                              <div class="sheet-label">최소잔가</div>
+                              <div class="sheet-label">선납금</div>
                               <div class="sheet-value">
-                                <input class="sheet-field readonly tabular" id="sheet-min-residual-rate" type="text" readonly value="-" />
+                                <input class="sheet-field tabular" id="upfrontPayment" name="upfrontPayment" type="number" value="0" />
                               </div>
-                              <div class="sheet-label">최대잔가</div>
-                              <div class="sheet-value">
-                                <input class="sheet-field readonly tabular" id="sheet-max-residual-rate" type="text" readonly value="-" />
-                              </div>
-
-                              <div class="sheet-label">잔가금액</div>
-                              <div class="sheet-value">
-                                <input class="sheet-field readonly tabular" id="sheet-residual-amount" type="text" readonly value="-" />
-                              </div>
-                              <div class="sheet-label">적용금리</div>
-                              <div class="sheet-value">
-                                <input class="sheet-field tabular" id="annualIrrRateOverride" name="annualIrrRateOverride" type="text" inputmode="decimal" placeholder="자동 반영" />
-                                <span class="sheet-help" id="annual-rate-help">비워두면 현재 정책 기준 금리를 자동 적용합니다.</span>
-                              </div>
-
-                              <div class="sheet-label">고잔가</div>
-                              <div class="sheet-value">
-                                <input class="sheet-field readonly" id="sheet-high-residual" type="text" readonly value="-" />
-                              </div>
-                              <div class="sheet-label">프로모션</div>
-                              <div class="sheet-value">
-                                <input class="sheet-field readonly" id="sheet-promo-code" type="text" readonly value="-" />
-                              </div>
-
-                              <div class="sheet-label">AG수수료율</div>
-                              <div class="sheet-value">
-                                <input class="sheet-field tabular" id="agFeeRate" name="agFeeRate" type="text" inputmode="decimal" value="0%" />
-                              </div>
-                              <div class="sheet-label">CM수수료율</div>
+                              <div class="sheet-label">CM수수료</div>
                               <div class="sheet-value">
                                 <input class="sheet-field tabular" id="cmFeeRate" name="cmFeeRate" type="text" inputmode="decimal" value="0%" />
                               </div>
 
-                              <div class="sheet-label">인지세</div>
+                              <div class="sheet-label">전기차 보조금</div>
                               <div class="sheet-value">
-                                <input class="sheet-field tabular" id="stampDuty" name="stampDuty" type="number" value="" placeholder="자동(10,000)" />
+                                <input class="sheet-field tabular" id="evSubsidy" type="number" value="0" placeholder="0" />
                               </div>
-                              <div class="sheet-label">잔가금액 override</div>
+                              <div class="sheet-label">AG수수료</div>
                               <div class="sheet-value">
-                                <input class="sheet-field tabular" id="residualAmountOverride" name="residualAmountOverride" type="number" placeholder="예: 24360000" />
+                                <input class="sheet-field tabular" id="agFeeRate" name="agFeeRate" type="text" inputmode="decimal" value="0%" />
                               </div>
                             </div>
+
+                            <input type="hidden" id="annualIrrRateOverride" name="annualIrrRateOverride" />
+                            <input type="hidden" id="stampDuty" name="stampDuty" />
+                            <input type="hidden" id="residualAmountOverride" name="residualAmountOverride" />
+                            <input type="hidden" id="sheet-applied-residual-rate" value="-" />
+                            <input type="hidden" id="sheet-min-residual-rate" value="-" />
+                            <input type="hidden" id="sheet-max-residual-rate" value="-" />
+                            <input type="hidden" id="sheet-residual-amount" value="-" />
+                            <input type="hidden" id="sheet-high-residual" value="-" />
+                            <input type="hidden" id="sheet-promo-code" value="-" />
+                            <span id="annual-rate-help" style="display:none"></span>
                           </div>
 
                           <details class="advanced-panel">
