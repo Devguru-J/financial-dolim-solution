@@ -50,28 +50,62 @@ docs/
 
 ## 견적 계산 UI (playground.ts) 구조
 
-### 섹션 구성
-1. **차량 정보** — Brand / Model(비활성) / Trim 선택 + 가격 입력
-2. **계약 및 부대비용** — 리스기간, 보증금, 취득세 등
-3. **잔가 및 금리** — 잔가율, 금리 오버라이드
+### 섹션 구성 (2026-03-26 현재)
+1. **차량 정보** — Brand / Model(비활성) / Trim 선택 + 가격 입력 + 하단 요약 행
+2. **취득원가 산출** — 취득세·탁송료·부대비용·공채 등 + 취득원가 표시
+3. **견적 조건** — 기간·약정거리·보증금·선납금·잔존가치·CM/AG 수수료 등
 
-### 차량 정보 섹션 (2026-03-25 리디자인)
+### 섹션별 상세
+
+#### 1. 차량 정보
 - **Brand → Model(비활성) → Trim** 3단계 구조 (미래 다금융사 확장 대비)
-- 현재는 Trim이 MG 캐피탈 모델 리스트를 로딩 (`id="trimName", name="modelName"`)
-- Model select (`id="modelName"`)는 disabled 유지 — 나중에 활성화 예정
-- 숨긴 필드 (hidden input): 제휴사, 차종직접입력, 차종구분, 배기량
+- Trim select: `id="trimName"`, `name="modelName"` (FormData 키 유지)
+- Model select: `id="modelName"`, disabled — 미래 확장용 placeholder
+- 숨긴 필드 (hidden input): `affiliateType`(비제휴사), `directModelEntry`, `manualVehicleClass`, `manualEngineDisplacementCc`
+- 4컬럼 그리드: Brand/Model/Trim | 차량가격/옵션가격/할인가격
 - 하단 요약 행: 최종차량가 / 일반잔가(%) / 최대(고)잔가(%)
+
+#### 2. 취득원가 산출 (구: 계약 및 부대비용)
+- 4컬럼 그리드, 3행
+- 보이는 필드: 취득세 감면 여부(드롭다운), 탁송료(체크+입력), 취득세 포함 여부(체크+세액표시), 부대비용(체크+입력), 공채 할인 여부(체크+입력), 취득원가(읽기전용)
+- 숨긴 필드: `ownershipType`(company), `acquisitionTaxRateOverride`(0.07)
+- 숨긴 필드: `insuranceYearlyAmount`(0), `lossDamageAmount`(0)
+- `#sheet-acquisition-cost` — 계산 후 `quote.majorInputs.financedPrincipal` 표시
+- `includeAcquisitionTax` 체크박스 → `acquisitionTaxRateOverride` 0.07 ↔ 0 토글
+
+#### 3. 견적 조건 (구: 잔가 및 금리)
+- 4컬럼 그리드, 5행
+- 보이는 필드:
+
+| 왼쪽 | 오른쪽 |
+|------|--------|
+| 판매사 (드롭다운, 기본 "비활성") | 기간(개월) (12~60, **기본 60**) |
+| 제휴수수료 면제 (라디오: 비해당/해당) | 약정거리 (10k~35k, 기본 20k) |
+| 보증금 (금액/% 모드 토글 + 입력) | 잔존가치 (트림 선택 시 최대잔가 자동반영) |
+| 선납금 (금액/% 모드 토글 + 입력) | CM수수료 (기본 0%) |
+| 전기차 보조금 (비해당/해당 라디오 + 금액) | AG수수료 (기본 0%) |
+
+- 숨긴 필드: `depositAmount`(보증금 실값), `upfrontPayment`(선납금 실값)
+- 숨긴 필드: `annualIrrRateOverride`, `stampDuty`, `residualAmountOverride`
+- 숨긴 readonly: `sheet-applied-residual-rate`, `sheet-min/max-residual-rate`, `sheet-residual-amount`, `sheet-high-residual`, `sheet-promo-code`
 
 ### 주요 JS 함수
 | 함수 | 역할 |
 |------|------|
 | `renderCatalogBrands(brands)` | Brand 드롭다운 채우기 |
 | `renderCatalogModels(brand, preferred)` | Trim 드롭다운 채우기 (trimSelect 사용) |
-| `syncSelectedModelMeta()` | Trim 선택 시 차량 메타 자동반영 |
+| `syncSelectedModelMeta()` | Trim 선택 시 차량 메타 + 최대잔가 자동반영 |
 | `previewBaseResidualRate(model, term)` | 일반잔가율 계산 (highResidual +0.08 미적용) |
 | `previewMaximumResidualRate(model, term)` | 최대잔가율 계산 |
 | `renderVehicleSummaryRow(model)` | 하단 요약 행 업데이트 |
+| `computeDepositAmount()` | 보증금 %/금액 모드 → `depositAmount` hidden 계산 |
+| `computeUpfrontPayment()` | 선납금 %/금액 모드 → `upfrontPayment` hidden 계산 |
 | `refreshDashboard()` | 페이지 로드 시 전체 데이터 갱신 |
+
+### 보증금/선납금 % 모드 동작
+- % 모드 선택 시: 실값 = `(quotedVehiclePrice - discountAmount) × 입력값 / 100`
+- 차량가 또는 할인가 변경 시 자동 재계산
+- `depositAmount` / `upfrontPayment` hidden input에 최종값 저장 → API 전송
 
 ---
 
@@ -85,10 +119,12 @@ docs/
 
 ---
 
-## 현재 진행 상태 (2026-03-25)
+## 현재 진행 상태 (2026-03-26)
 
 - ✅ MG 캐피탈 운용리스 계산 엔진
-- ✅ 차량 정보 섹션 Brand/Model/Trim 3단계 UI
+- ✅ 차량 정보 섹션 Brand/Model/Trim 3단계 UI + 하단 요약 행
+- ✅ 취득원가 산출 섹션 UI (6개 필드 표시, 나머지 hidden)
+- ✅ 견적 조건 섹션 UI (10개 필드 표시, 나머지 hidden) — 기간·보증금·선납금·잔존가치 포함
 - 🟡 Excel 패리티 (일부 모델 불일치)
 - ❌ 금융리스, 할부/오토론 미구현
 - ❌ 두 번째 금융사 미온보딩

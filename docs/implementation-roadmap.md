@@ -38,6 +38,7 @@ What is ready:
 8. production API path no longer depends on launching Microsoft Excel
 9. residual-company selection logic is moving toward a shared SNK/APS comparison path
 10. quote engine and catalog preview now use closer residual-company selection logic for maximum residual display
+11. playground UI redesigned into three focused sections: 차량 정보, 취득원가 산출, 견적 조건 — unnecessary fields hidden, key fields surfaced with better UX (2026-03-26)
 
 What is not done yet:
 
@@ -99,6 +100,7 @@ Completed:
 11. catalog-side `max residual` preview now follows the same candidate-summary direction more closely
 12. representative BENZ/BMW cases added to residual-company selection regression tests
 13. monthly payment display now follows Excel quote-sheet `ROUNDUP(...,-2)` style output
+14. playground UI rebuilt: 차량 정보 (Brand/Model/Trim 3-level, summary row), 취득원가 산출 (acquisition cost section), 견적 조건 (contract conditions with deposit/upfront mode toggle, auto residual fill) — 2026-03-26
 
 Remaining:
 
