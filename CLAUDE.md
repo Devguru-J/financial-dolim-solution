@@ -119,7 +119,7 @@ docs/
 
 ---
 
-## 현재 진행 상태 (2026-03-28)
+## 현재 진행 상태 (2026-03-28 오후)
 
 - ✅ MG 캐피탈 운용리스 계산 엔진
 - ✅ 차량 정보 섹션 Brand/Model/Trim 3단계 UI + 하단 요약 행
@@ -128,7 +128,9 @@ docs/
 - ✅ CQ27 자동금리 계산 경로 픽스처 검증 (BMW X7 76.5M 60M 54.5% → 4.823% / 913,100원 일치)
 - ✅ 픽스처 패리티 수정 — BENZ A200d resolvedMatrixGroup(APS→SNK), BMW X7 36m maximumResidualRateOverride(0.595→0.735) 정정
 - ✅ 다모델 픽스처 추가 (BMW 520i·320d·X5·X3, BENZ E220d — 60개월 기준, 총 33개 테스트 전체 통과)
+- ✅ 견적 결과 UI 개선 — 4컬럼 테이블(월납입금·IRR·잔가·총구매비용) + 헤더 태그(법인/잔가종류/잔가보증사)
 - 🟡 Excel 패리티 (BMW/BENZ/AUDI/VOLVO 대표 케이스 검증, 36개월·deposit/upfront 케이스 미완)
+- 🟡 프론트엔드 React + shadcn 전환 진행 예정 (`client/` 서브앱 구조)
 - ❌ 금융리스, 할부/오토론 미구현
 - ❌ 두 번째 금융사 미온보딩
 
@@ -165,6 +167,25 @@ bun run db:push      # DB 스키마 마이그레이션
 ```
 
 ---
+
+## 프론트엔드 구조 전환 계획 (2026-03-28~)
+
+현재 `src/playground.ts`(HTML-in-string ~3000줄)를 React + shadcn/ui 기반으로 전환 예정.
+
+```
+프로젝트 루트/
+  src/           ← Hono API 서버 (그대로 유지)
+  functions/     ← Cloudflare Pages Functions (그대로 유지)
+  client/        ← 신규 React + Vite + Tailwind + shadcn 앱
+    src/
+      pages/     ← 페이지 컴포넌트
+      components/← shadcn 컴포넌트 + 도메인 컴포넌트
+    dist/        ← Vite 빌드 아웃풋
+```
+
+- API 백엔드(Hono)는 변경 없음
+- `wrangler.jsonc`의 `pages_build_output_dir`를 `client/dist`로 변경 예정
+- playground.ts는 마이그레이션 완료 후 폐기 예정
 
 ## 알아두면 좋은 것들
 

@@ -46,6 +46,7 @@ What is not done yet:
 2. some hidden workbook fee/rate paths still need to be normalized into DB-backed rules
 3. admin UI is not implemented yet
 4. `financial_lease` and `installment_loan` are not implemented yet
+5. frontend React migration not started yet (playground.ts still in use)
 
 ## Phase 1. Import foundation
 
@@ -228,12 +229,13 @@ Safe monthly production workflow.
 
 If work resumes in a fresh thread, do this in order:
 
-1. add 36m variants for the 5 newly added models (BMW 520i, 320d, X5, X3, BENZ E220d)
-2. add deposit/upfront scenario fixtures for the new models
-3. investigate customer ownership (개인명의) bug — potential cq8 offset gap between TypeScript and Excel for AUDI A3 customer fixture
-4. model remaining hidden fee and exception rules in the MG calculator
-5. start `financial_lease`
-6. build the minimum admin UI for upload and activation
+1. complete React + Vite + Tailwind + shadcn client app setup in `client/` subfolder
+2. migrate playground quote form to React components (shadcn Card, Badge, Table, etc.)
+3. add 36m variants for the 5 newly added models (BMW 520i, 320d, X5, X3, BENZ E220d)
+4. add deposit/upfront scenario fixtures for the new models
+5. investigate customer ownership (개인명의) bug — potential cq8 offset gap between TypeScript and Excel for AUDI A3 customer fixture
+6. model remaining hidden fee and exception rules in the MG calculator
+7. start `financial_lease`
 
 ## Future lender readiness checklist
 

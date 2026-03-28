@@ -684,36 +684,114 @@ export function renderPlaygroundHtml() {
 
       .result-grid {
         display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 12px;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 8px;
+        margin-top: 12px;
       }
 
       .result-card {
-        padding: 14px;
-        border-radius: 10px;
+        padding: 10px 12px;
+        border-radius: 8px;
         background: var(--surface-low);
       }
 
-      .result-card.primary {
-        grid-column: 1 / -1;
-        background: linear-gradient(135deg, rgba(4, 22, 39, 0.96), rgba(26, 43, 60, 0.92));
-        color: white;
-      }
-
-      .result-card.primary .label {
-        color: rgba(255, 255, 255, 0.58);
-      }
-
       .result-value {
-        margin-top: 8px;
-        font-size: 22px;
+        margin-top: 4px;
+        font-size: 15px;
+        font-weight: 700;
+        letter-spacing: -0.02em;
+      }
+
+      /* ── 견적 결과 테이블 ── */
+      .quote-result-block {
+        border-radius: 10px;
+        overflow: hidden;
+        border: 1px solid var(--border);
+        background: var(--surface);
+        box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+      }
+
+      .quote-result-header {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 9px 14px;
+        background: var(--surface-low);
+        border-bottom: 1px solid var(--border);
+        font-size: 12px;
+      }
+
+      .qr-lender {
+        font-weight: 700;
+        color: var(--text);
+      }
+
+      .qr-sep {
+        color: var(--muted);
+        font-size: 11px;
+      }
+
+      .qr-tag {
+        display: inline-flex;
+        align-items: center;
+        padding: 2px 7px;
+        border-radius: 4px;
+        font-size: 11px;
+        font-weight: 600;
+        background: rgba(116, 119, 125, 0.13);
+        color: var(--muted);
+      }
+
+      .qr-tag.highlight {
+        background: rgba(0, 122, 255, 0.12);
+        color: var(--accent);
+      }
+
+      .quote-result-cols {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+      }
+
+      .qr-col {
+        padding: 14px 16px;
+        border-right: 1px solid var(--border);
+        background: var(--surface);
+      }
+
+      .qr-col:first-child {
+        background: var(--surface-low);
+      }
+
+      .qr-col:last-child {
+        border-right: none;
+      }
+
+      .qr-col-label {
+        font-size: 10px;
+        font-weight: 700;
+        color: var(--muted);
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        margin-bottom: 7px;
+      }
+
+      .qr-col-value {
+        font-size: 20px;
         font-weight: 800;
         letter-spacing: -0.03em;
+        color: var(--text);
+        line-height: 1.1;
       }
 
-      .result-card.primary .result-value {
-        font-size: 34px;
+      .qr-col-value.primary {
+        font-size: 26px;
         color: var(--accent);
+      }
+
+      .qr-col-sub {
+        font-size: 11px;
+        color: var(--muted);
+        margin-top: 5px;
       }
 
       .callout {
@@ -1524,7 +1602,7 @@ export function renderPlaygroundHtml() {
                         </div>
                       </div>
                       <div class="card-body">
-                        <div class="result-grid" id="quote-summary">
+                        <div id="quote-summary">
                           <div class="empty-state">아직 계산 결과가 없습니다. 왼쪽에서 값을 입력하고 견적 계산을 눌러주세요.</div>
                         </div>
                       </div>
@@ -2540,34 +2618,49 @@ export function renderPlaygroundHtml() {
           return;
         }
 
-        const workbookLabel = quote.workbookImport ? quote.workbookImport.versionLabel : '-';
-        const matrixGroup = quote.residual && quote.residual.matrixGroup ? quote.residual.matrixGroup : '미지정';
         const displayMonthlyPayment = roundUpToNearestHundred(quote.monthlyPayment);
-        const currentInputSummary =
-          quote.resolvedVehicle.brand +
-          ' · ' +
-          quote.resolvedVehicle.modelName +
-          ' · 차량가 ₩ ' +
-          formatNumber(quote.majorInputs.vehiclePrice) +
-          ' · ' +
-          quote.majorInputs.leaseTermMonths +
-          '개월 · ' +
-          (quote.majorInputs.ownershipType === 'company' ? '법인' : '고객명의');
+        const leaseTermMonths = quote.majorInputs.leaseTermMonths;
+        const matrixGroup = quote.residual && quote.residual.matrixGroup ? quote.residual.matrixGroup : '';
+        const ownerTag = quote.majorInputs.ownershipType === 'company' ? '법인' : '고객명의';
+        const isHighResidual =
+          quote.residual.maxRateDecimal != null &&
+          Math.abs(quote.residual.rateDecimal - quote.residual.maxRateDecimal) < 0.001;
+        const residualTag = isHighResidual ? '고잔가' : '일반잔가';
+        const totalCost = displayMonthlyPayment * leaseTermMonths + quote.residual.amount;
+
         quoteSummary.innerHTML =
-          '<div class="result-card primary">' +
-          '<div class="label">월 납입금</div>' +
-          '<div class="result-value tabular">₩ ' + formatNumber(displayMonthlyPayment) + '</div>' +
-          '<div class="card-subtitle" style="color: rgba(255,255,255,0.7); margin-top: 8px;">' + workbookLabel + ' 기준 · ' + matrixGroup + '</div>' +
-          '<div class="card-subtitle" style="color: rgba(255,255,255,0.82); margin-top: 6px;">' + currentInputSummary + '</div>' +
-          '<div class="card-subtitle" style="color: rgba(255,255,255,0.62); margin-top: 4px;">내부 계산값 ₩ ' + formatNumber(quote.monthlyPayment) + '</div>' +
+          '<div class="quote-result-block">' +
+          '<div class="quote-result-header">' +
+          '<span class="qr-lender">MG캐피탈</span>' +
+          '<span class="qr-sep">/</span>' +
+          '<span class="qr-tag">' + ownerTag + '</span>' +
+          '<span class="qr-sep">/</span>' +
+          '<span class="qr-tag' + (isHighResidual ? ' highlight' : '') + '">' + residualTag + '</span>' +
+          (matrixGroup ? '<span class="qr-sep">·</span><span class="qr-tag">' + matrixGroup + '</span>' : '') +
           '</div>' +
-          '<div class="result-card"><div class="label">적용 잔가율</div><div class="result-value tabular">' + formatPercent(quote.residual.rateDecimal) + '</div></div>' +
-          '<div class="result-card"><div class="label">잔가금액</div><div class="result-value tabular">₩ ' + formatNumber(quote.residual.amount) + '</div></div>' +
-          '<div class="result-card"><div class="label">조달원금</div><div class="result-value tabular">₩ ' + formatNumber(quote.majorInputs.financedPrincipal) + '</div></div>' +
-          '<div class="result-card"><div class="label">표시 IRR</div><div class="result-value tabular">' + formatPercent(quote.rates.annualRateDecimal) + '</div></div>' +
-          '<div class="result-card"><div class="label">유효 IRR</div><div class="result-value tabular">' + formatPercent(quote.rates.effectiveAnnualRateDecimal) + '</div></div>' +
-          '<div class="result-card"><div class="label">취득세</div><div class="result-value tabular">₩ ' + formatNumber(quote.feesAndTaxes.acquisitionTax) + '</div></div>' +
-          '<div class="result-card"><div class="label">인지세</div><div class="result-value tabular">₩ ' + formatNumber(quote.feesAndTaxes.stampDuty) + '</div></div>';
+          '<div class="quote-result-cols">' +
+          '<div class="qr-col">' +
+          '<div class="qr-col-label">월 납입금</div>' +
+          '<div class="qr-col-value primary tabular">₩ ' + formatNumber(displayMonthlyPayment) + '</div>' +
+          '<div class="qr-col-sub tabular">내부값 ₩ ' + formatNumber(quote.monthlyPayment) + '</div>' +
+          '</div>' +
+          '<div class="qr-col">' +
+          '<div class="qr-col-label">IRR</div>' +
+          '<div class="qr-col-value tabular">' + formatPercent(quote.rates.annualRateDecimal) + '</div>' +
+          '<div class="qr-col-sub tabular">유효 ' + formatPercent(quote.rates.effectiveAnnualRateDecimal) + '</div>' +
+          '</div>' +
+          '<div class="qr-col">' +
+          '<div class="qr-col-label">잔가</div>' +
+          '<div class="qr-col-value tabular">' + formatPercent(quote.residual.rateDecimal) + '</div>' +
+          '<div class="qr-col-sub tabular">₩ ' + formatNumber(quote.residual.amount) + '</div>' +
+          '</div>' +
+          '<div class="qr-col">' +
+          '<div class="qr-col-label">총 구매비용</div>' +
+          '<div class="qr-col-value tabular">₩ ' + formatNumber(totalCost) + '</div>' +
+          '<div class="qr-col-sub">월납입금×' + leaseTermMonths + '개월+잔존가치</div>' +
+          '</div>' +
+          '</div>' +
+          '</div>';
       }
 
       async function requestQuoteCalculation(payload, requestId) {
