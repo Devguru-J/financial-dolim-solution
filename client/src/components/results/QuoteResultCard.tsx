@@ -10,7 +10,7 @@ interface QuoteResultCardProps {
 export function QuoteResultCard({ result }: QuoteResultCardProps) {
   const displayMonthlyPayment = roundUpToNearestHundred(result.monthlyPayment)
   const leaseTermMonths = result.majorInputs.leaseTermMonths
-  const totalCost = displayMonthlyPayment * leaseTermMonths + result.residual.amount
+  const totalCost = result.monthlyPayment * leaseTermMonths + result.residual.amount
 
   const ownerTag =
     result.majorInputs.ownershipType === 'company' ? '법인' : '고객명의'
@@ -20,9 +20,7 @@ export function QuoteResultCard({ result }: QuoteResultCardProps) {
   const residualTag = isHighResidual ? '고잔가' : '일반잔가'
   const matrixGroup = result.residual.matrixGroup ?? ''
 
-  const irrPercent = result.irrAnnualDecimal
-    ? `${(result.irrAnnualDecimal * 100).toFixed(3)}%`
-    : '-'
+  const irrPercent = `${(result.irrAnnualDecimal * 100).toFixed(3)}%`
   const effectivePercent = result.effectiveAnnualRateDecimal
     ? `${(result.effectiveAnnualRateDecimal * 100).toFixed(3)}%`
     : irrPercent
@@ -51,7 +49,7 @@ export function QuoteResultCard({ result }: QuoteResultCardProps) {
       <CardContent className="p-0">
         <div className="grid grid-cols-2">
           {/* 월 납입금 */}
-          <ResultCell bg accent borderRight borderBottom>
+          <ResultCell bg borderRight borderBottom>
             <ResultLabel>월 납입금</ResultLabel>
             <ResultValue accent>{formatKrw(displayMonthlyPayment)}</ResultValue>
             <ResultSub>내부값 {formatKrw(result.monthlyPayment)}</ResultSub>
@@ -104,13 +102,11 @@ export function QuoteResultCard({ result }: QuoteResultCardProps) {
 function ResultCell({
   children,
   bg = false,
-  accent = false,
   borderRight = false,
   borderBottom = false,
 }: {
   children: React.ReactNode
   bg?: boolean
-  accent?: boolean
   borderRight?: boolean
   borderBottom?: boolean
 }) {
