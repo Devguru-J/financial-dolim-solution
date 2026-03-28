@@ -38,27 +38,32 @@ export interface QuotePayload {
 }
 
 export interface QuoteResidual {
+  matrixGroup: string | null
   rateDecimal: number
-  maxRateDecimal: number | null
   amount: number
-  matrixGroup?: string
+  maxRateDecimal?: number
 }
 
 export interface QuoteMajorInputs {
   leaseTermMonths: LeaseTerm
   ownershipType: 'company' | 'customer'
+  vehiclePrice: number
+  discountedVehiclePrice: number
+  upfrontPayment: number
+  depositAmount: number
   financedPrincipal: number
+}
+
+export interface QuoteRates {
+  annualRateDecimal: number
+  effectiveAnnualRateDecimal: number
+  monthlyRateDecimal: number
 }
 
 export interface QuoteResult {
   monthlyPayment: number
-  irrAnnualDecimal: number
-  effectiveAnnualRateDecimal?: number
+  rates: QuoteRates
   residual: QuoteResidual
   majorInputs: QuoteMajorInputs
-  warnings?: string[]
-  acquisitionCost?: {
-    acquisitionTax: number
-    totalAcquisitionCost: number
-  }
+  warnings: string[]
 }

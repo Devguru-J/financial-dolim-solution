@@ -20,10 +20,8 @@ export function QuoteResultCard({ result }: QuoteResultCardProps) {
   const residualTag = isHighResidual ? '고잔가' : '일반잔가'
   const matrixGroup = result.residual.matrixGroup ?? ''
 
-  const irrPercent = `${(result.irrAnnualDecimal * 100).toFixed(3)}%`
-  const effectivePercent = result.effectiveAnnualRateDecimal
-    ? `${(result.effectiveAnnualRateDecimal * 100).toFixed(3)}%`
-    : irrPercent
+  const irrPercent = `${(result.rates.annualRateDecimal * 100).toFixed(3)}%`
+  const effectivePercent = `${(result.rates.effectiveAnnualRateDecimal * 100).toFixed(3)}%`
 
   return (
     <Card className="overflow-hidden shadow-sm">
