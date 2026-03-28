@@ -119,7 +119,7 @@ docs/
 
 ---
 
-## 현재 진행 상태 (2026-03-28 저녁)
+## 현재 진행 상태 (2026-03-28 밤)
 
 - ✅ MG 캐피탈 운용리스 계산 엔진
 - ✅ 차량 정보 섹션 Brand/Model/Trim 3단계 UI + 하단 요약 행
@@ -132,30 +132,52 @@ docs/
 - ✅ **프론트엔드 React + shadcn 전환 완료** (`client/` 서브앱, playground.ts 폐기)
   - client/ Vite + React 18 + Tailwind v4 + shadcn/ui 구축
   - VehicleInfoCard / AcquisitionCostCard / QuoteConditionsCard / QuoteResultCard 구현
-  - QuotePage (견적 계산) + ImportPage + App.tsx (탭 네비게이션) 구현
+  - QuotePage (견적 계산) + ImportPage + DashboardPage + App.tsx (좌측 사이드바 네비게이션) 구현
   - useCatalog / useQuote 훅, API 레이어, 잔가 프리뷰 유틸 구현
   - QuoteResult 클라이언트 타입을 실제 API 응답(CanonicalQuoteResult) 형태에 맞게 수정 (IRR NaN 버그 수정)
   - wrangler.jsonc `pages_build_output_dir` → `"client/dist"`, playground.ts 라우트 제거
-- 🟡 Excel 패리티 (BMW/BENZ/AUDI/VOLVO 대표 케이스 검증, 36개월·deposit/upfront 케이스 미완)
+- ✅ **UI/UX 개선** (design-taste-frontend 스킬 적용)
+  - 탭 네비게이션 → 좌측 사이드바 패널로 교체 (대시보드 → 견적 계산 → 워크북 임포트 순)
+  - DashboardPage 구현 — ping-ring 상태 표시, 비대칭 그리드, 활성 워크북 메트릭, 브랜드 카탈로그
+  - ImportPage 완전 재구현 — 드래그앤드롭 업로드, 파일 프리뷰, 워크북 임포트, 히스토리 목록
+  - CSS 애니메이션 추가: `fade-up`, `shimmer`(스켈레톤 로더), `ping-ring`(상태 도트)
+  - dot-grid 배경, `min-h-[100dvh]`(iOS Safari 대응), 버튼 tactile 피드백
+  - 숫자 폰트 bold → normal weight 변경 (가독성 개선)
+- ✅ **엔진 버그 수정**: `financedPrincipal`이 upfrontPayment를 잘못 차감하던 문제 수정 — Excel CP17 기준으로 gross acquisitionCost 그대로 반영
+- ✅ **패리티 픽스처 확장** (33개 → 41개, 전체 통과)
+  - 기간 변형: bmw-x7-24-base, bmw-x7-48-base
+  - 보증금/선납금: bmw-x7-36-deposit-20m, bmw-x7-36-upfront-20m, bmw-x7-60-upfront-20m-deposit-30m
+  - 고객명의: bmw-x7-60-customer-base (10% 고금리 확인)
+  - 약정거리: bmw-x7-60-mileage-30k (SNK 승, gap=2% → 1.1% 수수료)
+  - 크로스브랜드: benz-e220d-36-base
+- 🟡 Excel 패리티 진행 중 (주요 케이스 검증 완료, 추가 모델/조건 지속 확장 예정)
 - ❌ 금융리스, 할부/오토론 미구현
 - ❌ 두 번째 금융사 미온보딩
 
-### 검증된 픽스처 목록 (2026-03-28 기준, 33개)
+### 검증된 픽스처 목록 (2026-03-28 기준, 41개)
 
 | 파일 | 모델 | 기간 | 잔가사 | 비고 |
 |------|------|------|--------|------|
+| bmw-x7-24-base | BMW X7 40d | 24m | APS | 기간 변형 |
 | bmw-x7-36-base | BMW X7 40d | 36m | APS | 기본 |
+| bmw-x7-36-deposit-20m | BMW X7 40d | 36m | APS | 보증금 20M |
 | bmw-x7-36-upfront-10m-deposit-30m | BMW X7 40d | 36m | APS | 선납+보증금 |
+| bmw-x7-36-upfront-20m | BMW X7 40d | 36m | APS | 선납금 20M |
+| bmw-x7-48-base | BMW X7 40d | 48m | APS | 기간 변형 |
 | bmw-x7-60-base | BMW X7 40d | 60m | APS | 기본 |
-| bmw-x7-60-upfront-20m | BMW X7 40d | 60m | APS | 선납금 |
-| bmw-x7-60-deposit-50m | BMW X7 40d | 60m | APS | 보증금 |
+| bmw-x7-60-upfront-20m | BMW X7 40d | 60m | APS | 선납금 20M |
+| bmw-x7-60-upfront-20m-deposit-30m | BMW X7 40d | 60m | APS | 선납+보증금 |
+| bmw-x7-60-deposit-50m | BMW X7 40d | 60m | APS | 보증금 50M |
 | bmw-x7-60-screenshot | BMW X7 40d | 60m | APS | 스크린샷 |
+| bmw-x7-60-mileage-30k | BMW X7 40d | 60m | SNK | 30k km, gap=2% → 1.1% 수수료 |
+| bmw-x7-60-customer-base | BMW X7 40d | 60m | - | 고객명의, 10% 금리 |
 | bmw-520i-60-base | BMW 520i | 60m | APS | gap=0.05 → 0.44% 수수료 |
 | bmw-320d-60-base | BMW 320d | 60m | APS | gap≥0.08 → 0% 수수료 |
 | bmw-x5-30d-60-base | BMW X5 30d | 60m | APS | gap≥0.07 → 0% 수수료 |
 | bmw-x3-20d-60-base | BMW X3 20d | 60m | SNK | SNK 프로모로 SNK 승 |
 | benz-a200d-36-base | BENZ A200d | 36m | SNK | APS 미해당 모델 |
-| benz-e220d-60-base | BENZ E220d 4MATIC | 60m | APS | gap≥0.085 → 0% 수수료 |
+| benz-e220d-36-base | BENZ E220d 4Matic | 36m | APS | 기간 변형 |
+| benz-e220d-60-base | BENZ E220d 4Matic | 60m | APS | gap≥0.085 → 0% 수수료 |
 | audi-a3-36-base | AUDI A3 40 TFSI | 36m | SNK | 기본 |
 | audi-a3-36-customer | AUDI A3 40 TFSI | 36m | SNK | 개인명의 / 고금리 |
 | volvo-xc40-36-promo | VOLVO XC40 B4 | 36m | APS | 잔가 프로모 0.75 |
@@ -184,13 +206,24 @@ bun run db:push      # DB 스키마 마이그레이션
   functions/     ← Cloudflare Pages Functions (그대로 유지)
   client/        ← React + Vite + Tailwind v4 + shadcn/ui 앱
     src/
-      pages/          ← QuotePage.tsx, ImportPage.tsx
+      pages/          ← QuotePage.tsx, ImportPage.tsx, DashboardPage.tsx
       components/     ← VehicleInfoCard, AcquisitionCostCard, QuoteConditionsCard, QuoteResultCard
       hooks/          ← useCatalog.ts, useQuote.ts
       lib/            ← api.ts, residual.ts, utils.ts
-      types/          ← catalog.ts, quote.ts
+      types/          ← catalog.ts, quote.ts, imports.ts
     dist/        ← Vite 빌드 아웃풋 (wrangler pages_build_output_dir)
 ```
+
+### 네비게이션 구조
+- 좌측 사이드바 (w-220px, oklch 다크 배경)
+- 순서: 대시보드 → 견적 계산 → 워크북 임포트
+- 활성 항목: 좌측 accent bar + bg-white/10
+
+### 디자인 시스템
+- `index.css`: `fade-up`, `shimmer`, `ping-ring` 키프레임 + `.skeleton`, `.animate-fade-up`, `.ping-ring` 유틸
+- dot-grid 배경 (radial-gradient, fixed attachment)
+- oklch 색상 토큰, Geist Variable 폰트
+- 숫자: `font-mono tabular-nums font-normal` (SF Mono, non-bold)
 
 - API 백엔드(Hono) 변경 없음, 계산 엔진 완전 동일
 - `wrangler.jsonc` `pages_build_output_dir` = `"client/dist"` ✅

@@ -111,14 +111,18 @@ Completed:
     - BMW X5 30d: APS, gap≥0.07 → 0% fee, displayedRate 4.702%
     - BMW X3 20d: SNK wins (snkPromo=0.015 → SNK max 0.585 > APS max 0.57), displayedRate 4.704%
     - BENZ E220d 4MATIC: APS wins tie, gap≥0.085 → 0% fee, displayedRate 4.703%
+19. financedPrincipal bug fixed: was incorrectly subtracting upfrontPayment, now correctly equals gross acquisitionCost matching Excel CP17 — 2026-03-28
+20. fixture bank expanded from 33 to 41: added 24m/48m term variants, deposit/upfront combos, customer ownership, 30k mileage (SNK 2% gap → 1.1% fee), BENZ E220d 36m — 2026-03-28
+21. React frontend fully live: DashboardPage implemented (active workbook stats, brand catalog, ping-ring status); ImportPage fully implemented (drag-and-drop upload, preview, import, history); sidebar navigation replaces tab header — 2026-03-28
+22. UI polish: fade-up/shimmer/ping-ring CSS animations, skeleton loaders, tactile button feedback, dot-grid background, min-h-[100dvh], number fonts changed to normal weight — 2026-03-28
 
 Remaining:
 
-1. add 36m variants for newly verified models (BMW 520i, 320d, X5, X3, BENZ E220d)
-2. add deposit/upfront scenarios for new models
+1. add 36m variants for more models (BMW 520i, 320d, X5, X3)
+2. add deposit/upfront scenarios for non-BMW models
 3. model remaining hidden fee and exception rules that still create small payment deltas
-4. complete the all-model residual-company selection verification path, especially where workbook hidden cells pick SNK vs APS differently by model
-5. build UI flow that lets users confirm workbook-style final residual selection when needed
+4. complete the all-model residual-company selection verification path
+5. build UI flow for confirming workbook-style final residual selection when needed
 
 Deliverable:
 

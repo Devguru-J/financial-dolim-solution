@@ -882,7 +882,7 @@ export function calculateMgOperatingLeaseQuoteFromResolvedInput(
   const acquisitionCost = acquisitionCostBeforeStamp + stampDuty;
   const depositAmount = Math.max(0, input.depositAmount ?? 0);
   const upfrontPayment = Math.max(0, input.upfrontPayment);
-  const financedPrincipal = Math.max(acquisitionCost - upfrontPayment, 0);
+  const financedPrincipal = acquisitionCost;
   const plusAmount = upfrontPayment + depositAmount + Math.max(0, input.lossDamageAmount ?? 0);
   const paymentOne = computeLeaseMonthlyPaymentRaw({
     presentValue: Math.max(acquisitionCost - plusAmount, 0),

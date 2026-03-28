@@ -24,59 +24,60 @@ export function QuoteResultCard({ result }: QuoteResultCardProps) {
   const effectivePercent = `${(result.rates.effectiveAnnualRateDecimal * 100).toFixed(3)}%`
 
   return (
-    <Card className="overflow-hidden shadow-sm">
-      <CardHeader className="bg-muted py-2.5 px-4 flex flex-row items-center gap-2 flex-wrap">
-        <span className="font-bold text-sm">MG캐피탈</span>
-        <Badge variant="outline" className="text-xs">
+    <Card className="overflow-hidden shadow-[0_12px_30px_rgba(29,51,184,0.15)]">
+      {/* Header */}
+      <CardHeader className="py-2.5 px-4 border-b border-border bg-muted/60 flex flex-row items-center gap-2 flex-wrap space-y-0">
+        <span className="font-semibold text-sm text-foreground mr-1">MG캐피탈</span>
+        <Badge variant="outline" className="text-[10px] font-medium">
           {ownerTag}
         </Badge>
         <Badge
           variant="outline"
-          className={`text-xs ${
-            isHighResidual ? 'bg-blue-50 text-blue-700 border-blue-200' : ''
+          className={`text-[10px] font-medium ${
+            isHighResidual ? 'bg-primary/10 text-primary border-primary/30' : ''
           }`}
         >
           {residualTag}
         </Badge>
         {matrixGroup && (
-          <Badge variant="outline" className="text-xs">
+          <Badge variant="outline" className="text-[10px] font-medium">
             {matrixGroup}
           </Badge>
         )}
       </CardHeader>
+
       <CardContent className="p-0">
-        <div className="grid grid-cols-2">
-          {/* 월 납입금 */}
-          <ResultCell bg borderRight borderBottom>
-            <ResultLabel>월 납입금</ResultLabel>
-            <ResultValue accent>{formatKrw(displayMonthlyPayment)}</ResultValue>
-            <ResultSub>내부값 {formatKrw(result.monthlyPayment)}</ResultSub>
-          </ResultCell>
+        <div className="flex divide-x divide-border">
+          {/* Left: monthly payment hero */}
+          <div className="flex-1 px-5 py-4 bg-primary/[0.03]">
+            <div className="text-[10px] font-semibold text-muted-foreground tracking-widest uppercase mb-3 leading-none">월 납입금</div>
+            <div className="text-3xl font-normal tracking-tight font-mono tabular-nums text-primary leading-none">
+              {formatKrw(displayMonthlyPayment)}
+            </div>
+            <div className="text-[11px] text-muted-foreground mt-2">
+              내부값 {formatKrw(result.monthlyPayment)}
+            </div>
+          </div>
 
-          {/* IRR */}
-          <ResultCell borderBottom>
-            <ResultLabel>IRR</ResultLabel>
-            <ResultValue>{irrPercent}</ResultValue>
-            <ResultSub>유효 {effectivePercent}</ResultSub>
-          </ResultCell>
-
-          {/* 잔가 */}
-          <ResultCell bg borderRight>
-            <ResultLabel>잔가</ResultLabel>
-            <ResultValue>
-              {(result.residual.rateDecimal * 100).toFixed(2)}%
-            </ResultValue>
-            <ResultSub>{formatKrw(result.residual.amount)}</ResultSub>
-          </ResultCell>
-
-          {/* 총 구매비용 */}
-          <ResultCell>
-            <ResultLabel>총 구매비용</ResultLabel>
-            <ResultValue small>{formatKrw(totalCost)}</ResultValue>
-            <ResultSub>
-              월납입금×{leaseTermMonths}개월+잔존가치
-            </ResultSub>
-          </ResultCell>
+          {/* Right: stacked secondary metrics */}
+          <div className="w-48 flex flex-col divide-y divide-border">
+            <SecRow
+              label="IRR"
+              value={irrPercent}
+              sub={irrPercent !== effectivePercent ? `유효 ${effectivePercent}` : undefined}
+            />
+            <SecRow
+              label="잔가율"
+              value={`${(result.residual.rateDecimal * 100).toFixed(2)}%`}
+              sub={formatKrw(result.residual.amount)}
+            />
+            <SecRow
+              label="총 구매비용"
+              value={formatKrw(totalCost)}
+              sub={`${leaseTermMonths}개월 + 잔존가치`}
+              small
+            />
+          </div>
         </div>
 
         {/* Warnings */}
@@ -97,63 +98,26 @@ export function QuoteResultCard({ result }: QuoteResultCardProps) {
   )
 }
 
-function ResultCell({
-  children,
-  bg = false,
-  borderRight = false,
-  borderBottom = false,
-}: {
-  children: React.ReactNode
-  bg?: boolean
-  borderRight?: boolean
-  borderBottom?: boolean
-}) {
-  return (
-    <div
-      className={[
-        'p-4',
-        bg ? 'bg-muted' : '',
-        borderRight ? 'border-r border-border' : '',
-        borderBottom ? 'border-b border-border' : '',
-      ].join(' ')}
-    >
-      {children}
-    </div>
-  )
-}
-
-function ResultLabel({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="text-[10px] font-bold text-muted-foreground tracking-wider uppercase mb-1.5">
-      {children}
-    </div>
-  )
-}
-
-function ResultValue({
-  children,
-  accent = false,
+function SecRow({
+  label,
+  value,
+  sub,
   small = false,
 }: {
-  children: React.ReactNode
-  accent?: boolean
+  label: string
+  value: string
+  sub?: string
   small?: boolean
 }) {
   return (
-    <div
-      className={[
-        'font-extrabold tracking-tight',
-        small ? 'text-lg' : 'text-xl',
-        accent ? 'text-blue-600' : 'text-foreground',
-      ].join(' ')}
-    >
-      {children}
+    <div className="px-4 py-3">
+      <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1.5 leading-none">
+        {label}
+      </div>
+      <div className={`font-normal font-mono tabular-nums text-foreground leading-none ${small ? 'text-sm' : 'text-base'}`}>
+        {value}
+      </div>
+      {sub && <div className="text-[10px] text-muted-foreground mt-1">{sub}</div>}
     </div>
-  )
-}
-
-function ResultSub({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="text-xs text-muted-foreground mt-1">{children}</div>
   )
 }

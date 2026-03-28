@@ -148,7 +148,7 @@ export function QuotePage() {
   }, [catalog.selectedModel, leaseTermMonths])
 
   return (
-    <div className="p-4 grid grid-cols-[1fr_420px] gap-4 min-h-screen bg-background">
+    <div className="p-5 grid grid-cols-[minmax(0,720px)_440px] gap-5 min-h-[100dvh]">
       {/* Left: Form */}
       <div className="flex flex-col gap-3">
         <VehicleInfoCard
@@ -224,37 +224,55 @@ export function QuotePage() {
           onPaymentRateOverrideChange={setPaymentRateOverride}
         />
 
-        {/* Action buttons */}
-        <div className="flex gap-2">
-          <Button variant="outline" size="sm" className="text-xs" onClick={() => {}}>
-            엑셀 기본값 적용
-          </Button>
-          <Button
-            className="flex-1 text-sm font-semibold"
+        {/* Action row */}
+        <div className="flex flex-col gap-2">
+          {/* Primary CTA */}
+          <button
             disabled={quote.loading || !catalog.selectedModel}
             onClick={handleCalculate}
+            className="w-full h-11 rounded-xl bg-primary text-white text-sm font-semibold tracking-tight flex items-center justify-center gap-2 shadow-[0_4px_16px_rgba(29,51,184,0.3)] hover:bg-primary/90 transition-all duration-150 active:scale-[0.985] active:translate-y-px active:shadow-[0_2px_8px_rgba(29,51,184,0.2)] disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none"
           >
-            {quote.loading ? '계산 중...' : '견적 계산'}
-          </Button>
-          <Button variant="outline" size="sm" className="text-xs" onClick={handleResetSelectedResidual}>
-            잔가 선택값 지우기
-          </Button>
+            {quote.loading ? (
+              <>
+                <span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                계산 중
+              </>
+            ) : '견적 계산'}
+          </button>
+          {/* Utility buttons */}
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" className="text-xs flex-1" onClick={() => {}}>
+              엑셀 기본값 적용
+            </Button>
+            <Button variant="outline" size="sm" className="text-xs flex-1" onClick={handleResetSelectedResidual}>
+              잔가 선택값 지우기
+            </Button>
+          </div>
         </div>
 
         {quote.error && (
-          <div className="text-xs text-red-600 bg-red-50 border border-red-200 rounded px-3 py-2">
+          <div className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2.5">
             {quote.error}
           </div>
         )}
       </div>
 
       {/* Right: Result */}
-      <div className="flex flex-col gap-3">
+      <div className="flex flex-col gap-3 sticky top-5 h-fit">
         {quote.result ? (
           <QuoteResultCard result={quote.result} />
         ) : (
-          <div className="border border-dashed border-border rounded-lg flex items-center justify-center text-muted-foreground text-sm min-h-48">
-            {quote.loading ? '계산 중...' : '계산 전 상태'}
+          <div className="border border-dashed border-border rounded-xl bg-card flex flex-col items-center justify-center text-center gap-3 min-h-64 px-8">
+            <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-muted-foreground">
+                <rect x="2" y="3" width="20" height="14" rx="2"/>
+                <path d="M8 21h8M12 17v4"/>
+              </svg>
+            </div>
+            <div>
+              <p className="text-sm font-medium text-foreground">견적 준비 완료</p>
+              <p className="text-xs text-muted-foreground mt-1 leading-relaxed">차량과 조건을 선택한 뒤<br />견적 계산을 눌러주세요</p>
+            </div>
           </div>
         )}
       </div>

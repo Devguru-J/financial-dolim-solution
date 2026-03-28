@@ -1,5 +1,6 @@
 import type { CatalogBrand, CatalogModel } from '@/types/catalog'
 import type { QuotePayload, QuoteResult } from '@/types/quote'
+import type { ImportListResponse, PreviewResponse, ImportResponse } from '@/types/imports'
 
 async function apiFetch<T>(url: string, options?: RequestInit): Promise<T> {
   const res = await fetch(url, {
@@ -31,4 +32,37 @@ export async function calculateQuote(payload: QuotePayload): Promise<QuoteResult
     body: JSON.stringify(payload),
   })
   return data.quote
+}
+
+export async function fetchImports(lenderCode = 'mg-capital'): Promise<ImportListResponse> {
+  return apiFetch<ImportListResponse>(`/api/imports?lenderCode=${encodeURIComponent(lenderCode)}`)
+}
+
+export async function previewWorkbook(file: File, lenderCode = 'mg-capital'): Promise<PreviewResponse> {
+  const formData = new FormData()
+  formData.append('file', file)
+  const res = await fetch(`/api/imports/preview?lenderCode=${encodeURIComponent(lenderCode)}`, {
+    method: 'POST',
+    body: formData,
+  })
+  if (!res.ok) {
+    const text = await res.text().catch(() => res.statusText)
+    throw new Error(`API ${res.status}: ${text}`)
+  }
+  return res.json() as Promise<PreviewResponse>
+}
+
+export async function importWorkbook(file: File, lenderCode = 'mg-capital', activate = true): Promise<ImportResponse> {
+  const formData = new FormData()
+  formData.append('file', file)
+  formData.append('activate', String(activate))
+  const res = await fetch(`/api/imports?lenderCode=${encodeURIComponent(lenderCode)}`, {
+    method: 'POST',
+    body: formData,
+  })
+  if (!res.ok) {
+    const text = await res.text().catch(() => res.statusText)
+    throw new Error(`API ${res.status}: ${text}`)
+  }
+  return res.json() as Promise<ImportResponse>
 }

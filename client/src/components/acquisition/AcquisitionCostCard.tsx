@@ -43,9 +43,10 @@ export function AcquisitionCostCard({
   onPublicBondChange,
 }: AcquisitionCostCardProps) {
   return (
-    <Card>
-      <CardHeader className="bg-slate-900 rounded-t-lg py-3 px-4">
-        <CardTitle className="text-white text-sm font-semibold">취득원가 산출</CardTitle>
+    <Card className="shadow-[0_20px_40px_-12px_rgba(25,28,31,0.08)]">
+      <CardHeader className="py-3 px-4 border-b border-border flex flex-row items-center gap-2.5 space-y-0">
+        <div className="w-1 h-3.5 rounded-sm bg-primary" />
+        <CardTitle className="text-sm font-semibold text-foreground">취득원가 산출</CardTitle>
       </CardHeader>
       <CardContent className="p-0">
         <div className="grid grid-cols-[120px_1fr_120px_1fr]">
@@ -108,7 +109,7 @@ export function AcquisitionCostCard({
           </FieldCell>
           <FieldLabel last>취득원가</FieldLabel>
           <FieldCell last>
-            <div className="w-full h-8 px-2 text-xs bg-green-50 border border-green-200 rounded flex items-center font-bold text-green-800">
+            <div className="w-full h-8 px-2 text-xs bg-primary/8 border border-primary/25 rounded flex items-center font-normal font-mono tabular-nums text-primary">
               {formatKrw(totalAcquisitionCost)}
             </div>
           </FieldCell>
@@ -169,7 +170,7 @@ function CheckboxInput({
     <>
       <input
         type="checkbox"
-        className="accent-blue-600"
+        className=""
         checked={checked}
         onChange={(e) => onToggle(e.target.checked)}
       />
@@ -200,15 +201,15 @@ function CheckboxDisplay({
     <>
       <input
         type="checkbox"
-        className="accent-blue-600"
+        className=""
         checked={checked}
         onChange={(e) => onToggle(e.target.checked)}
       />
       <span className="text-xs text-muted-foreground">포함</span>
       <div
-        className={`flex-1 h-8 px-2 text-xs rounded flex items-center ${
+        className={`flex-1 h-8 px-2 text-xs rounded flex items-center font-mono tabular-nums ${
           highlight
-            ? 'bg-green-50 border border-green-200 text-green-800'
+            ? 'bg-primary/8 border border-primary/25 text-primary'
             : 'bg-muted border border-border'
         }`}
       >

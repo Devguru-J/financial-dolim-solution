@@ -83,9 +83,10 @@ export function QuoteConditionsCard(props: QuoteConditionsCardProps) {
   const uid = useId()
 
   return (
-    <Card>
-      <CardHeader className="bg-slate-900 rounded-t-lg py-3 px-4">
-        <CardTitle className="text-white text-sm font-semibold">견적 조건</CardTitle>
+    <Card className="shadow-[0_20px_40px_-12px_rgba(25,28,31,0.08)]">
+      <CardHeader className="py-3 px-4 border-b border-border flex flex-row items-center gap-2.5 space-y-0">
+        <div className="w-1 h-3.5 rounded-sm bg-primary" />
+        <CardTitle className="text-sm font-semibold text-foreground">견적 조건</CardTitle>
       </CardHeader>
       <CardContent className="p-0">
         <div className="grid grid-cols-[120px_1fr_120px_1fr]">
@@ -125,7 +126,7 @@ export function QuoteConditionsCard(props: QuoteConditionsCardProps) {
               <input
                 type="radio"
                 name={`${uid}-affiliate`}
-                className="accent-blue-600"
+                className=""
                 checked={affiliateExempt}
                 onChange={() => onAffiliateExemptChange(true)}
               />
@@ -135,7 +136,7 @@ export function QuoteConditionsCard(props: QuoteConditionsCardProps) {
               <input
                 type="radio"
                 name={`${uid}-affiliate`}
-                className="accent-blue-600"
+                className=""
                 checked={!affiliateExempt}
                 onChange={() => onAffiliateExemptChange(false)}
               />
@@ -208,7 +209,7 @@ export function QuoteConditionsCard(props: QuoteConditionsCardProps) {
               <input
                 type="radio"
                 name={`${uid}-evSubsidy`}
-                className="accent-blue-600"
+                className=""
                 checked={!evSubsidy}
                 onChange={() => onEvSubsidyChange(false)}
               />
@@ -218,7 +219,7 @@ export function QuoteConditionsCard(props: QuoteConditionsCardProps) {
               <input
                 type="radio"
                 name={`${uid}-evSubsidy`}
-                className="accent-blue-600"
+                className=""
                 checked={evSubsidy}
                 onChange={() => onEvSubsidyChange(true)}
               />

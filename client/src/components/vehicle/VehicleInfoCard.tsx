@@ -47,9 +47,10 @@ export function VehicleInfoCard({
     (Number(discountPrice.replace(/,/g, '')) || 0)
 
   return (
-    <Card>
-      <CardHeader className="bg-slate-900 rounded-t-lg py-3 px-4">
-        <CardTitle className="text-white text-sm font-semibold">차량 정보</CardTitle>
+    <Card className="shadow-[0_20px_40px_-12px_rgba(25,28,31,0.08)]">
+      <CardHeader className="py-3 px-4 border-b border-border flex flex-row items-center gap-2.5 space-y-0">
+        <div className="w-1 h-3.5 rounded-sm bg-primary" />
+        <CardTitle className="text-sm font-semibold text-foreground">차량 정보</CardTitle>
       </CardHeader>
       <CardContent className="p-0">
         <div className="grid grid-cols-[120px_1fr_120px_1fr]">
@@ -114,7 +115,7 @@ export function VehicleInfoCard({
                   placeholder={modelsLoading ? '로딩 중...' : '트림 선택'}
                 />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="min-w-72">
                 {models.map((m) => (
                   <SelectItem key={m.modelName} value={m.modelName}>
                     {m.modelName}
@@ -147,16 +148,16 @@ export function VehicleInfoCard({
           </div>
         )}
 
-        {/* Summary stat cards */}
-        <div className="grid grid-cols-3 gap-2 p-3">
-          <StatCard label="최종차량가" value={formatKrw(finalPrice)} />
-          <StatCard
+        {/* Summary stat row */}
+        <div className="border-t border-border grid grid-cols-3 divide-x divide-border">
+          <StatItem label="최종차량가" value={formatKrw(finalPrice)} accent />
+          <StatItem
             label={`일반잔가${baseResidualRate != null ? ` (${(baseResidualRate * 100).toFixed(2)}%)` : ''}`}
-            value={baseResidualRate != null ? formatKrw(finalPrice * baseResidualRate) : '-'}
+            value={baseResidualRate != null ? formatKrw(finalPrice * baseResidualRate) : '—'}
           />
-          <StatCard
-            label={`최대(고)잔가${maxResidualRate != null ? ` (${(maxResidualRate * 100).toFixed(2)}%)` : ''}`}
-            value={maxResidualRate != null ? formatKrw(finalPrice * maxResidualRate) : '-'}
+          <StatItem
+            label={`최대잔가${maxResidualRate != null ? ` (${(maxResidualRate * 100).toFixed(2)}%)` : ''}`}
+            value={maxResidualRate != null ? formatKrw(finalPrice * maxResidualRate) : '—'}
           />
         </div>
       </CardContent>
@@ -199,11 +200,11 @@ function FieldCell({
   )
 }
 
-function StatCard({ label, value }: { label: string; value: string }) {
+function StatItem({ label, value, accent = false }: { label: string; value: string; accent?: boolean }) {
   return (
-    <div className="bg-muted border border-border rounded-lg p-2.5">
-      <div className="text-[10px] text-muted-foreground mb-1">{label}</div>
-      <div className="text-sm font-bold text-foreground">{value}</div>
+    <div className="px-4 py-3">
+      <div className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider mb-1.5 leading-none">{label}</div>
+      <div className={`text-sm font-normal font-mono tabular-nums ${accent ? 'text-primary' : 'text-foreground'}`}>{value}</div>
     </div>
   )
 }
