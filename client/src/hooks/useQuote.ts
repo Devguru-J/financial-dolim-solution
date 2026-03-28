@@ -20,6 +20,7 @@ export function useQuote(): QuoteState & QuoteActions {
 
   const calculate = useCallback(async (payload: QuotePayload) => {
     setLoading(true)
+    setResult(null)
     setError(null)
     try {
       const data = await calculateQuote(payload)

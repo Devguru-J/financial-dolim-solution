@@ -8,7 +8,6 @@ import {
 } from '@/components/ui/select'
 import { formatKrw } from '@/lib/residual'
 import type { CatalogBrand, CatalogModel } from '@/types/catalog'
-import type { LeaseTerm } from '@/types/quote'
 
 interface VehicleInfoCardProps {
   brands: CatalogBrand[]
@@ -19,7 +18,6 @@ interface VehicleInfoCardProps {
   selectedModel: CatalogModel | null
   vehiclePrice: string
   discountPrice: string
-  leaseTermMonths: LeaseTerm
   baseResidualRate: number | null
   maxResidualRate: number | null
   onBrandChange: (brand: string) => void
@@ -37,7 +35,6 @@ export function VehicleInfoCard({
   selectedModel,
   vehiclePrice,
   discountPrice,
-  leaseTermMonths: _leaseTermMonths,
   baseResidualRate,
   maxResidualRate,
   onBrandChange,
