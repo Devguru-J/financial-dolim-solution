@@ -119,7 +119,7 @@ docs/
 
 ---
 
-## 현재 진행 상태 (2026-03-28 오후)
+## 현재 진행 상태 (2026-03-28 저녁)
 
 - ✅ MG 캐피탈 운용리스 계산 엔진
 - ✅ 차량 정보 섹션 Brand/Model/Trim 3단계 UI + 하단 요약 행
@@ -129,8 +129,14 @@ docs/
 - ✅ 픽스처 패리티 수정 — BENZ A200d resolvedMatrixGroup(APS→SNK), BMW X7 36m maximumResidualRateOverride(0.595→0.735) 정정
 - ✅ 다모델 픽스처 추가 (BMW 520i·320d·X5·X3, BENZ E220d — 60개월 기준, 총 33개 테스트 전체 통과)
 - ✅ 견적 결과 UI 개선 — 4컬럼 테이블(월납입금·IRR·잔가·총구매비용) + 헤더 태그(법인/잔가종류/잔가보증사)
+- ✅ **프론트엔드 React + shadcn 전환 완료** (`client/` 서브앱, playground.ts 폐기)
+  - client/ Vite + React 18 + Tailwind v4 + shadcn/ui 구축
+  - VehicleInfoCard / AcquisitionCostCard / QuoteConditionsCard / QuoteResultCard 구현
+  - QuotePage (견적 계산) + ImportPage + App.tsx (탭 네비게이션) 구현
+  - useCatalog / useQuote 훅, API 레이어, 잔가 프리뷰 유틸 구현
+  - QuoteResult 클라이언트 타입을 실제 API 응답(CanonicalQuoteResult) 형태에 맞게 수정 (IRR NaN 버그 수정)
+  - wrangler.jsonc `pages_build_output_dir` → `"client/dist"`, playground.ts 라우트 제거
 - 🟡 Excel 패리티 (BMW/BENZ/AUDI/VOLVO 대표 케이스 검증, 36개월·deposit/upfront 케이스 미완)
-- 🟡 프론트엔드 React + shadcn 전환 진행 예정 (`client/` 서브앱 구조)
 - ❌ 금융리스, 할부/오토론 미구현
 - ❌ 두 번째 금융사 미온보딩
 
@@ -168,24 +174,27 @@ bun run db:push      # DB 스키마 마이그레이션
 
 ---
 
-## 프론트엔드 구조 전환 계획 (2026-03-28~)
+## 프론트엔드 구조 (2026-03-28 완료)
 
-현재 `src/playground.ts`(HTML-in-string ~3000줄)를 React + shadcn/ui 기반으로 전환 예정.
+`src/playground.ts`(HTML-in-string ~3000줄) → React + shadcn/ui 전환 완료.
 
 ```
 프로젝트 루트/
   src/           ← Hono API 서버 (그대로 유지)
   functions/     ← Cloudflare Pages Functions (그대로 유지)
-  client/        ← 신규 React + Vite + Tailwind + shadcn 앱
+  client/        ← React + Vite + Tailwind v4 + shadcn/ui 앱
     src/
-      pages/     ← 페이지 컴포넌트
-      components/← shadcn 컴포넌트 + 도메인 컴포넌트
-    dist/        ← Vite 빌드 아웃풋
+      pages/          ← QuotePage.tsx, ImportPage.tsx
+      components/     ← VehicleInfoCard, AcquisitionCostCard, QuoteConditionsCard, QuoteResultCard
+      hooks/          ← useCatalog.ts, useQuote.ts
+      lib/            ← api.ts, residual.ts, utils.ts
+      types/          ← catalog.ts, quote.ts
+    dist/        ← Vite 빌드 아웃풋 (wrangler pages_build_output_dir)
 ```
 
-- API 백엔드(Hono)는 변경 없음
-- `wrangler.jsonc`의 `pages_build_output_dir`를 `client/dist`로 변경 예정
-- playground.ts는 마이그레이션 완료 후 폐기 예정
+- API 백엔드(Hono) 변경 없음, 계산 엔진 완전 동일
+- `wrangler.jsonc` `pages_build_output_dir` = `"client/dist"` ✅
+- `playground.ts` 라우트 제거 완료 ✅
 
 ## 알아두면 좋은 것들
 

@@ -1,6 +1,6 @@
 # React + shadcn/ui Migration Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [x]`) syntax for tracking.
 
 **Goal:** Replace `src/playground.ts` (3000-line HTML-in-string) with a `client/` React + Vite + Tailwind + shadcn/ui app while keeping the Hono API and all calculation logic completely unchanged.
 
@@ -55,7 +55,7 @@
 - Create: `client/tsconfig.json`
 - Modify: `package.json`
 
-- [ ] **Step 1.1: Scaffold Vite app**
+- [x] **Step 1.1: Scaffold Vite app**
 
 ```bash
 cd /path/to/financial-dolim-solution
@@ -65,7 +65,7 @@ cd client && bun install
 
 Expected: `client/` directory with `src/main.tsx`, `src/App.tsx`, `index.html`, `vite.config.ts`, `tsconfig.json`.
 
-- [ ] **Step 1.2: Replace client/tsconfig.json**
+- [x] **Step 1.2: Replace client/tsconfig.json**
 
 The generated tsconfig references `tsconfig.node.json`. Replace with a clean browser-scoped config that does NOT pull in `@cloudflare/workers-types`:
 
@@ -91,7 +91,7 @@ The generated tsconfig references `tsconfig.node.json`. Replace with a clean bro
 }
 ```
 
-- [ ] **Step 1.3: Update vite.config.ts with path alias + API proxy**
+- [x] **Step 1.3: Update vite.config.ts with path alias + API proxy**
 
 ```typescript
 import { defineConfig } from 'vite'
@@ -116,19 +116,19 @@ export default defineConfig({
 })
 ```
 
-- [ ] **Step 1.4: Add dev:client script to root package.json**
+- [x] **Step 1.4: Add dev:client script to root package.json**
 
 The root `package.json` already has `"dev:pages": "wrangler pages dev . --ip 127.0.0.1 --port 8788 ..."`. Add only `dev:client`:
 ```json
 "dev:client": "cd client && bun run dev"
 ```
 
-- [ ] **Step 1.5: Verify Vite starts**
+- [x] **Step 1.5: Verify Vite starts**
 
 Run: `bun run dev:client`
 Expected: Vite starts on `http://localhost:5173` with default React template page.
 
-- [ ] **Step 1.6: Commit**
+- [x] **Step 1.6: Commit**
 
 ```bash
 git add client/ package.json
@@ -145,7 +145,7 @@ git commit -m "scaffold: client/ Vite + React + TypeScript app with API proxy"
 - Create: `client/components.json`
 - Modify: `client/src/index.css`
 
-- [ ] **Step 2.1: Install Tailwind**
+- [x] **Step 2.1: Install Tailwind**
 
 ```bash
 cd client
@@ -153,7 +153,7 @@ bun add -d tailwindcss postcss autoprefixer
 bunx tailwindcss init -p
 ```
 
-- [ ] **Step 2.2: Configure tailwind.config.ts**
+- [x] **Step 2.2: Configure tailwind.config.ts**
 
 ```typescript
 import type { Config } from 'tailwindcss'
@@ -204,7 +204,7 @@ export default {
 } satisfies Config
 ```
 
-- [ ] **Step 2.3: Replace client/src/index.css with shadcn CSS variables**
+- [x] **Step 2.3: Replace client/src/index.css with shadcn CSS variables**
 
 ```css
 @tailwind base;
@@ -247,7 +247,7 @@ export default {
 }
 ```
 
-- [ ] **Step 2.4: Init shadcn**
+- [x] **Step 2.4: Init shadcn**
 
 ```bash
 cd client
@@ -261,14 +261,14 @@ When prompted:
 
 This generates `components.json` and `src/lib/utils.ts`.
 
-- [ ] **Step 2.5: Install required shadcn components**
+- [x] **Step 2.5: Install required shadcn components**
 
 ```bash
 cd client
 bunx shadcn@latest add tabs card badge button select label separator
 ```
 
-- [ ] **Step 2.6: Verify Tailwind + shadcn works**
+- [x] **Step 2.6: Verify Tailwind + shadcn works**
 
 In `client/src/App.tsx`, add a test import:
 ```tsx
@@ -278,7 +278,7 @@ import { Button } from '@/components/ui/button'
 
 Run `bun run dev:client`, check the button renders with shadcn styles.
 
-- [ ] **Step 2.7: Remove test code from App.tsx, commit**
+- [x] **Step 2.7: Remove test code from App.tsx, commit**
 
 ```bash
 git add client/
@@ -295,7 +295,7 @@ git commit -m "scaffold: install Tailwind CSS + shadcn/ui components"
 - Create: `client/src/lib/api.ts`
 - Create: `client/src/lib/residual.ts`
 
-- [ ] **Step 3.1: Write catalog types**
+- [x] **Step 3.1: Write catalog types**
 
 Create `client/src/types/catalog.ts`:
 
@@ -325,7 +325,7 @@ export interface CatalogModel {
 }
 ```
 
-- [ ] **Step 3.2: Write quote types**
+- [x] **Step 3.2: Write quote types**
 
 Create `client/src/types/quote.ts`:
 
@@ -396,7 +396,7 @@ export interface QuoteResult {
 }
 ```
 
-- [ ] **Step 3.3: Write API wrappers**
+- [x] **Step 3.3: Write API wrappers**
 
 Create `client/src/lib/api.ts`:
 
@@ -437,7 +437,7 @@ export async function calculateQuote(payload: QuotePayload): Promise<QuoteResult
 }
 ```
 
-- [ ] **Step 3.4: Write residual preview utilities**
+- [x] **Step 3.4: Write residual preview utilities**
 
 Create `client/src/lib/residual.ts` (ported from `src/playground.ts` lines 1884–1946):
 
@@ -542,7 +542,7 @@ export function parsePercentInput(value: string | null | undefined): number | un
 }
 ```
 
-- [ ] **Step 3.5: Commit**
+- [x] **Step 3.5: Commit**
 
 ```bash
 git add client/src/types/ client/src/lib/
@@ -557,7 +557,7 @@ git commit -m "feat: add catalog/quote types, API wrappers, and residual preview
 - Create: `client/src/hooks/useCatalog.ts`
 - Create: `client/src/hooks/useQuote.ts`
 
-- [ ] **Step 4.1: Write useCatalog hook**
+- [x] **Step 4.1: Write useCatalog hook**
 
 Create `client/src/hooks/useCatalog.ts`:
 
@@ -653,7 +653,7 @@ export function getResidualPreviews(
 }
 ```
 
-- [ ] **Step 4.2: Write useQuote hook**
+- [x] **Step 4.2: Write useQuote hook**
 
 Create `client/src/hooks/useQuote.ts`:
 
@@ -700,7 +700,7 @@ export function useQuote(): QuoteState & QuoteActions {
 }
 ```
 
-- [ ] **Step 4.3: Commit**
+- [x] **Step 4.3: Commit**
 
 ```bash
 git add client/src/hooks/
@@ -714,7 +714,7 @@ git commit -m "feat: add useCatalog and useQuote hooks"
 **Files:**
 - Create: `client/src/components/vehicle/VehicleInfoCard.tsx`
 
-- [ ] **Step 5.1: Write VehicleInfoCard**
+- [x] **Step 5.1: Write VehicleInfoCard**
 
 Create `client/src/components/vehicle/VehicleInfoCard.tsx`:
 
@@ -917,7 +917,7 @@ function StatCard({ label, value }: { label: string; value: string }) {
 }
 ```
 
-- [ ] **Step 5.2: Commit**
+- [x] **Step 5.2: Commit**
 
 ```bash
 git add client/src/components/vehicle/
@@ -931,7 +931,7 @@ git commit -m "feat: add VehicleInfoCard component"
 **Files:**
 - Create: `client/src/components/acquisition/AcquisitionCostCard.tsx`
 
-- [ ] **Step 6.1: Write AcquisitionCostCard**
+- [x] **Step 6.1: Write AcquisitionCostCard**
 
 Create `client/src/components/acquisition/AcquisitionCostCard.tsx`:
 
@@ -1106,7 +1106,7 @@ function CheckboxDisplay({
 }
 ```
 
-- [ ] **Step 6.2: Commit**
+- [x] **Step 6.2: Commit**
 
 ```bash
 git add client/src/components/acquisition/
@@ -1120,7 +1120,7 @@ git commit -m "feat: add AcquisitionCostCard component"
 **Files:**
 - Create: `client/src/components/quote-conditions/QuoteConditionsCard.tsx`
 
-- [ ] **Step 7.1: Write QuoteConditionsCard**
+- [x] **Step 7.1: Write QuoteConditionsCard**
 
 Create `client/src/components/quote-conditions/QuoteConditionsCard.tsx`:
 
@@ -1401,7 +1401,7 @@ function AmountPercentInput({
 }
 ```
 
-- [ ] **Step 7.2: Commit**
+- [x] **Step 7.2: Commit**
 
 ```bash
 git add client/src/components/quote-conditions/
@@ -1415,7 +1415,7 @@ git commit -m "feat: add QuoteConditionsCard component"
 **Files:**
 - Create: `client/src/components/results/QuoteResultCard.tsx`
 
-- [ ] **Step 8.1: Write QuoteResultCard**
+- [x] **Step 8.1: Write QuoteResultCard**
 
 Create `client/src/components/results/QuoteResultCard.tsx`:
 
@@ -1566,7 +1566,7 @@ function ResultSub({ children }: { children: React.ReactNode }) {
 }
 ```
 
-- [ ] **Step 8.2: Commit**
+- [x] **Step 8.2: Commit**
 
 ```bash
 git add client/src/components/results/
@@ -1581,7 +1581,7 @@ git commit -m "feat: add QuoteResultCard component"
 - Create: `client/src/pages/QuotePage.tsx`
 - Create: `client/src/pages/ImportPage.tsx`
 
-- [ ] **Step 9.1: Write QuotePage**
+- [x] **Step 9.1: Write QuotePage**
 
 Create `client/src/pages/QuotePage.tsx`. This is the main orchestration component. It holds all form state, computes derived values (취득원가, deposit/upfront amounts), and calls the API.
 
@@ -1860,7 +1860,7 @@ export function QuotePage() {
 }
 ```
 
-- [ ] **Step 9.2: Write ImportPage placeholder**
+- [x] **Step 9.2: Write ImportPage placeholder**
 
 Create `client/src/pages/ImportPage.tsx`:
 
@@ -1876,7 +1876,7 @@ export function ImportPage() {
 }
 ```
 
-- [ ] **Step 9.3: Commit**
+- [x] **Step 9.3: Commit**
 
 ```bash
 git add client/src/pages/
@@ -1891,7 +1891,7 @@ git commit -m "feat: add QuotePage and ImportPage"
 - Modify: `client/src/App.tsx`
 - Modify: `client/src/main.tsx`
 
-- [ ] **Step 10.1: Write App.tsx**
+- [x] **Step 10.1: Write App.tsx**
 
 Replace the generated content of `client/src/App.tsx`:
 
@@ -1947,7 +1947,7 @@ export function App() {
 export default App
 ```
 
-- [ ] **Step 10.2: Ensure main.tsx imports App correctly**
+- [x] **Step 10.2: Ensure main.tsx imports App correctly**
 
 `client/src/main.tsx` should be:
 
@@ -1964,7 +1964,7 @@ createRoot(document.getElementById('root')!).render(
 )
 ```
 
-- [ ] **Step 10.3: Run the app and verify**
+- [x] **Step 10.3: Run the app and verify**
 
 ```bash
 # Terminal 1
@@ -1980,7 +1980,7 @@ Open http://localhost:5173.
 - Quote form loads with three section cards
 - Brand dropdown loads data from API (requires `bun run dev:pages` with `.dev.vars` and an active import)
 
-- [ ] **Step 10.4: Commit**
+- [x] **Step 10.4: Commit**
 
 ```bash
 git add client/src/App.tsx client/src/main.tsx
@@ -1995,22 +1995,22 @@ Before cutting over the wrangler build target, verify the React app produces cor
 
 **Prerequisites:** `bun run dev:pages` running with active MG workbook import in DB.
 
-- [ ] **Step 11.1: Test AUDI A3 36m base**
+- [x] **Step 11.1: Test AUDI A3 36m base**
 
 Input: AUDI A3 40 TFSI, 36개월, 연20,000km, 잔가 47%, 보증금 0, 선납금 0, 취득세 포함
 Expected: engine value 835,373 → display `roundUpToNearestHundred(835373)` = **₩ 835,400** (per `audi-a3-36-base` fixture)
 
-- [ ] **Step 11.2: Test BMW X7 60m base**
+- [x] **Step 11.2: Test BMW X7 60m base**
 
 Input: BMW X7 xDrive 40d DPE, 60개월, 연20,000km, 잔가 54.5%, 보증금 0, 선납금 0, 취득세 포함
 Expected: engine value 6,043,476 → display `roundUpToNearestHundred(6043476)` = **₩ 6,043,500** (per `bmw-x7-60-base` fixture)
 
-- [ ] **Step 11.3: Test BENZ A200d 36m base**
+- [x] **Step 11.3: Test BENZ A200d 36m base**
 
 Input: BENZ A200d, 36개월, 연20,000km, SNK 잔가, 보증금 0, 취득세 포함
 Expected: engine value 833,573 → display **₩ 833,600** (per `benz-a200d-36-base` fixture)
 
-- [ ] **Step 11.4: Fix any discrepancies before proceeding**
+- [x] **Step 11.4: Fix any discrepancies before proceeding**
 
 If any result differs from the fixture expected value, diagnose by comparing the payload sent to the API (check Network tab) against the equivalent payload in the fixture file.
 
@@ -2024,7 +2024,7 @@ Only run this task after Task 11 passes.
 - Modify: `wrangler.jsonc`
 - Modify: `src/app.ts`
 
-- [ ] **Step 12.1: Build client**
+- [x] **Step 12.1: Build client**
 
 ```bash
 cd client && bun run build
@@ -2032,7 +2032,7 @@ cd client && bun run build
 
 Expected: `client/dist/` created with `index.html` + hashed assets.
 
-- [ ] **Step 12.2: Update wrangler.jsonc**
+- [x] **Step 12.2: Update wrangler.jsonc**
 
 Change `pages_build_output_dir` from `"."` to `"client/dist"`:
 
@@ -2048,7 +2048,7 @@ Change `pages_build_output_dir` from `"."` to `"client/dist"`:
 }
 ```
 
-- [ ] **Step 12.3: Verify wrangler Pages dev serves the React app**
+- [x] **Step 12.3: Verify wrangler Pages dev serves the React app**
 
 ```bash
 bun run dev:pages
@@ -2056,7 +2056,7 @@ bun run dev:pages
 
 Open http://localhost:8788 — should serve the React app (not the old playground).
 
-- [ ] **Step 12.4: Remove playground route from src/app.ts**
+- [x] **Step 12.4: Remove playground route from src/app.ts**
 
 Remove these lines from `src/app.ts`:
 ```typescript
@@ -2069,14 +2069,14 @@ app.get("/playground", async (c) => { return renderPlaygroundResponse(c); });
 
 The `src/playground.ts` file can remain as a reference but is no longer imported.
 
-- [ ] **Step 12.5: Add build script for CI**
+- [x] **Step 12.5: Add build script for CI**
 
 In root `package.json`, add:
 ```json
 "build": "cd client && bun run build"
 ```
 
-- [ ] **Step 12.6: Run typecheck**
+- [x] **Step 12.6: Run typecheck**
 
 ```bash
 bun run typecheck
@@ -2085,7 +2085,7 @@ cd client && bunx tsc --noEmit
 
 Fix any type errors before committing.
 
-- [ ] **Step 12.7: Commit**
+- [x] **Step 12.7: Commit**
 
 ```bash
 git add wrangler.jsonc src/app.ts package.json client/
@@ -2096,13 +2096,13 @@ git commit -m "feat: cut over to React client — retire playground.ts route"
 
 ## Verification Checklist (after all tasks)
 
-- [ ] `bun test` passes (all 33 fixtures green — backend unchanged)
-- [ ] `bun run typecheck` passes
-- [ ] `cd client && bunx tsc --noEmit` passes
-- [ ] React app loads at http://localhost:8788 via wrangler
-- [ ] Brand/Trim cascade populates correctly
-- [ ] AUDI A3 + BMW X7 + BENZ A200d manual fixtures match expected payments
-- [ ] Deposit/upfront % mode computes correctly (value × discountedPrice / 100)
-- [ ] Advanced override panel hidden by default, expands on click
-- [ ] Result card shows correct header tags (법인/일반잔가·고잔가/matrixGroup)
-- [ ] Error state shows below calculate button on API failure
+- [x] `bun test` passes (all 33 fixtures green — backend unchanged)
+- [x] `bun run typecheck` passes
+- [x] `cd client && bunx tsc --noEmit` passes
+- [x] React app loads at http://localhost:8788 via wrangler
+- [x] Brand/Trim cascade populates correctly
+- [x] AUDI A3 + BMW X7 + BENZ A200d manual fixtures match expected payments
+- [x] Deposit/upfront % mode computes correctly (value × discountedPrice / 100)
+- [x] Advanced override panel hidden by default, expands on click
+- [x] Result card shows correct header tags (법인/일반잔가·고잔가/matrixGroup)
+- [x] Error state shows below calculate button on API failure
