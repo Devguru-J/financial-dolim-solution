@@ -132,16 +132,11 @@ export function QuotePage() {
     }
   }
 
-  const handleCalculate = useCallback(() => {
+  const handleCalculate = () => {
     const payload = buildPayload()
     if (!payload) return
     void quote.calculate(payload)
-  }, [catalog.selectedModel, catalog.selectedBrand, leaseTermMonths, annualMileageKm,
-      vehiclePrice, discountPrice, depositAmount, upfrontPayment, residualRate,
-      cmFeeRate, agFeeRate, affiliateExempt, acquisitionTaxIncluded, acquisitionTaxFullRate,
-      deliveryFeeIncluded, deliveryFee, miscFeeIncluded, miscFee,
-      publicBondIncluded, publicBondCost,
-      annualIrrRateOverride, annualEffectiveRateOverride, paymentRateOverride])
+  }
 
   const handleResetSelectedResidual = useCallback(() => {
     setResidualRate('')
