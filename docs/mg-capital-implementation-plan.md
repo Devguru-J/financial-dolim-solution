@@ -161,6 +161,15 @@ Already implemented:
 18. workbook-style `ROUNDUP(...,-2)` display for monthly payment
 19. fixture format extended to support end-to-end CQ27 auto-calculation tests without rate overrides: `baseIrrRate`, `resolvedMatrixGroup`, `maximumResidualRateOverride` fields
 20. BMW X7 76.5M 60M 54.5% end-to-end verified: CQ27 auto-computes 4.823% from 4.7% base, APS guarantee fee (0.44%) path, engine 913,092 → display 913,100 (ROUNDUP) matching Excel
+21. fixture parity corrections: BENZ A200d resolvedMatrixGroup APS→SNK (apsBand=null confirmed), BMW X7 36m maximumResidualRateOverride 0.595→0.735 (aps36+promo+boost) — 2026-03-28
+22. five new 60m model fixtures added and passing (BMW 520i/320d/X5/X3, BENZ E220d), total 33 fixtures — 2026-03-28
+
+Key formula findings confirmed analytically:
+- `maximumResidualRateOverride` = mileageAdjustedRate + 0.08 (highResidualBoost)
+- `residualAmount` = roundDown(discountedVehiclePrice × ratio, -3)
+- `acquisitionTax` = roundDown((discountedVehiclePrice / 1.1) × taxRate, -1)
+- `financedPrincipal` = discountedVehiclePrice + acquisitionTax + stampDuty (guarantee fee excluded)
+- SNK wins when SNK promo pushes SNK maxBoostedRate above APS maxBoostedRate (BMW X3 case: snkPromo=0.015)
 
 Verified findings from the provided MG workbook:
 
@@ -196,11 +205,16 @@ Current gap we are actively closing:
 
 ## 8. Immediate next build slice
 
-1. add no-override end-to-end fixtures for more models using Excel screenshots
-   - fixture format now supports `baseIrrRate` + `resolvedMatrixGroup` + `maximumResidualRateOverride` (no `annualIrrRateOverride`)
-   - priority: BENZ (any model), AUDI, VOLVO, upfront/deposit cases, promo residual cases
-   - each fixture: capture vehicle price, term, residual %, max residual %, applied rate %, monthly payment from Excel
-2. continue extracting hidden fee and PMT-chain rules that still cause monthly-payment deltas for other models
-3. wire `candidateSummary` and `selectionGuide` into the quote UI more clearly
-4. capture remaining scattered exception logic from hidden quote sheets
-5. start `금융리스` implementation
+Completed (2026-03-28):
+- ✅ BENZ A200d, AUDI A3, VOLVO XC40, LEXUS RX350h fixtures verified
+- ✅ BMW 520i, 320d, X5, X3, BENZ E220d 60m fixtures added (total 33 passing)
+- ✅ Fixture correctness fixes: BENZ A200d resolvedMatrixGroup, BMW X7 36m maximumResidualRateOverride
+
+Remaining:
+1. add 36m term variants for BMW 520i, 320d, X5, X3, BENZ E220d
+2. add deposit/upfront scenario fixtures for new models
+3. investigate customer ownership (개인명의) cq8 offset issue — TypeScript `paymentBasePrincipal` does not subtract customerOffset but Excel CQ29 uses customer-adjusted CQ8
+4. continue extracting hidden fee and PMT-chain rules for any remaining delta models
+5. wire `candidateSummary` and `selectionGuide` into the quote UI more clearly
+6. capture remaining scattered exception logic from hidden quote sheets
+7. start `금융리스` implementation

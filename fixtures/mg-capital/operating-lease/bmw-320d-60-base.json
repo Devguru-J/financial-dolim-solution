@@ -1,0 +1,59 @@
+{
+  "name": "bmw-320d-60-base",
+  "workbookVersion": "복사본 ★MG캐피탈_수입견적_26.03월_외부용_2603_vol1_잠금해제",
+  "resolvedMatrixGroup": "APS",
+  "workbookDebug": {
+    "selectedResidualRatio": 0.47,
+    "maxResidualRatio": 0.55,
+    "residualGapRatio": 0.08,
+    "residualGuaranteeCompany": "APS",
+    "guaranteeBaseRatio": 0.47,
+    "guaranteePromoRatio": 0.47
+  },
+  "vehicle": {
+    "vehiclePrice": "61400000",
+    "vehicleClass": "승용일반",
+    "engineDisplacementCc": 1995,
+    "highResidualAllowed": true,
+    "hybridAllowed": false,
+    "residualPromotionCode": "0",
+    "snkResidualBand": "B"
+  },
+  "input": {
+    "lenderCode": "mg-capital",
+    "productType": "operating_lease",
+    "brand": "BMW",
+    "modelName": "320d Sedan",
+    "ownershipType": "company",
+    "leaseTermMonths": 60,
+    "annualMileageKm": 20000,
+    "upfrontPayment": 0,
+    "depositAmount": 0,
+    "quotedVehiclePrice": 61400000,
+    "discountAmount": 0,
+    "baseIrrRate": 0.047,
+    "residualValueMode": "vehicle-price-ratio",
+    "residualValueRatio": 0.47,
+    "maximumResidualRateOverride": 0.55,
+    "acquisitionTaxRateOverride": 0.07,
+    "publicBondCost": 0,
+    "stampDuty": 10000
+  },
+  "expected": {
+    "discountedVehiclePrice": 61400000,
+    "acquisitionTax": 3907270,
+    "stampDuty": 10000,
+    "financedPrincipal": 65317270,
+    "residualAmount": 28858000,
+    "displayedAnnualRateDecimal": 0.04705,
+    "effectiveAnnualRateDecimal": 0.04704981119527146,
+    "monthlyPayment": 796074
+  },
+  "tolerance": {
+    "monthlyPayment": 0,
+    "residualAmount": 0,
+    "acquisitionTax": 0,
+    "displayedAnnualRateDecimal": 0,
+    "effectiveAnnualRateDecimal": 0
+  }
+}

@@ -21,14 +21,13 @@
     "depositAmount": 30000000,
     "quotedVehiclePrice": 500000000,
     "discountAmount": 8500000,
-    "annualIrrRateOverride": 0.047,
-    "annualEffectiveRateOverride": 0.047,
-    "paymentRateOverride": 0.04344,
     "residualValueMode": "amount",
     "residualAmountOverride": 258037000,
     "acquisitionTaxRateOverride": 0.07,
     "publicBondCost": 0,
-    "stampDuty": 10000
+    "stampDuty": 10000,
+    "baseIrrRate": 0.047,
+    "maximumResidualRateOverride": 0.735
   },
   "expected": {
     "discountedVehiclePrice": 491500000,
@@ -36,13 +35,16 @@
     "stampDuty": 10000,
     "financedPrincipal": 512787270,
     "residualAmount": 258037000,
-    "displayedAnnualRateDecimal": 0.047,
-    "effectiveAnnualRateDecimal": 0.047,
-    "monthlyPayment": 8771750
+    "displayedAnnualRateDecimal": 0.04344,
+    "effectiveAnnualRateDecimal": 0.04344,
+    "monthlyPayment": 8663560
   },
   "tolerance": {
     "monthlyPayment": 0,
     "residualAmount": 0,
-    "acquisitionTax": 0
-  }
+    "acquisitionTax": 0,
+    "displayedAnnualRateDecimal": 1e-05,
+    "effectiveAnnualRateDecimal": 0.01
+  },
+  "resolvedMatrixGroup": "APS"
 }

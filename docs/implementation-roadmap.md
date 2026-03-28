@@ -103,13 +103,21 @@ Completed:
 14. playground UI rebuilt: 차량 정보 (Brand/Model/Trim 3-level, summary row), 취득원가 산출 (acquisition cost section), 견적 조건 (contract conditions with deposit/upfront mode toggle, auto residual fill) — 2026-03-26
 15. fixture format extended to support end-to-end tests without rate overrides (baseIrrRate, resolvedMatrixGroup, maximumResidualRateOverride fields) — 2026-03-26
 16. BMW X7 76.5M 60M 54.5% scenario verified end-to-end without overrides: CQ27 auto-computes 4.823% from 4.7% base rate via APS guarantee fee path, engine payment 913,092 → UI displays 913,100 matching Excel — 2026-03-26
+17. fixture parity corrections: BENZ A200d resolvedMatrixGroup APS→SNK (apsBand=null vehicle), BMW X7 36m maximumResidualRateOverride 0.595→0.735 (aps36=0.63+promo0.025+boost0.08) — 2026-03-28
+18. five new 60m model fixtures added and verified (BMW 520i/320d/X5/X3, BENZ E220d), total 33 fixtures all passing — 2026-03-28
+    - BMW 520i: APS, gap=0.05 → 0.44% fee, displayedRate 4.823%
+    - BMW 320d: APS, gap≥0.08 → 0% fee, displayedRate 4.705%
+    - BMW X5 30d: APS, gap≥0.07 → 0% fee, displayedRate 4.702%
+    - BMW X3 20d: SNK wins (snkPromo=0.015 → SNK max 0.585 > APS max 0.57), displayedRate 4.704%
+    - BENZ E220d 4MATIC: APS wins tie, gap≥0.085 → 0% fee, displayedRate 4.703%
 
 Remaining:
 
-1. verify more representative models across BMW, BENZ, AUDI, VOLVO and others with saved Excel screenshots (one no-override fixture per scenario)
-2. model remaining hidden fee and exception rules that still create small payment deltas
-3. complete the all-model residual-company selection verification path, especially where workbook hidden cells pick SNK vs APS differently by model
-4. build UI flow that lets users confirm workbook-style final residual selection when needed
+1. add 36m variants for newly verified models (BMW 520i, 320d, X5, X3, BENZ E220d)
+2. add deposit/upfront scenarios for new models
+3. model remaining hidden fee and exception rules that still create small payment deltas
+4. complete the all-model residual-company selection verification path, especially where workbook hidden cells pick SNK vs APS differently by model
+5. build UI flow that lets users confirm workbook-style final residual selection when needed
 
 Deliverable:
 
@@ -220,11 +228,12 @@ Safe monthly production workflow.
 
 If work resumes in a fresh thread, do this in order:
 
-1. continue adding representative BENZ/BMW/AUDI/VOLVO fixtures for residual-company selection verification
-2. finish hidden fee and PMT-chain parity for monthly payment
-3. model remaining workbook exception rules in the MG calculator
-4. start `financial_lease`
-5. build the minimum admin UI for upload and activation
+1. add 36m variants for the 5 newly added models (BMW 520i, 320d, X5, X3, BENZ E220d)
+2. add deposit/upfront scenario fixtures for the new models
+3. investigate customer ownership (개인명의) bug — potential cq8 offset gap between TypeScript and Excel for AUDI A3 customer fixture
+4. model remaining hidden fee and exception rules in the MG calculator
+5. start `financial_lease`
+6. build the minimum admin UI for upload and activation
 
 ## Future lender readiness checklist
 

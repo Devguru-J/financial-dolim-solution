@@ -119,16 +119,39 @@ docs/
 
 ---
 
-## 현재 진행 상태 (2026-03-26)
+## 현재 진행 상태 (2026-03-28)
 
 - ✅ MG 캐피탈 운용리스 계산 엔진
 - ✅ 차량 정보 섹션 Brand/Model/Trim 3단계 UI + 하단 요약 행
 - ✅ 취득원가 산출 섹션 UI (6개 필드 표시, 나머지 hidden)
 - ✅ 견적 조건 섹션 UI (10개 필드 표시, 나머지 hidden) — 기간·보증금·선납금·잔존가치 포함
 - ✅ CQ27 자동금리 계산 경로 픽스처 검증 (BMW X7 76.5M 60M 54.5% → 4.823% / 913,100원 일치)
-- 🟡 Excel 패리티 (BMW X7 표준 케이스 자동계산 확인, 나머지 모델/케이스 미검증)
+- ✅ 픽스처 패리티 수정 — BENZ A200d resolvedMatrixGroup(APS→SNK), BMW X7 36m maximumResidualRateOverride(0.595→0.735) 정정
+- ✅ 다모델 픽스처 추가 (BMW 520i·320d·X5·X3, BENZ E220d — 60개월 기준, 총 33개 테스트 전체 통과)
+- 🟡 Excel 패리티 (BMW/BENZ/AUDI/VOLVO 대표 케이스 검증, 36개월·deposit/upfront 케이스 미완)
 - ❌ 금융리스, 할부/오토론 미구현
 - ❌ 두 번째 금융사 미온보딩
+
+### 검증된 픽스처 목록 (2026-03-28 기준, 33개)
+
+| 파일 | 모델 | 기간 | 잔가사 | 비고 |
+|------|------|------|--------|------|
+| bmw-x7-36-base | BMW X7 40d | 36m | APS | 기본 |
+| bmw-x7-36-upfront-10m-deposit-30m | BMW X7 40d | 36m | APS | 선납+보증금 |
+| bmw-x7-60-base | BMW X7 40d | 60m | APS | 기본 |
+| bmw-x7-60-upfront-20m | BMW X7 40d | 60m | APS | 선납금 |
+| bmw-x7-60-deposit-50m | BMW X7 40d | 60m | APS | 보증금 |
+| bmw-x7-60-screenshot | BMW X7 40d | 60m | APS | 스크린샷 |
+| bmw-520i-60-base | BMW 520i | 60m | APS | gap=0.05 → 0.44% 수수료 |
+| bmw-320d-60-base | BMW 320d | 60m | APS | gap≥0.08 → 0% 수수료 |
+| bmw-x5-30d-60-base | BMW X5 30d | 60m | APS | gap≥0.07 → 0% 수수료 |
+| bmw-x3-20d-60-base | BMW X3 20d | 60m | SNK | SNK 프로모로 SNK 승 |
+| benz-a200d-36-base | BENZ A200d | 36m | SNK | APS 미해당 모델 |
+| benz-e220d-60-base | BENZ E220d 4MATIC | 60m | APS | gap≥0.085 → 0% 수수료 |
+| audi-a3-36-base | AUDI A3 40 TFSI | 36m | SNK | 기본 |
+| audi-a3-36-customer | AUDI A3 40 TFSI | 36m | SNK | 개인명의 / 고금리 |
+| volvo-xc40-36-promo | VOLVO XC40 B4 | 36m | APS | 잔가 프로모 0.75 |
+| lexus-rx350h-60-base | LEXUS RX 350h | 60m | APS | 하이브리드 |
 
 ---
 
@@ -151,3 +174,8 @@ bun run db:push      # DB 스키마 마이그레이션
 - 엔진 월납입금은 floor(PMT), UI 표시는 100원 단위 올림 (`roundUpToNearestHundred`) — Excel ROUNDUP(-2) 방식과 동일
 - CQ27 자동계산 픽스처 패턴: `baseIrrRate` + `resolvedMatrixGroup` + `maximumResidualRateOverride` 설정, `annualIrrRateOverride` 미설정
 - 리스기간별 최소잔가율: 12개월 50%, 24개월 40%, 36개월 30%, 48개월 20%, 60개월 15%
+- `maximumResidualRateOverride` 산출 공식: `mileageAdjustedRate + highResidualBoost(0.08)` — APS 60m SA1 밴드 = 0.515+0.08=0.595
+- BMW X3: SNK 잔가 프로모(0.015)로 SNK max(0.585) > APS max(0.57) → SNK 승 — 프로모 여부에 따라 승자가 바뀌는 대표 케이스
+- `residualAmount` 산출: `roundDown(discountedVehiclePrice × ratio, -3)` — 천원 단위 절사
+- `acquisitionTax` 산출: `roundDown((discountedVehiclePrice / 1.1) × taxRate, -1)` — 10원 단위 절사
+- `financedPrincipal` = discountedVehiclePrice + acquisitionTax + stampDuty (잔가보증 수수료는 cq17에만 포함, financedPrincipal에는 미포함)

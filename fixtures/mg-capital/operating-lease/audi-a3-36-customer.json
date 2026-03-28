@@ -29,14 +29,13 @@
     "depositAmount": 0,
     "quotedVehiclePrice": 46400000,
     "discountAmount": 0,
-    "annualIrrRateOverride": 0.1,
-    "annualEffectiveRateOverride": 0.099999236361,
-    "paymentRateOverride": 0.1001,
     "residualValueMode": "amount",
     "residualAmountOverride": 24360000,
     "acquisitionTaxRateOverride": 0.07,
     "publicBondCost": 0,
-    "stampDuty": 10000
+    "stampDuty": 10000,
+    "baseIrrRate": 0.1,
+    "maximumResidualRateOverride": 0.61
   },
   "expected": {
     "discountedVehiclePrice": 46400000,
@@ -44,13 +43,16 @@
     "stampDuty": 10000,
     "financedPrincipal": 49362720,
     "residualAmount": 24360000,
-    "displayedAnnualRateDecimal": 0.1,
-    "effectiveAnnualRateDecimal": 0.099999236361,
-    "monthlyPayment": 1009765
+    "displayedAnnualRateDecimal": 0.10011,
+    "effectiveAnnualRateDecimal": 0.10010995186082389,
+    "monthlyPayment": 1009797
   },
   "tolerance": {
     "monthlyPayment": 0,
     "residualAmount": 0,
-    "acquisitionTax": 0
-  }
+    "acquisitionTax": 0,
+    "displayedAnnualRateDecimal": 0,
+    "effectiveAnnualRateDecimal": 0
+  },
+  "resolvedMatrixGroup": "에스앤케이모터스"
 }
