@@ -16,7 +16,7 @@ export function QuoteResultCard({ result }: QuoteResultCardProps) {
     result.majorInputs.ownershipType === 'company' ? '법인' : '고객명의'
   const isHighResidual =
     result.residual.maxRateDecimal != null &&
-    Math.abs(result.residual.rateDecimal - result.residual.maxRateDecimal) < 0.001
+    result.residual.rateDecimal >= result.residual.maxRateDecimal
   const residualTag = isHighResidual ? '고잔가' : '일반잔가'
   const matrixGroup = result.residual.matrixGroup ?? ''
 

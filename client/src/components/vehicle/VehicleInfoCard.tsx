@@ -100,9 +100,7 @@ export function VehicleInfoCard({
           <FieldLabel>옵션 가격</FieldLabel>
           <FieldCell>
             <div className="h-8 px-2 text-xs bg-muted border border-border rounded flex items-center text-muted-foreground">
-              {selectedModel
-                ? Number(selectedModel.vehiclePrice || 0).toLocaleString('ko-KR')
-                : '0'}
+              0
             </div>
           </FieldCell>
 
