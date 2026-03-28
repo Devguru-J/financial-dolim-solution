@@ -1,5 +1,4 @@
 import { Hono } from "hono";
-import type { Context } from "hono";
 import { zValidator } from "@hono/zod-validator";
 import { z } from "zod";
 
@@ -8,7 +7,6 @@ import { getActiveWorkbookSheetContracts, listWorkbookImports } from "@/domain/i
 import { getActiveWorkbookBrands, getActiveWorkbookModels } from "@/domain/imports/catalog-queries";
 import { getLenderAdapter } from "@/domain/imports/lender-registry";
 import { calculateMgOperatingLeaseQuote } from "@/domain/lenders/mg-capital/operating-lease-service";
-import { renderPlaygroundHtml } from "@/playground";
 
 type Bindings = Env;
 
@@ -74,17 +72,6 @@ app.get("/favicon.ico", (c) => c.body(null, 204));
 app.get("/apple-touch-icon.png", (c) => c.body(null, 204));
 app.get("/apple-touch-icon-precomposed.png", (c) => c.body(null, 204));
 
-function renderPlaygroundResponse(c: Context<{ Bindings: Bindings }>) {
-  return c.html(renderPlaygroundHtml());
-}
-
-app.get("/", async (c) => {
-  return renderPlaygroundResponse(c);
-});
-
-app.get("/playground", async (c) => {
-  return renderPlaygroundResponse(c);
-});
 
 app.get("/api/lenders", (c) => {
   return c.json({
