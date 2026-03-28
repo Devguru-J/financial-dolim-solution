@@ -12,7 +12,8 @@ interface AcquisitionCostCardProps {
   publicBondIncluded: boolean
   publicBondCost: string
   totalAcquisitionCost: number
-  onAcquisitionTaxToggle: (checked: boolean) => void
+  onAcquisitionTaxIncludedToggle: (checked: boolean) => void
+  onAcquisitionTaxRateChange: (fullRate: boolean) => void
   onDeliveryFeeToggle: (checked: boolean) => void
   onDeliveryFeeChange: (value: string) => void
   onMiscFeeToggle: (checked: boolean) => void
@@ -32,7 +33,8 @@ export function AcquisitionCostCard({
   publicBondIncluded,
   publicBondCost,
   totalAcquisitionCost,
-  onAcquisitionTaxToggle,
+  onAcquisitionTaxIncludedToggle,
+  onAcquisitionTaxRateChange,
   onDeliveryFeeToggle,
   onDeliveryFeeChange,
   onMiscFeeToggle,
@@ -53,7 +55,7 @@ export function AcquisitionCostCard({
             <select
               className="w-full h-8 px-2 text-xs bg-muted border border-border rounded"
               value={acquisitionTaxRate === 0 ? 'exempt' : 'full'}
-              onChange={(e) => onAcquisitionTaxToggle(e.target.value !== 'exempt')}
+              onChange={(e) => onAcquisitionTaxRateChange(e.target.value !== 'exempt')}
             >
               <option value="full">해당없음 (7%)</option>
               <option value="exempt">감면 (0%)</option>
@@ -75,7 +77,7 @@ export function AcquisitionCostCard({
           <FieldCell borderRight>
             <CheckboxDisplay
               checked={acquisitionTaxIncluded}
-              onToggle={onAcquisitionTaxToggle}
+              onToggle={onAcquisitionTaxIncludedToggle}
               displayValue={
                 acquisitionTaxIncluded ? formatKrw(acquisitionTaxAmount) : '₩ 0'
               }
@@ -125,8 +127,7 @@ function FieldLabel({
 }) {
   return (
     <div
-      className={`px-3 text-xs font-semibold text-foreground bg-muted flex items-center border-r border-border ${!last ? 'border-b border-border' : ''}`}
-      style={{ minHeight: 40 }}
+      className={`px-3 text-xs font-semibold text-foreground bg-muted flex items-center border-r border-border min-h-10 ${!last ? 'border-b border-border' : ''}`}
     >
       {children}
     </div>

@@ -1,3 +1,4 @@
+import { useId } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import {
   Select,
@@ -79,6 +80,8 @@ export function QuoteConditionsCard(props: QuoteConditionsCardProps) {
     onPaymentRateOverrideChange,
   } = props
 
+  const uid = useId()
+
   return (
     <Card>
       <CardHeader className="bg-slate-900 rounded-t-lg py-3 px-4">
@@ -89,7 +92,10 @@ export function QuoteConditionsCard(props: QuoteConditionsCardProps) {
           {/* Row 1: 판매사 / 기간 */}
           <FieldLabel>판매사</FieldLabel>
           <FieldCell borderRight>
-            <select className="w-full h-8 px-2 text-xs bg-muted border border-border rounded">
+            <select
+              className="w-full h-8 px-2 text-xs bg-muted border border-border rounded opacity-50"
+              disabled
+            >
               <option>비활성</option>
             </select>
           </FieldCell>
@@ -118,7 +124,7 @@ export function QuoteConditionsCard(props: QuoteConditionsCardProps) {
             <label className="flex items-center gap-1 text-xs cursor-pointer">
               <input
                 type="radio"
-                name="affiliate"
+                name={`${uid}-affiliate`}
                 className="accent-blue-600"
                 checked={affiliateExempt}
                 onChange={() => onAffiliateExemptChange(true)}
@@ -128,7 +134,7 @@ export function QuoteConditionsCard(props: QuoteConditionsCardProps) {
             <label className="flex items-center gap-1 text-xs cursor-pointer ml-3">
               <input
                 type="radio"
-                name="affiliate"
+                name={`${uid}-affiliate`}
                 className="accent-blue-600"
                 checked={!affiliateExempt}
                 onChange={() => onAffiliateExemptChange(false)}
@@ -148,7 +154,7 @@ export function QuoteConditionsCard(props: QuoteConditionsCardProps) {
               <SelectContent>
                 {([10000, 20000, 30000, 35000] as AnnualMileage[]).map((m) => (
                   <SelectItem key={m} value={String(m)}>
-                    {(m / 10000).toFixed(0)}만km
+                    {m / 10000}만km
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -201,7 +207,7 @@ export function QuoteConditionsCard(props: QuoteConditionsCardProps) {
             <label className="flex items-center gap-1 text-xs cursor-pointer">
               <input
                 type="radio"
-                name="evSubsidy"
+                name={`${uid}-evSubsidy`}
                 className="accent-blue-600"
                 checked={!evSubsidy}
                 onChange={() => onEvSubsidyChange(false)}
@@ -211,7 +217,7 @@ export function QuoteConditionsCard(props: QuoteConditionsCardProps) {
             <label className="flex items-center gap-1 text-xs cursor-pointer ml-3">
               <input
                 type="radio"
-                name="evSubsidy"
+                name={`${uid}-evSubsidy`}
                 className="accent-blue-600"
                 checked={evSubsidy}
                 onChange={() => onEvSubsidyChange(true)}
@@ -293,8 +299,7 @@ function FieldLabel({
 }) {
   return (
     <div
-      className={`px-3 text-xs font-semibold text-foreground bg-muted flex items-center border-r border-border ${!last ? 'border-b border-border' : ''}`}
-      style={{ minHeight: 40 }}
+      className={`px-3 text-xs font-semibold text-foreground bg-muted flex items-center border-r border-border min-h-10 ${!last ? 'border-b border-border' : ''}`}
     >
       {children}
     </div>
