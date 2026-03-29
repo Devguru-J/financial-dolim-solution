@@ -1,5 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
-import { Button } from '@/components/ui/button'
+import { useState, useEffect } from 'react'
 import { VehicleInfoCard } from '@/components/vehicle/VehicleInfoCard'
 import { AcquisitionCostCard } from '@/components/acquisition/AcquisitionCostCard'
 import { QuoteConditionsCard } from '@/components/quote-conditions/QuoteConditionsCard'
@@ -138,15 +137,6 @@ export function QuotePage() {
     void quote.calculate(payload)
   }
 
-  const handleResetSelectedResidual = useCallback(() => {
-    setResidualRate('')
-    if (catalog.selectedModel) {
-      const p = getResidualPreviews(catalog.selectedModel, leaseTermMonths)
-      if (p.max != null) setResidualRate(`${(p.max * 100).toFixed(2)}%`)
-    }
-    quote.reset()
-  }, [catalog.selectedModel, leaseTermMonths])
-
   return (
     <div className="p-5 grid grid-cols-[minmax(0,720px)_440px] gap-5 min-h-[100dvh]">
       {/* Left: Form */}
@@ -239,15 +229,7 @@ export function QuotePage() {
               </>
             ) : '견적 계산'}
           </button>
-          {/* Utility buttons */}
-          <div className="flex gap-2">
-            <Button variant="outline" size="sm" className="text-xs flex-1" onClick={() => {}}>
-              엑셀 기본값 적용
-            </Button>
-            <Button variant="outline" size="sm" className="text-xs flex-1" onClick={handleResetSelectedResidual}>
-              잔가 선택값 지우기
-            </Button>
-          </div>
+
         </div>
 
         {quote.error && (

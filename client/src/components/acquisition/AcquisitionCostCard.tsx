@@ -176,7 +176,7 @@ function CheckboxInput({
       />
       <span className="text-xs text-muted-foreground">{label}</span>
       <input
-        className="flex-1 h-8 px-2 text-xs bg-muted border border-border rounded"
+        className="flex-1 h-8 px-2 text-xs bg-muted border border-border rounded font-mono tabular-nums"
         value={value}
         onChange={(e) => onValueChange(e.target.value)}
         disabled={!checked}

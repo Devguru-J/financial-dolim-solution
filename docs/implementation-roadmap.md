@@ -115,6 +115,10 @@ Completed:
 20. fixture bank expanded from 33 to 41: added 24m/48m term variants, deposit/upfront combos, customer ownership, 30k mileage (SNK 2% gap → 1.1% fee), BENZ E220d 36m — 2026-03-28
 21. React frontend fully live: DashboardPage implemented (active workbook stats, brand catalog, ping-ring status); ImportPage fully implemented (drag-and-drop upload, preview, import, history); sidebar navigation replaces tab header — 2026-03-28
 22. UI polish: fade-up/shimmer/ping-ring CSS animations, skeleton loaders, tactile button feedback, dot-grid background, min-h-[100dvh], number fonts changed to normal weight — 2026-03-28
+23. 일반잔가 display updated to match Excel CI31: Math.floor(finalPrice × rate / 1000) × 1000 (roundDown -3) — 2026-03-29
+24. ImportPage lender selector: dynamic dropdown fetching from /api/lenders, fetchLenders() added to api client — 2026-03-29
+25. sidebar sticky fix: App root changed from min-h-[100dvh] to h-[100dvh] overflow-hidden so sidebar stays fixed during content scroll — 2026-03-29
+26. removed unimplemented utility buttons from QuotePage ("엑셀 기본값 적용", "잔가 선택값 지우기") — 2026-03-29
 
 Remaining:
 

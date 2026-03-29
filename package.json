@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "bun --env-file=.dev.vars src/local-dev.ts",
+    "start": "bun run dev & bun run dev:client",
     "dev:pages": "wrangler pages dev . --ip 127.0.0.1 --port 8788 --compatibility-date=2026-03-17",
     "dev:client": "cd client && bun run dev",
     "test": "bun test",

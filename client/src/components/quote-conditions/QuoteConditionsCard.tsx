@@ -106,12 +106,12 @@ export function QuoteConditionsCard(props: QuoteConditionsCardProps) {
               value={String(leaseTermMonths)}
               onValueChange={(v) => onTermChange(Number(v) as LeaseTerm)}
             >
-              <SelectTrigger className="h-8 text-xs">
+              <SelectTrigger className="h-8 text-xs font-mono tabular-nums">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
                 {([12, 24, 36, 48, 60] as LeaseTerm[]).map((t) => (
-                  <SelectItem key={t} value={String(t)}>
+                  <SelectItem key={t} value={String(t)} className="font-mono tabular-nums">
                     {t}개월
                   </SelectItem>
                 ))}
@@ -149,12 +149,12 @@ export function QuoteConditionsCard(props: QuoteConditionsCardProps) {
               value={String(annualMileageKm)}
               onValueChange={(v) => onMileageChange(Number(v) as AnnualMileage)}
             >
-              <SelectTrigger className="h-8 text-xs">
+              <SelectTrigger className="h-8 text-xs font-mono tabular-nums">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
                 {([10000, 20000, 30000, 35000] as AnnualMileage[]).map((m) => (
-                  <SelectItem key={m} value={String(m)}>
+                  <SelectItem key={m} value={String(m)} className="font-mono tabular-nums">
                     {m / 10000}만km
                   </SelectItem>
                 ))}
@@ -175,7 +175,7 @@ export function QuoteConditionsCard(props: QuoteConditionsCardProps) {
           <FieldLabel>잔존가치</FieldLabel>
           <FieldCell>
             <input
-              className="w-full h-8 px-2 text-xs bg-muted border border-border rounded"
+              className="w-full h-8 px-2 text-xs bg-muted border border-border rounded font-mono tabular-nums"
               value={residualRate}
               onChange={(e) => onResidualRateChange(e.target.value)}
               placeholder="예: 54.5%"
@@ -195,7 +195,7 @@ export function QuoteConditionsCard(props: QuoteConditionsCardProps) {
           <FieldLabel>CM수수료</FieldLabel>
           <FieldCell>
             <input
-              className="w-full h-8 px-2 text-xs bg-muted border border-border rounded"
+              className="w-full h-8 px-2 text-xs bg-muted border border-border rounded font-mono tabular-nums"
               value={cmFeeRate}
               onChange={(e) => onCmFeeRateChange(e.target.value)}
               placeholder="0%"
@@ -227,7 +227,7 @@ export function QuoteConditionsCard(props: QuoteConditionsCardProps) {
             </label>
             {evSubsidy && (
               <input
-                className="flex-1 h-8 px-2 text-xs bg-muted border border-border rounded ml-2"
+                className="flex-1 h-8 px-2 text-xs bg-muted border border-border rounded ml-2 font-mono tabular-nums"
                 value={evSubsidyAmount}
                 onChange={(e) => onEvSubsidyAmountChange(e.target.value)}
                 placeholder="0"
@@ -237,7 +237,7 @@ export function QuoteConditionsCard(props: QuoteConditionsCardProps) {
           <FieldLabel last>AG수수료</FieldLabel>
           <FieldCell last>
             <input
-              className="w-full h-8 px-2 text-xs bg-muted border border-border rounded"
+              className="w-full h-8 px-2 text-xs bg-muted border border-border rounded font-mono tabular-nums"
               value={agFeeRate}
               onChange={(e) => onAgFeeRateChange(e.target.value)}
               placeholder="0%"
@@ -260,7 +260,7 @@ export function QuoteConditionsCard(props: QuoteConditionsCardProps) {
             <div>
               <div className="text-xs text-muted-foreground mb-1">연 IRR override</div>
               <input
-                className="w-full h-8 px-2 text-xs bg-muted border border-border rounded"
+                className="w-full h-8 px-2 text-xs bg-muted border border-border rounded font-mono tabular-nums"
                 value={annualIrrRateOverride}
                 onChange={(e) => onAnnualIrrRateOverrideChange(e.target.value)}
                 placeholder="빈칸 = 자동"
@@ -269,7 +269,7 @@ export function QuoteConditionsCard(props: QuoteConditionsCardProps) {
             <div>
               <div className="text-xs text-muted-foreground mb-1">유효 IRR override</div>
               <input
-                className="w-full h-8 px-2 text-xs bg-muted border border-border rounded"
+                className="w-full h-8 px-2 text-xs bg-muted border border-border rounded font-mono tabular-nums"
                 value={annualEffectiveRateOverride}
                 onChange={(e) => onAnnualEffectiveRateOverrideChange(e.target.value)}
                 placeholder="빈칸 = 자동"
@@ -278,7 +278,7 @@ export function QuoteConditionsCard(props: QuoteConditionsCardProps) {
             <div>
               <div className="text-xs text-muted-foreground mb-1">월 납입률 override</div>
               <input
-                className="w-full h-8 px-2 text-xs bg-muted border border-border rounded"
+                className="w-full h-8 px-2 text-xs bg-muted border border-border rounded font-mono tabular-nums"
                 value={paymentRateOverride}
                 onChange={(e) => onPaymentRateOverrideChange(e.target.value)}
                 placeholder="빈칸 = 자동"
@@ -347,7 +347,7 @@ function AmountPercentInput({
         <option value="percent">%</option>
       </select>
       <input
-        className="flex-1 h-8 px-2 text-xs bg-muted border border-border rounded"
+        className="flex-1 h-8 px-2 text-xs bg-muted border border-border rounded font-mono tabular-nums"
         value={value}
         onChange={(e) => onValueChange(e.target.value)}
         placeholder="0"

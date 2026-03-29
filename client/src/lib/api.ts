@@ -2,6 +2,12 @@ import type { CatalogBrand, CatalogModel } from '@/types/catalog'
 import type { QuotePayload, QuoteResult } from '@/types/quote'
 import type { ImportListResponse, PreviewResponse, ImportResponse } from '@/types/imports'
 
+export type LenderInfo = {
+  lenderCode: string
+  lenderName: string
+  status: string
+}
+
 async function apiFetch<T>(url: string, options?: RequestInit): Promise<T> {
   const res = await fetch(url, {
     headers: { 'Content-Type': 'application/json', ...options?.headers },
@@ -32,6 +38,11 @@ export async function calculateQuote(payload: QuotePayload): Promise<QuoteResult
     body: JSON.stringify(payload),
   })
   return data.quote
+}
+
+export async function fetchLenders(): Promise<LenderInfo[]> {
+  const data = await apiFetch<{ lenders: LenderInfo[] }>('/api/lenders')
+  return data.lenders
 }
 
 export async function fetchImports(lenderCode = 'mg-capital'): Promise<ImportListResponse> {

@@ -119,7 +119,7 @@ docs/
 
 ---
 
-## 현재 진행 상태 (2026-03-28 밤)
+## 현재 진행 상태 (2026-03-29)
 
 - ✅ MG 캐피탈 운용리스 계산 엔진
 - ✅ 차량 정보 섹션 Brand/Model/Trim 3단계 UI + 하단 요약 행
@@ -143,6 +143,11 @@ docs/
   - CSS 애니메이션 추가: `fade-up`, `shimmer`(스켈레톤 로더), `ping-ring`(상태 도트)
   - dot-grid 배경, `min-h-[100dvh]`(iOS Safari 대응), 버튼 tactile 피드백
   - 숫자 폰트 bold → normal weight 변경 (가독성 개선)
+- ✅ **UI/UX 추가 개선** (2026-03-29)
+  - 일반잔가 표시: `Math.floor(finalPrice × rate / 1000) * 1000` — Excel CI31 roundDown(-3) 방식과 일치
+  - ImportPage 금융사 선택 드롭다운 추가 — `/api/lenders`에서 목록 동적 로드, `fetchLenders()` API 함수 추가
+  - 사이드바 고정: App 루트 `min-h-[100dvh]` → `h-[100dvh] overflow-hidden` — 스크롤 시 사이드바 항상 뷰포트에 고정
+  - 견적 계산 페이지 미구현 버튼 제거: "엑셀 기본값 적용"(미구현), "잔가 선택값 지우기" 둘 다 제거
 - ✅ **엔진 버그 수정**: `financedPrincipal`이 upfrontPayment를 잘못 차감하던 문제 수정 — Excel CP17 기준으로 gross acquisitionCost 그대로 반영
 - ✅ **패리티 픽스처 확장** (33개 → 41개, 전체 통과)
   - 기간 변형: bmw-x7-24-base, bmw-x7-48-base

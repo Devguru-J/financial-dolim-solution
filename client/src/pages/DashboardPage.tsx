@@ -145,7 +145,7 @@ function StatusBanner({
             <div
               className={`text-sm font-semibold tracking-tight leading-none ${isOk ? 'text-emerald-900' : 'text-amber-900'}`}
             >
-              {isOk ? '시스템 정상 가동 중' : 'DB 연결 없음'}
+              {isOk ? '해결책 정상 가동 중' : 'DB 연결 없음'}
             </div>
             <div className={`text-xs mt-1.5 ${isOk ? 'text-emerald-700' : 'text-amber-700'}`}>
               {isOk

@@ -7,16 +7,16 @@ import { DashboardPage } from '@/pages/DashboardPage'
 type Page = 'dashboard' | 'quote' | 'import'
 
 const NAV: { id: Page; label: string; Icon: React.ElementType }[] = [
-  { id: 'dashboard',  label: '대시보드',      Icon: LayoutDashboard },
-  { id: 'quote',      label: '견적 계산',      Icon: Calculator },
-  { id: 'import',     label: '워크북 임포트',  Icon: FileSpreadsheet },
+  { id: 'dashboard',  label: '종합현황판',      Icon: LayoutDashboard },
+  { id: 'quote',      label: '값어림 계산',      Icon: Calculator },
+  { id: 'import',     label: '문건 들여오기',  Icon: FileSpreadsheet },
 ]
 
 export function App() {
   const [page, setPage] = useState<Page>('dashboard')
 
   return (
-    <div className="min-h-[100dvh] flex">
+    <div className="h-[100dvh] flex overflow-hidden">
 
       {/* ── Sidebar ── */}
       <aside
@@ -30,8 +30,8 @@ export function App() {
               <span className="text-white font-black text-[9px] tracking-widest select-none">DR</span>
             </div>
             <div className="leading-none">
-              <div className="text-[13px] font-semibold text-white tracking-tight leading-snug">도림 자동차</div>
-              <div className="text-[11px] text-white/35 tracking-wide mt-0.5">견적 해결책</div>
+              <div className="text-[13px] font-semibold text-white tracking-tight leading-snug">도림 자동차 견적 해결책</div>
+              <div className="text-[11px] text-white/35 tracking-wide mt-0.5">혁명적인 씨-스템</div>
             </div>
           </div>
 

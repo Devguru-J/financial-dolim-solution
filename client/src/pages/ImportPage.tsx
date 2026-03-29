@@ -1,9 +1,13 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Upload, FileSpreadsheet, X, CheckCircle, AlertTriangle, Clock, History } from 'lucide-react'
-import { fetchImports, previewWorkbook, importWorkbook } from '@/lib/api'
+import { fetchLenders, fetchImports, previewWorkbook, importWorkbook } from '@/lib/api'
+import type { LenderInfo } from '@/lib/api'
 import type { WorkbookImport, WorkbookPreview } from '@/types/imports'
 
 export function ImportPage() {
+  const [lenders, setLenders] = useState<LenderInfo[]>([])
+  const [selectedLender, setSelectedLender] = useState<string>('mg-capital')
+
   const [historyLoading, setHistoryLoading] = useState(true)
   const [imports, setImports] = useState<WorkbookImport[]>([])
   const [connected, setConnected] = useState<boolean | null>(null)
@@ -18,9 +22,13 @@ export function ImportPage() {
 
   const fileInputRef = useRef<HTMLInputElement>(null)
 
+  useEffect(() => {
+    fetchLenders().then(setLenders).catch(() => {})
+  }, [])
+
   const loadImports = useCallback(async () => {
     try {
-      const data = await fetchImports('mg-capital')
+      const data = await fetchImports(selectedLender)
       setConnected(data.connected)
       setImports(data.imports ?? [])
     } catch {
@@ -28,9 +36,18 @@ export function ImportPage() {
     } finally {
       setHistoryLoading(false)
     }
-  }, [])
+  }, [selectedLender])
 
   useEffect(() => { loadImports() }, [loadImports])
+
+  const handleLenderChange = (code: string) => {
+    setSelectedLender(code)
+    setSelectedFile(null)
+    setPreview(null)
+    setError(null)
+    setSuccessMsg(null)
+    if (fileInputRef.current) fileInputRef.current.value = ''
+  }
 
   const handleFileDrop = useCallback(async (file: File) => {
     setSelectedFile(file)
@@ -39,14 +56,14 @@ export function ImportPage() {
     setSuccessMsg(null)
     setPreviewLoading(true)
     try {
-      const res = await previewWorkbook(file, 'mg-capital')
+      const res = await previewWorkbook(file, selectedLender)
       setPreview(res.workbook)
     } catch (e) {
       setError(e instanceof Error ? e.message : '파싱 실패')
     } finally {
       setPreviewLoading(false)
     }
-  }, [])
+  }, [selectedLender])
 
   const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault()
@@ -66,7 +83,7 @@ export function ImportPage() {
     setError(null)
     setSuccessMsg(null)
     try {
-      const res = await importWorkbook(selectedFile, 'mg-capital', true)
+      const res = await importWorkbook(selectedFile, selectedLender, true)
       setSuccessMsg(`${res.workbook.versionLabel} — 차량 ${res.workbook.vehicleProgramCount}개, 잔가 ${res.workbook.residualMatrixRowCount}행 활성화 완료`)
       setSelectedFile(null)
       setPreview(null)
@@ -78,6 +95,8 @@ export function ImportPage() {
       setImportLoading(false)
     }
   }
+
+  const currentLender = lenders.find(l => l.lenderCode === selectedLender)
 
   const handleReset = () => {
     setSelectedFile(null)
@@ -96,9 +115,21 @@ export function ImportPage() {
         <div className="px-6 py-4 border-b border-border flex items-center gap-3">
           <Upload size={13} className="text-primary" strokeWidth={2} />
           <span className="text-sm font-semibold text-foreground tracking-tight">워크북 업로드</span>
-          <span className="ml-auto text-[10px] font-semibold px-2.5 py-1 rounded-full border border-border bg-muted text-muted-foreground tracking-wider">
-            MG캐피탈 · 운용리스
-          </span>
+          <div className="ml-auto flex items-center gap-2">
+            <span className="text-[10px] text-muted-foreground font-medium">금융사</span>
+            <select
+              className="h-7 px-2.5 text-[11px] font-semibold rounded-full border border-border bg-muted text-foreground tracking-wide appearance-none cursor-pointer hover:border-primary/50 transition-colors"
+              value={selectedLender}
+              onChange={(e) => handleLenderChange(e.target.value)}
+            >
+              {lenders.length > 0
+                ? lenders.map(l => (
+                    <option key={l.lenderCode} value={l.lenderCode}>{l.lenderName}</option>
+                  ))
+                : <option value="mg-capital">MG Capital</option>
+              }
+            </select>
+          </div>
         </div>
 
         <div className="p-5 flex flex-col gap-4">
@@ -150,7 +181,7 @@ export function ImportPage() {
                     파일을 드래그하거나 클릭하여 선택
                   </div>
                   <div className="text-xs text-muted-foreground leading-relaxed">
-                    MG캐피탈 운용리스 워크북<br />
+                    {currentLender?.lenderName ?? selectedLender} 워크북<br />
                     .xlsx 또는 .xls 형식
                   </div>
                 </div>

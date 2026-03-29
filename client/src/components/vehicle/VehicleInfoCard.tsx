@@ -79,7 +79,7 @@ export function VehicleInfoCard({
           <FieldLabel>차량 가격</FieldLabel>
           <FieldCell>
             <input
-              className="w-full h-8 px-2 text-xs bg-muted border border-border rounded"
+              className="w-full h-8 px-2 text-xs bg-muted border border-border rounded font-mono tabular-nums"
               value={vehiclePrice}
               onChange={(e) => onVehiclePriceChange(e.target.value)}
               placeholder="0"
@@ -97,7 +97,7 @@ export function VehicleInfoCard({
           </FieldCell>
           <FieldLabel>옵션 가격</FieldLabel>
           <FieldCell>
-            <div className="h-8 px-2 text-xs bg-muted border border-border rounded flex items-center text-muted-foreground">
+            <div className="h-8 px-2 text-xs bg-muted border border-border rounded flex items-center text-muted-foreground font-mono tabular-nums">
               0
             </div>
           </FieldCell>
@@ -127,7 +127,7 @@ export function VehicleInfoCard({
           <FieldLabel last>할인 가격</FieldLabel>
           <FieldCell last>
             <input
-              className="w-full h-8 px-2 text-xs bg-muted border border-border rounded"
+              className="w-full h-8 px-2 text-xs bg-muted border border-border rounded font-mono tabular-nums"
               value={discountPrice}
               onChange={(e) => onDiscountPriceChange(e.target.value)}
               placeholder="0"
@@ -153,7 +153,7 @@ export function VehicleInfoCard({
           <StatItem label="최종차량가" value={formatKrw(finalPrice)} accent />
           <StatItem
             label={`일반잔가${baseResidualRate != null ? ` (${(baseResidualRate * 100).toFixed(2)}%)` : ''}`}
-            value={baseResidualRate != null ? formatKrw(finalPrice * baseResidualRate) : '—'}
+            value={baseResidualRate != null ? formatKrw(Math.floor(finalPrice * baseResidualRate / 1000) * 1000) : '—'}
           />
           <StatItem
             label={`최대잔가${maxResidualRate != null ? ` (${(maxResidualRate * 100).toFixed(2)}%)` : ''}`}
