@@ -7,6 +7,7 @@ import { getActiveWorkbookSheetContracts, listWorkbookImports } from "@/domain/i
 import { getActiveWorkbookBrands, getActiveWorkbookModels } from "@/domain/imports/catalog-queries";
 import { getLenderAdapter } from "@/domain/imports/lender-registry";
 import { calculateMgOperatingLeaseQuote } from "@/domain/lenders/mg-capital/operating-lease-service";
+import { calculateBnkOperatingLeaseQuote } from "@/domain/lenders/bnk-capital/operating-lease-service";
 
 type Bindings = Env;
 
@@ -79,7 +80,12 @@ app.get("/api/lenders", (c) => {
     lenders: [
       {
         lenderCode: "mg-capital",
-        lenderName: "MG Capital",
+        lenderName: "MG캐피탈",
+        status: "active-development",
+      },
+      {
+        lenderCode: "bnk-capital",
+        lenderName: "BNK캐피탈",
         status: "active-development",
       },
     ],
@@ -206,13 +212,14 @@ app.post("/api/imports", zValidator("query", previewQuerySchema), async (c) => {
 
 app.post("/api/quotes/calculate", zValidator("json", calculateQuoteSchema), async (c) => {
   const input = c.req.valid("json");
-  const databaseUrl = c.env.DATABASE_URL;
 
   try {
-    const quote = await calculateMgOperatingLeaseQuote({
-      databaseUrl,
-      input,
-    });
+    let quote;
+    if (input.lenderCode === "bnk-capital") {
+      quote = await calculateBnkOperatingLeaseQuote({ databaseUrl: c.env.DATABASE_URL, input });
+    } else {
+      quote = await calculateMgOperatingLeaseQuote({ databaseUrl: c.env.DATABASE_URL, input });
+    }
 
     return c.json({
       ok: true,

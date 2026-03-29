@@ -17,6 +17,8 @@ export type WorkbookVehicleProgram = {
   snkResidualBand: string | null;
   apsPromotionRate: number | null;
   snkPromotionRate: number | null;
+  /** Lender-specific extra data to persist in raw_row JSONB. Merged with default rawRow fields. */
+  rawRow?: Record<string, unknown>;
 };
 
 export type WorkbookResidualMatrixRow = {

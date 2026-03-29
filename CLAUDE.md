@@ -17,15 +17,26 @@
 ```
 src/
   app.ts                          # Hono API 라우트 (8개 엔드포인트)
-  playground.ts                   # 견적 계산 UI (HTML-in-string, ~3000줄)
   db/schema.ts                    # Drizzle DB 스키마
   domain/
     imports/
       catalog-queries.ts          # 브랜드/모델 DB 조회
       import-service.ts           # 워크북 DB 저장 (트랜잭션)
-    lenders/mg-capital/
-      operating-lease-service.ts  # MG 운용리스 계산 엔진
-      workbook-parser.ts          # MG 엑셀 파싱
+      lender-registry.ts          # 금융사 어댑터 레지스트리
+    lenders/
+      mg-capital/
+        operating-lease-service.ts  # MG 운용리스 계산 엔진
+        workbook-parser.ts          # MG 엑셀 파싱
+        adapter.ts                  # MG 어댑터
+        operating-lease-service.test.ts  # MG 패리티 테스트 (41개)
+      bnk-capital/
+        operating-lease-service.ts  # BNK 운용리스 계산 엔진
+        workbook-parser.ts          # BNK 엑셀 파싱
+        adapter.ts                  # BNK 어댑터
+        operating-lease-service.test.ts  # BNK 패리티 테스트 (1개)
+fixtures/
+  mg-capital/operating-lease/     # MG 패리티 픽스처 (41개 JSON)
+  bnk-capital/operating-lease/    # BNK 패리티 픽스처 (1개 JSON)
 docs/
   platform-blueprint.md           # 전체 아키텍처 설계
   implementation-roadmap.md       # 구현 로드맵 (Phase 0-7)
@@ -121,45 +132,43 @@ docs/
 
 ## 현재 진행 상태 (2026-03-29)
 
-- ✅ MG 캐피탈 운용리스 계산 엔진
-- ✅ 차량 정보 섹션 Brand/Model/Trim 3단계 UI + 하단 요약 행
-- ✅ 취득원가 산출 섹션 UI (6개 필드 표시, 나머지 hidden)
-- ✅ 견적 조건 섹션 UI (10개 필드 표시, 나머지 hidden) — 기간·보증금·선납금·잔존가치 포함
-- ✅ CQ27 자동금리 계산 경로 픽스처 검증 (BMW X7 76.5M 60M 54.5% → 4.823% / 913,100원 일치)
-- ✅ 픽스처 패리티 수정 — BENZ A200d resolvedMatrixGroup(APS→SNK), BMW X7 36m maximumResidualRateOverride(0.595→0.735) 정정
-- ✅ 다모델 픽스처 추가 (BMW 520i·320d·X5·X3, BENZ E220d — 60개월 기준, 총 33개 테스트 전체 통과)
-- ✅ 견적 결과 UI 개선 — 4컬럼 테이블(월납입금·IRR·잔가·총구매비용) + 헤더 태그(법인/잔가종류/잔가보증사)
-- ✅ **프론트엔드 React + shadcn 전환 완료** (`client/` 서브앱, playground.ts 폐기)
-  - client/ Vite + React 18 + Tailwind v4 + shadcn/ui 구축
-  - VehicleInfoCard / AcquisitionCostCard / QuoteConditionsCard / QuoteResultCard 구현
-  - QuotePage (견적 계산) + ImportPage + DashboardPage + App.tsx (좌측 사이드바 네비게이션) 구현
-  - useCatalog / useQuote 훅, API 레이어, 잔가 프리뷰 유틸 구현
-  - QuoteResult 클라이언트 타입을 실제 API 응답(CanonicalQuoteResult) 형태에 맞게 수정 (IRR NaN 버그 수정)
-  - wrangler.jsonc `pages_build_output_dir` → `"client/dist"`, playground.ts 라우트 제거
-- ✅ **UI/UX 개선** (design-taste-frontend 스킬 적용)
-  - 탭 네비게이션 → 좌측 사이드바 패널로 교체 (대시보드 → 견적 계산 → 워크북 임포트 순)
-  - DashboardPage 구현 — ping-ring 상태 표시, 비대칭 그리드, 활성 워크북 메트릭, 브랜드 카탈로그
-  - ImportPage 완전 재구현 — 드래그앤드롭 업로드, 파일 프리뷰, 워크북 임포트, 히스토리 목록
-  - CSS 애니메이션 추가: `fade-up`, `shimmer`(스켈레톤 로더), `ping-ring`(상태 도트)
-  - dot-grid 배경, `min-h-[100dvh]`(iOS Safari 대응), 버튼 tactile 피드백
-  - 숫자 폰트 bold → normal weight 변경 (가독성 개선)
-- ✅ **UI/UX 추가 개선** (2026-03-29)
-  - 일반잔가 표시: `Math.floor(finalPrice × rate / 1000) * 1000` — Excel CI31 roundDown(-3) 방식과 일치
-  - ImportPage 금융사 선택 드롭다운 추가 — `/api/lenders`에서 목록 동적 로드, `fetchLenders()` API 함수 추가
-  - 사이드바 고정: App 루트 `min-h-[100dvh]` → `h-[100dvh] overflow-hidden` — 스크롤 시 사이드바 항상 뷰포트에 고정
-  - 견적 계산 페이지 미구현 버튼 제거: "엑셀 기본값 적용"(미구현), "잔가 선택값 지우기" 둘 다 제거
-- ✅ **엔진 버그 수정**: `financedPrincipal`이 upfrontPayment를 잘못 차감하던 문제 수정 — Excel CP17 기준으로 gross acquisitionCost 그대로 반영
-- ✅ **패리티 픽스처 확장** (33개 → 41개, 전체 통과)
-  - 기간 변형: bmw-x7-24-base, bmw-x7-48-base
-  - 보증금/선납금: bmw-x7-36-deposit-20m, bmw-x7-36-upfront-20m, bmw-x7-60-upfront-20m-deposit-30m
-  - 고객명의: bmw-x7-60-customer-base (10% 고금리 확인)
-  - 약정거리: bmw-x7-60-mileage-30k (SNK 승, gap=2% → 1.1% 수수료)
-  - 크로스브랜드: benz-e220d-36-base
-- 🟡 Excel 패리티 진행 중 (주요 케이스 검증 완료, 추가 모델/조건 지속 확장 예정)
-- ❌ 금융리스, 할부/오토론 미구현
-- ❌ 두 번째 금융사 미온보딩
+### MG 캐피탈
+- ✅ 운용리스 계산 엔진 (Phase A + Phase B 완료)
+- ✅ 패리티 픽스처 41개 — 전체 통과
+- ✅ CQ27 자동금리 계산 경로 (baseIrrRate + resolvedMatrixGroup + maximumResidualRateOverride)
+- ✅ 프론트엔드 React + shadcn 전환 완료 (playground.ts 폐기)
+- ✅ UI/UX — 좌측 사이드바, DashboardPage, ImportPage 드래그앤드롭, 숫자 폰트 font-normal
+- ✅ financedPrincipal 버그 수정 — gross acquisitionCost (upfrontPayment 차감 안 함)
 
-### 검증된 픽스처 목록 (2026-03-28 기준, 41개)
+### BNK 캐피탈 (2026-03-29 신규)
+- ✅ **워크북 파서** (`workbook-parser.ts`) — CDB/RVs/Cond 시트 파싱, (brand, modelName) 중복제거
+  - 3321 CDB행 → 2275개 유니크 차량 (최신 modelYear 유지)
+  - 7개 잔가사 매트릭스 (WS통합/WS수입/CB/TY/JY/CR/ADB)
+  - Cond 시트 → 브랜드별 conditionType → baseIrr 매핑
+- ✅ **BNK 어댑터** 등록 (`adapter.ts`, `lender-registry.ts`, `app.ts`)
+- ✅ **운용리스 계산 엔진** (`operating-lease-service.ts`) — Excel Es1 시트 재현
+  - PMT: `((PV - FV/factor) × rate) / (1 - 1/factor)`, monthlyRate = annualRate/12
+  - 표시금액: ROUNDUP(rawPayment, -2) — 100원 단위 올림
+  - 취득세: roundDown(discountedVehiclePrice/1.1 × rate, -1), 기본 7%(≥1600cc), 4%(기타)
+  - financedPrincipal = gross (upfrontPayment 미차감 — MG와 동일)
+  - 잔존가치: roundDown(discountedVehiclePrice × ratio, -3)
+  - 잔가보증 수수료 테이블 (gap = 표준잔가율 - 적용잔가율 기준):
+    - gap ≤ 0%: 0%, ≤1%: 1.21%, ≤2%: 1.10%, ≤3%: 0.88%, ≤4%: 0.66%, ≤5%: 0.44%, ≤6%: 0.22%, >6%: 0%
+  - Phase B 자동금리: CB/TY/CR/ADB 잔가사 중 수수료 가장 낮은 쪽 자동 선택
+  - `calculateBnkOperatingLeaseQuoteFromContext` 순수함수 export (테스트용)
+- ✅ **Phase A 픽스처 검증** — BMW 520i 60m, 차량가 110M, IRR 5.21% → 1,575,700원 ✓
+  - `fixtures/bnk-capital/operating-lease/bmw-520i-60-base.json`
+  - acqTax 7,000,000 / financedPrincipal 117,000,000 / residualAmount 44,000,000 — 모두 일치
+- ✅ **테스트 러너** (`operating-lease-service.test.ts`) — 42개 전체 통과 (MG 41 + BNK 1)
+
+### 미완료
+- 🟡 BNK Phase B 픽스처 (providerRates 포함, 자동금리 경로 검증) — 다음 세션 우선순위
+- 🟡 BNK 잔가 마일리지 조정 (RVs 테이블은 2만km 기준, 다른 거리 조정 공식 미구현)
+- 🟡 BNK JY 잔가사 (float/string 그레이드 파싱 복잡, Phase B에서 처리 예정)
+- 🟡 BNK 추가 픽스처 (기간 변형, 보증금/선납금, 고객명의, 크로스브랜드)
+- ❌ 금융리스, 할부/오토론 미구현
+
+### 검증된 픽스처 목록 (2026-03-29 기준, 42개)
 
 | 파일 | 모델 | 기간 | 잔가사 | 비고 |
 |------|------|------|--------|------|
@@ -187,6 +196,12 @@ docs/
 | audi-a3-36-customer | AUDI A3 40 TFSI | 36m | SNK | 개인명의 / 고금리 |
 | volvo-xc40-36-promo | VOLVO XC40 B4 | 36m | APS | 잔가 프로모 0.75 |
 | lexus-rx350h-60-base | LEXUS RX 350h | 60m | APS | 하이브리드 |
+
+#### BNK 캐피탈 픽스처 (1개)
+
+| 파일 | 모델 | 기간 | 잔가사 | 비고 |
+|------|------|------|--------|------|
+| bmw-520i-60-base | BMW 520i (BNK) | 60m | - | Phase A (IRR override), 110M → 1,575,700원 |
 
 ---
 
@@ -247,3 +262,16 @@ bun run db:push      # DB 스키마 마이그레이션
 - `residualAmount` 산출: `roundDown(discountedVehiclePrice × ratio, -3)` — 천원 단위 절사
 - `acquisitionTax` 산출: `roundDown((discountedVehiclePrice / 1.1) × taxRate, -1)` — 10원 단위 절사
 - `financedPrincipal` = discountedVehiclePrice + acquisitionTax + stampDuty (잔가보증 수수료는 cq17에만 포함, financedPrincipal에는 미포함)
+
+### BNK 캐피탈 엔진 메모
+
+- BNK 워크북에는 차량가격 없음 — 사용자가 `quotedVehiclePrice` 직접 입력 필수
+- BNK CDB 그레이드 인덱스 (cbGrade, tyGrade, crGrade, adbGrade) → matrixGroup `{PROVIDER}_{gradeIndex}` 로 변환
+- BMW 520i 기준: cbGrade=9(CB_9) 표준잔가=37%, tyGrade=3(TY_3)=45%, crGrade=6(CR_6)=42% (60m)
+- 적용잔가 40%일 때: CB gap=-0.03 → fee=0%, TY gap=0.05 → fee=0.44%, CR gap=0.02 → fee=0.88% → CB 선택
+- BNK 잔가보증 수수료 방향 주의: gap = 표준잔가 - 적용잔가 (양수 = 적용이 표준보다 낮음 → 수수료 발생)
+- BNK RVs 테이블은 2만km 기준 (`오토데이터베이스 / 2만KM` 헤더 확인), 다른 약정거리 조정 공식은 Es1 B366 셀 참조
+- BNK 취득세 기본값: ≥1600cc 승용 → 7%, 그 외 → 4% (MG와 동일)
+- BNK stampDuty 기본값: 0원 (MG는 10,000원 — 다름)
+- BNK Es1 잔가보증 수수료 최대값: WS=1.32%, SE/CB=1.35%, BR=0%, TY=1.32%, JY=1.45%, CR=1.35%, ADB=1.45%
+- BNK Phase B 테스트 픽스처 패턴: `annualIrrRateOverride` 제거 + `providerRates` 배열 + `policyBaseIrr` 설정

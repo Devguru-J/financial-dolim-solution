@@ -111,6 +111,7 @@ export async function persistWorkbookImport(params: {
               chatbotResiduals: program.chatbotResiduals,
               apsPromotionRate: program.apsPromotionRate,
               snkPromotionRate: program.snkPromotionRate,
+              ...(program.rawRow ?? {}),
             },
           })),
         );
