@@ -3,7 +3,7 @@ export type AnnualMileage = 10000 | 20000 | 30000 | 35000
 export type AffiliateType = '비제휴사' | 'KCC오토' | 'KCC면제'
 
 export interface QuotePayload {
-  lenderCode: 'mg-capital'
+  lenderCode: string
   productType: 'operating_lease'
   brand: string
   modelName: string

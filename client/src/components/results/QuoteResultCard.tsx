@@ -5,9 +5,10 @@ import type { QuoteResult } from '@/types/quote'
 
 interface QuoteResultCardProps {
   result: QuoteResult
+  lenderName: string
 }
 
-export function QuoteResultCard({ result }: QuoteResultCardProps) {
+export function QuoteResultCard({ result, lenderName }: QuoteResultCardProps) {
   const displayMonthlyPayment = roundUpToNearestHundred(result.monthlyPayment)
   const leaseTermMonths = result.majorInputs.leaseTermMonths
   const totalCost = result.monthlyPayment * leaseTermMonths + result.residual.amount
@@ -27,7 +28,7 @@ export function QuoteResultCard({ result }: QuoteResultCardProps) {
     <Card className="overflow-hidden shadow-[0_12px_30px_rgba(29,51,184,0.15)]">
       {/* Header */}
       <CardHeader className="py-2.5 px-4 border-b border-border bg-muted/60 flex flex-row items-center gap-2 flex-wrap space-y-0">
-        <span className="font-semibold text-sm text-foreground mr-1">MG캐피탈</span>
+        <span className="font-semibold text-sm text-foreground mr-1">{lenderName}</span>
         <Badge variant="outline" className="text-[10px] font-medium">
           {ownerTag}
         </Badge>
