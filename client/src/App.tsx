@@ -31,7 +31,7 @@ export function App() {
             </div>
             <div className="leading-none">
               <div className="text-[13px] font-semibold text-white tracking-tight leading-snug">도림 자동차 견적 해결책</div>
-              <div className="text-[11px] text-white/35 tracking-wide mt-0.5">혁명적인 씨-스템</div>
+              <div className="text-[11px] text-white/35 tracking-wide mt-0.5">혁명적인 값어림 계산 체계</div>
             </div>
           </div>
 
@@ -82,7 +82,7 @@ export function App() {
             <span className="absolute inset-0 rounded-full bg-emerald-400 ping-ring" />
             <span className="relative block w-1.5 h-1.5 rounded-full bg-emerald-500" />
           </div>
-          <span className="text-[10px] text-white/25 tracking-wider">시스템 가동 중</span>
+          <span className="text-[10px] text-white/25 tracking-wider">해결책 가동 중</span>
         </div>
       </aside>
 
