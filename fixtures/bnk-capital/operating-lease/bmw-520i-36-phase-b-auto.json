@@ -1,0 +1,72 @@
+{
+  "name": "bnk-bmw-520i-36-phase-b-auto",
+  "workbookVersion": "BNK Capital 2025",
+  "workbookDebug": {
+    "selectedResidualRatio": 0.50,
+    "residualGuaranteeCompany": "CB",
+    "guaranteeBaseRatio": 0.0,
+    "note": "Phase B 36-month term. CB base(0.58) > applied(0.50), gap<0 → fee=0%. Rate = 5.21%."
+  },
+  "vehicle": {
+    "brand": "BMW",
+    "modelName": "The New 5 Series 가솔린 2.0 520i",
+    "vehicleClass": "승용",
+    "engineDisplacementCc": 1998,
+    "highResidualAllowed": false,
+    "hybridAllowed": false,
+    "rawRow": {
+      "cbGrade": 9,
+      "cbPGrade": null,
+      "tyGrade": 3,
+      "tyPGrade": null,
+      "jyGrade": null,
+      "jyPGrade": null,
+      "crGrade": 6,
+      "crPGrade": null,
+      "adbGrade": null,
+      "adbPGrade": null,
+      "modelYear": 2026,
+      "vehicleClass": "승용",
+      "eco": false
+    }
+  },
+  "providerRates": [
+    { "matrixGroup": "BNK_9", "leaseTermMonths": 36, "residualRate": "0.58" },
+    { "matrixGroup": "BNK_3", "leaseTermMonths": 36, "residualRate": "0.64" },
+    { "matrixGroup": "BNK_6", "leaseTermMonths": 36, "residualRate": "0.61" }
+  ],
+  "policyBaseIrr": 0.0521,
+  "input": {
+    "lenderCode": "bnk-capital",
+    "productType": "operating_lease",
+    "brand": "BMW",
+    "modelName": "The New 5 Series 가솔린 2.0 520i",
+    "ownershipType": "company",
+    "leaseTermMonths": 36,
+    "upfrontPayment": 0,
+    "depositAmount": 0,
+    "quotedVehiclePrice": 110000000,
+    "discountAmount": 0,
+    "acquisitionTaxRateOverride": 0.07,
+    "selectedResidualRateOverride": 0.50,
+    "cmFeeRate": 0,
+    "agFeeRate": 0
+  },
+  "expected": {
+    "discountedVehiclePrice": 110000000,
+    "acquisitionTax": 7000000,
+    "stampDuty": 0,
+    "financedPrincipal": 117000000,
+    "residualAmount": 55000000,
+    "displayedAnnualRateDecimal": 0.0521,
+    "effectiveAnnualRateDecimal": 0.0521,
+    "monthlyPayment": 2102900
+  },
+  "tolerance": {
+    "monthlyPayment": 1,
+    "residualAmount": 0,
+    "acquisitionTax": 0,
+    "displayedAnnualRateDecimal": 0,
+    "effectiveAnnualRateDecimal": 0
+  }
+}

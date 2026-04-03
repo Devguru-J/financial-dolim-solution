@@ -75,48 +75,74 @@ function defaultAcquisitionTaxRate(engineDisplacementCc: number | null): number 
 }
 
 // ---------------------------------------------------------------------------
-// BNK Guarantee fee table (indexed by gap = standard_rate - applied_rate)
-// gap ≤ 0:         0%   (applied at or above standard → no extra risk)
-// 0 < gap ≤ 0.01: 1.21%
-// 0.01 < gap ≤ 0.02: 1.10%
-// 0.02 < gap ≤ 0.03: 0.88%
-// 0.03 < gap ≤ 0.04: 0.66%
-// 0.04 < gap ≤ 0.05: 0.44%
-// 0.05 < gap ≤ 0.06: 0.22%
-// gap > 0.06:      0%   (very conservative residual, guarantee risk is near-zero)
+// BNK Guarantee fee table (indexed by gap = applied_rate - base_rate)
+// Matches Es1 sheet B248/B269/B311 etc.  Fee increases with gap because
+// a higher applied residual means more risk for the guarantee provider.
+//
+// gap ≤ 0:         0%      (applied at or below base → no extra risk)
+// 0 < gap ≤ 0.01: 0.22%   (Es1 H174)
+// 0.01 < gap ≤ 0.02: 0.44%  (Es1 H173)
+// 0.02 < gap ≤ 0.03: 0.66%  (Es1 H172)
+// 0.03 < gap ≤ 0.04: 0.88%  (Es1 H171)
+// 0.04 < gap ≤ 0.05: 1.10%  (Es1 H170)
+// 0.05 < gap ≤ 0.06: 1.21%  (Es1 H169)
+// gap > 0.06:      provider-specific max fee (Es1 J168:J174)
 // ---------------------------------------------------------------------------
 
 const BNK_GAP_FEE_STEPS: Array<{ maxGap: number; fee: number }> = [
   { maxGap: 0.00, fee: 0 },
-  { maxGap: 0.01, fee: 0.0121 },
-  { maxGap: 0.02, fee: 0.011 },
-  { maxGap: 0.03, fee: 0.0088 },
-  { maxGap: 0.04, fee: 0.0066 },
-  { maxGap: 0.05, fee: 0.0044 },
-  { maxGap: 0.06, fee: 0.0022 },
+  { maxGap: 0.01, fee: 0.0022 },
+  { maxGap: 0.02, fee: 0.0044 },
+  { maxGap: 0.03, fee: 0.0066 },
+  { maxGap: 0.04, fee: 0.0088 },
+  { maxGap: 0.05, fee: 0.011 },
+  { maxGap: 0.06, fee: 0.0121 },
 ];
 
-function lookupGuaranteeFeeFromGap(gapDecimal: number): number {
+function lookupGuaranteeFeeFromGap(gapDecimal: number, maxFee: number): number {
   if (gapDecimal <= 0) return 0;
+  if (gapDecimal > 0.06) return maxFee;
   for (let i = BNK_GAP_FEE_STEPS.length - 1; i >= 0; i--) {
     if (gapDecimal > BNK_GAP_FEE_STEPS[i].maxGap) {
-      return BNK_GAP_FEE_STEPS[i + 1]?.fee ?? 0;
+      return BNK_GAP_FEE_STEPS[i + 1]?.fee ?? maxFee;
     }
   }
   return 0;
 }
 
 // ---------------------------------------------------------------------------
+// BNK mileage adjustment (Es1 B240/B261/B282/B303/B324/B346/B368)
+// RVs table stores rates at 2만km base. Other distances adjust as follows:
+// ---------------------------------------------------------------------------
+
+const BNK_MILEAGE_ADJUSTMENTS: Record<number, number> = {
+  10000: 0.02,   // 1만km: +2%
+  15000: 0.01,   // 1.5만km: +1%
+  20000: 0,      // 2만km: base (no adjustment)
+  30000: -0.04,  // 3만km: -4%
+  40000: -0.09,  // 4만km: -9%
+};
+
+function getMileageAdjustment(annualMileageKm: number | undefined): number {
+  if (annualMileageKm == null) return 0; // default = 20k base
+  return BNK_MILEAGE_ADJUSTMENTS[annualMileageKm] ?? 0;
+}
+
+// ---------------------------------------------------------------------------
 // BNK provider configuration
 // ---------------------------------------------------------------------------
 
-// Maps rawRow grade key → matrixGroup prefix for DB lookup
+// Maps rawRow grade key → BNK unified table lookup.
+// All providers share the same RVs unified table (AG8:CW67).  CDB grade values
+// (cbGrade, tyGrade, jyGrade, crGrade, adbGrade) map to column headers in that
+// table.  matrixGroup in DB = "BNK_{gradeValue}".
+// maxFee = provider-specific ceiling for gap > 6% (Es1 J168:J174).
 const BNK_PROVIDERS = [
-  { key: "cbGrade", prefix: "CB" },
-  { key: "tyGrade", prefix: "TY" },
-  { key: "crGrade", prefix: "CR" },
-  { key: "adbGrade", prefix: "ADB" },
-  // JY uses float/string grades — handled separately after Phase A
+  { key: "cbGrade", maxFee: 0.0135 },
+  { key: "tyGrade", maxFee: 0.0132 },
+  { key: "jyGrade", maxFee: 0.0145 },
+  { key: "crGrade", maxFee: 0.0135 },
+  { key: "adbGrade", maxFee: 0.0145 },
 ] as const;
 
 type BnkProviderResult = {
@@ -125,6 +151,21 @@ type BnkProviderResult = {
   gapFromStandard: number;
   guaranteeFee: number;
 };
+
+/** Convert a CDB grade value (number or string) to "BNK_{grade}" matrixGroup. */
+function resolveBnkMatrixGroup(gradeValue: unknown): string | null {
+  if (typeof gradeValue === "number") {
+    if (gradeValue <= 0) return null;
+    return `BNK_${gradeValue}`;
+  }
+  if (typeof gradeValue === "string") {
+    const trimmed = gradeValue.trim();
+    if (!trimmed || trimmed === "0") return null;
+    // Numeric strings like "7.5" and S-prefix strings like "S8" both work
+    return `BNK_${trimmed}`;
+  }
+  return null;
+}
 
 // ---------------------------------------------------------------------------
 // DB context types
@@ -240,14 +281,14 @@ export async function calculateBnkOperatingLeaseQuote(params: {
     const policyBaseIrr = policyFallback ? Number(policyFallback.baseIrrRate) : 0.0681;
 
     // 4. Resolve matrixGroups for provider lookup (Phase B auto-rate path)
+    // CDB grades can be numbers (9, 3.5) or strings ("S8", "S10").
+    // All map to the unified BNK table via "BNK_{gradeValue}".
     const rawRow = vehicleRow.rawRow;
     const matrixGroupsToFetch: string[] = [];
 
     for (const provider of BNK_PROVIDERS) {
-      const gradeIdx = rawRow?.[provider.key];
-      if (typeof gradeIdx === "number" && gradeIdx > 0) {
-        matrixGroupsToFetch.push(`${provider.prefix}_${Math.trunc(gradeIdx)}`);
-      }
+      const mg = resolveBnkMatrixGroup(rawRow?.[provider.key]);
+      if (mg) matrixGroupsToFetch.push(mg);
     }
 
     // Fetch standard residual rates from DB for all applicable providers
@@ -392,31 +433,36 @@ function computeQuote(params: ComputeQuoteParams): CanonicalQuoteResult {
     // Phase B auto-rate path: find best provider (lowest guarantee fee)
     const rawRow = vehicle.rawRow;
     const providerResults: BnkProviderResult[] = [];
+    const mileageAdj = getMileageAdjustment(input.annualMileageKm);
 
     for (const provider of BNK_PROVIDERS) {
-      const gradeIdx = rawRow?.[provider.key];
-      if (typeof gradeIdx !== "number" || gradeIdx <= 0) continue;
+      const mg = resolveBnkMatrixGroup(rawRow?.[provider.key]);
+      if (!mg) continue;
 
-      const mg = `${provider.prefix}_${Math.trunc(gradeIdx)}`;
       const rateRow = providerRates.find((r) => r.matrixGroup === mg);
       if (!rateRow) continue;
 
-      const standardRate = Number(rateRow.residualRate);
-      if (!Number.isFinite(standardRate) || standardRate <= 0) continue;
+      // standardRate from RVs is at 2만km base; apply mileage adjustment.
+      const baseRate = Number(rateRow.residualRate);
+      if (!Number.isFinite(baseRate) || baseRate <= 0) continue;
+      const standardRate = baseRate + mileageAdj;
 
-      // Gap = standard - applied. Positive = applied is below standard → fee > 0.
-      const gap = Math.max(0, standardRate - residualRateRaw);
-      const guaranteeFee = lookupGuaranteeFeeFromGap(gap);
+      // Gap = applied - standard. Positive = applied exceeds base → guarantor takes
+      // more risk → fee increases.  Matches Es1 B54 = applied_rate - base_rate.
+      const gap = residualRateRaw - standardRate;
+      const guaranteeFee = lookupGuaranteeFeeFromGap(gap, provider.maxFee);
 
       providerResults.push({ matrixGroup: mg, standardRate, gapFromStandard: gap, guaranteeFee });
     }
 
     if (providerResults.length > 0) {
-      // Select provider with lowest guarantee fee
-      // If tie: prefer the one where applied rate is closest to (≤) standard (lowest gap)
+      // Select provider with lowest guarantee fee.
+      // Equivalent to Excel's "highest base rate" selection (VLOOKUP B50 in G101:H107),
+      // since a higher base → smaller gap → lower fee for the same applied rate.
+      // Tie-break: prefer the provider where applied rate is closest to base (smallest |gap|).
       selectedProviderResult = providerResults.reduce((best, curr) => {
         if (curr.guaranteeFee < best.guaranteeFee) return curr;
-        if (curr.guaranteeFee === best.guaranteeFee && curr.gapFromStandard < best.gapFromStandard) return curr;
+        if (curr.guaranteeFee === best.guaranteeFee && Math.abs(curr.gapFromStandard) < Math.abs(best.gapFromStandard)) return curr;
         return best;
       });
       resolvedMatrixGroup = selectedProviderResult.matrixGroup;

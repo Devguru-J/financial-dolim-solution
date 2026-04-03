@@ -137,81 +137,72 @@ function parseVehiclePrograms(rows: unknown[][]): WorkbookVehicleProgram[] {
 }
 
 // ---------------------------------------------------------------------------
-// RVs parser — builds matrixGroup → term → rate lookup
+// RVs parser — unified BNK residual rate table
 //
-// Provider tables (0-indexed row offsets):
-//   WS통합:  header row 2,  data rows 3-9   (terms: 12/24/36/42/44/48/60)
-//   WS수입:  header row 15, data rows 16-22
-//   CB:      header row 28, data rows 29-35
-//   MK:      header row 39, data rows 40-46
-//   TY:      header row 51, data rows 52-58
-//   JY:      header row 64, data rows 65-71 (terms: 12/24/36/42/44/48/60)
-//   CR:      header row 76, data rows 77-81 (terms: 12/24/36/48/60)
-//   ADB:     header row 86, data rows 87-91 (terms: 12/24/36/48/60)
+// Es1 calculates residual rates from the unified BNK table at RVs!AG8:CW67,
+// NOT from the small per-provider tables (WS통합/CB/TY/JY/CR/ADB rows 1-91).
+// The small tables are reference data with different values — using them would
+// cause systematic errors in guarantee fee calculation.
 //
-// Grade lookup: grade index N from CDB maps to col N in the provider's rate table.
-// For letter-grade tables (CB A-Q cols 1-17, CR A-Z cols 1-26, ADB A-I cols 1-9,
-// JY S/A/B/C/D/E/F cols 1-7 + PS/PA/PB/PC cols 8-11, WS S/A/B/C/D/E/F/G/H/I cols 1-10):
-// matrixGroup = "{PROVIDER}_{gradeIndex}"
+// Unified table structure (0-indexed):
+//   Header row 6 (AG7:CW7): grade labels — S1..S10, 1, 1.5, 2, 2.5, ..., 29
+//   Term column 31 (AF8:AF67): months 1-60
+//   Data: row 7..66, cols 32..98
+//
+// CDB grade values (cbGrade, tyGrade, jyGrade, crGrade, adbGrade) map directly
+// to column headers in this table.  E.g. cbGrade=9 → column "9", jyGrade="S8" → "S8".
+//
+// matrixGroup = "BNK_{headerLabel}" — shared across all providers since they
+// all reference the same table. Engine resolves per-provider by looking up the
+// vehicle's grade for that provider.
 // ---------------------------------------------------------------------------
 
-type ProviderTableSpec = {
-  prefix: string;
-  headerRow: number;
-  dataRows: [number, number]; // [start, end] inclusive
-  gradeColStart: number;
-  gradeColEnd: number;
-};
-
-const PROVIDER_TABLES: ProviderTableSpec[] = [
-  { prefix: "WS통합", headerRow: 2, dataRows: [3, 9], gradeColStart: 1, gradeColEnd: 10 },
-  { prefix: "WS수입", headerRow: 15, dataRows: [16, 22], gradeColStart: 1, gradeColEnd: 10 },
-  { prefix: "CB", headerRow: 28, dataRows: [29, 35], gradeColStart: 1, gradeColEnd: 17 },
-  { prefix: "TY", headerRow: 51, dataRows: [52, 58], gradeColStart: 1, gradeColEnd: 15 },
-  { prefix: "JY", headerRow: 64, dataRows: [65, 71], gradeColStart: 1, gradeColEnd: 11 },
-  { prefix: "CR", headerRow: 76, dataRows: [77, 81], gradeColStart: 1, gradeColEnd: 26 },
-  { prefix: "ADB", headerRow: 86, dataRows: [87, 91], gradeColStart: 1, gradeColEnd: 9 },
-];
+const BNK_UNIFIED_TABLE = {
+  headerRow: 6,       // 0-indexed row containing grade labels
+  termCol: 31,        // 0-indexed col AF (lease term months)
+  gradeColStart: 32,  // 0-indexed col AG (first grade column)
+  gradeColEnd: 98,    // 0-indexed col CU (scan up to here)
+  dataRowStart: 7,    // 0-indexed first data row (month 1)
+  dataRowEnd: 66,     // 0-indexed last data row (month 60)
+} as const;
 
 function parseResidualMatrixRows(rows: unknown[][]): WorkbookResidualMatrixRow[] {
   const results: WorkbookResidualMatrixRow[] = [];
 
-  for (const spec of PROVIDER_TABLES) {
-    const headerRow = rows[spec.headerRow];
-    if (!headerRow) continue;
+  const headerRow = rows[BNK_UNIFIED_TABLE.headerRow];
+  if (!headerRow) return results;
 
-    // Build grade label map: col index → grade label
-    const gradeLabelByCol = new Map<number, string>();
-    for (let col = spec.gradeColStart; col <= spec.gradeColEnd; col++) {
-      const label = asText(headerRow[col]);
-      if (label) gradeLabelByCol.set(col, label);
-    }
+  // Build grade label map: col index → header label
+  const gradeLabelByCol = new Map<number, string>();
+  for (let col = BNK_UNIFIED_TABLE.gradeColStart; col <= BNK_UNIFIED_TABLE.gradeColEnd; col++) {
+    const raw = headerRow[col];
+    if (raw == null) continue;
+    // Headers can be numbers (1, 1.5, 9) or strings (S1, S8)
+    const label = typeof raw === "number" ? String(raw) : asText(raw);
+    if (label) gradeLabelByCol.set(col, label);
+  }
 
-    // Parse each data row (each row = one term)
-    for (let rowIdx = spec.dataRows[0]; rowIdx <= spec.dataRows[1]; rowIdx++) {
-      const row = rows[rowIdx];
-      if (!row) continue;
+  // Parse each data row (each row = one month in the 1-60 range)
+  for (let rowIdx = BNK_UNIFIED_TABLE.dataRowStart; rowIdx <= BNK_UNIFIED_TABLE.dataRowEnd; rowIdx++) {
+    const row = rows[rowIdx];
+    if (!row) continue;
 
-      const term = asNumber(row[0]);
-      if (term == null) continue;
+    const term = asNumber(row[BNK_UNIFIED_TABLE.termCol]);
+    if (term == null) continue;
 
-      // Only standard lease terms
-      if (![12, 24, 36, 48, 60].includes(term)) continue;
+    // Only standard lease terms
+    if (![12, 24, 36, 48, 60].includes(term)) continue;
 
-      for (let col = spec.gradeColStart; col <= spec.gradeColEnd; col++) {
-        const rate = asNumber(row[col]);
-        if (rate == null || rate <= 0) continue;
+    for (const [col, label] of gradeLabelByCol) {
+      const rate = asNumber(row[col]);
+      if (rate == null || rate <= 0) continue;
 
-        const gradeLabel = gradeLabelByCol.get(col) ?? String(col);
-        const matrixGroup = `${spec.prefix}_${col}`;
-
-        results.push({
-          matrixGroup,
-          gradeCode: gradeLabel,
-          leaseTermMonths: term,
-          residualRate: rate,
-        });
-      }
+      results.push({
+        matrixGroup: `BNK_${label}`,
+        gradeCode: label,
+        leaseTermMonths: term,
+        residualRate: rate,
+      });
     }
   }
 

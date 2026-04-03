@@ -15,8 +15,12 @@ const previewQuerySchema = z.object({
   lenderCode: z.string().min(1).default("mg-capital"),
 });
 
+const catalogQuerySchema = z.object({
+  lenderCode: z.string().min(1).optional(),
+});
+
 const catalogModelsQuerySchema = z.object({
-  lenderCode: z.string().min(1).default("mg-capital"),
+  lenderCode: z.string().min(1).optional(),
   brand: z.string().min(1),
 });
 
@@ -31,7 +35,7 @@ const calculateQuoteSchema = z.object({
   manualEngineDisplacementCc: z.number().positive().optional(),
   ownershipType: z.enum(["company", "customer"]),
   leaseTermMonths: z.union([z.literal(12), z.literal(24), z.literal(36), z.literal(48), z.literal(60)]),
-  annualMileageKm: z.union([z.literal(10000), z.literal(20000), z.literal(30000), z.literal(35000)]).optional(),
+  annualMileageKm: z.union([z.literal(10000), z.literal(15000), z.literal(20000), z.literal(30000), z.literal(35000), z.literal(40000)]).optional(),
   upfrontPayment: z.number().min(0).default(0),
   depositAmount: z.number().min(0).optional(),
   quotedVehiclePrice: z.number().positive().optional(),
@@ -118,7 +122,7 @@ app.get("/api/workbook-contract", zValidator("query", previewQuerySchema), async
   });
 });
 
-app.get("/api/catalog/brands", zValidator("query", previewQuerySchema), async (c) => {
+app.get("/api/catalog/brands", zValidator("query", catalogQuerySchema), async (c) => {
   const lenderCode = c.req.valid("query").lenderCode;
   const result = await getActiveWorkbookBrands({
     databaseUrl: c.env.DATABASE_URL,

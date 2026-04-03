@@ -81,7 +81,6 @@ export function QuotePage() {
   const totalAcquisitionCost =
     discountedPrice +
     acquisitionTaxAmount +
-    10000 + // stampDuty
     (deliveryFeeIncluded ? Number(deliveryFee) || 0 : 0) +
     (miscFeeIncluded ? Number(miscFee) || 0 : 0) +
     (publicBondIncluded ? Number(publicBondCost) || 0 : 0)
@@ -112,7 +111,7 @@ export function QuotePage() {
       quotedVehiclePrice: rawVehiclePrice,
       discountAmount: rawDiscount,
       acquisitionTaxRateOverride: acquisitionTaxRate,
-      stampDuty: 10000,
+      // stampDuty omitted — each lender engine uses its own default (MG=10000, BNK=0)
       includePublicBondCost: publicBondIncluded,
       publicBondCost: publicBondIncluded ? Number(publicBondCost) || 0 : undefined,
       includeMiscFeeAmount: miscFeeIncluded,

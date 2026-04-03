@@ -119,14 +119,15 @@ Completed:
 24. ImportPage lender selector: dynamic dropdown fetching from /api/lenders, fetchLenders() added to api client — 2026-03-29
 25. sidebar sticky fix: App root changed from min-h-[100dvh] to h-[100dvh] overflow-hidden so sidebar stays fixed during content scroll — 2026-03-29
 26. removed unimplemented utility buttons from QuotePage ("엑셀 기본값 적용", "잔가 선택값 지우기") — 2026-03-29
+27. multi-lender E2E web flow: catalog queries merged across all active workbooks, stampDuty lender-specific defaults, mileage options 15k/40k for BNK, fetchModels mg-capital hardcode removed — 2026-04-04
+28. single-command local dev: `bun run start` launches backend(8788) + frontend(5173) via scripts/dev.ts — 2026-04-04
 
 Remaining:
 
 1. add 36m variants for more models (BMW 520i, 320d, X5, X3)
 2. add deposit/upfront scenarios for non-BMW models
 3. model remaining hidden fee and exception rules that still create small payment deltas
-4. complete the all-model residual-company selection verification path
-5. build UI flow for confirming workbook-style final residual selection when needed
+4. build UI flow for confirming workbook-style final residual selection when needed
 
 Deliverable:
 
@@ -195,7 +196,7 @@ Make adding lenders systematic.
 
 Status:
 
-Started.
+Complete — BNK Capital onboarded as second lender (2026-04-04).
 
 Completed:
 
@@ -203,16 +204,18 @@ Completed:
 2. MG parser moved under lender-specific domain path
 3. reusable import persistence path introduced
 4. onboarding and blueprint docs created
+5. BNK Capital fully onboarded: parser, adapter, engine, 13 parity fixtures — 2026-04-03
+6. multi-lender catalog: brands/models API fetches across all active workbooks — 2026-04-04
+7. multi-lender quote UI: parallel requests to all lenders, per-lender result cards — 2026-03-29
+8. lender-specific defaults: stampDuty (MG=10000, BNK=0), mileage options, residual handling — 2026-04-04
 
 Remaining:
 
-1. create reusable validation fixture runner
-2. define quote-calculator adapter contract
-3. add second lender using the same structure
+1. create reusable validation fixture runner (currently each lender has its own test runner)
 
 Deliverable:
 
-Second lender can be added without architectural changes.
+Second lender can be added without architectural changes. ✅ Done — BNK proved the pattern.
 
 ## Phase 7. Operational hardening
 
@@ -237,13 +240,12 @@ Safe monthly production workflow.
 
 If work resumes in a fresh thread, do this in order:
 
-1. complete React + Vite + Tailwind + shadcn client app setup in `client/` subfolder
-2. migrate playground quote form to React components (shadcn Card, Badge, Table, etc.)
-3. add 36m variants for the 5 newly added models (BMW 520i, 320d, X5, X3, BENZ E220d)
-4. add deposit/upfront scenario fixtures for the new models
-5. investigate customer ownership (개인명의) bug — potential cq8 offset gap between TypeScript and Excel for AUDI A3 customer fixture
-6. model remaining hidden fee and exception rules in the MG calculator
-7. start `financial_lease`
+1. BNK cross-brand parity fixtures (BENZ, AUDI, VOLVO — different policyBaseIrr values)
+2. BNK WS(웨스트) residual provider support — currently CB/TY/JY/CR/ADB only
+3. add 36m variants for MG models (BMW 520i, 320d, X5, X3, BENZ E220d)
+4. add deposit/upfront scenario fixtures for non-BMW MG models
+5. model remaining hidden fee and exception rules in the MG calculator
+6. start `금융리스` (financial lease)
 
 ## Future lender readiness checklist
 

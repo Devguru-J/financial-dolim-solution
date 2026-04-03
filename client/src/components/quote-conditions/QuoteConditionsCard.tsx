@@ -153,9 +153,9 @@ export function QuoteConditionsCard(props: QuoteConditionsCardProps) {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {([10000, 20000, 30000, 35000] as AnnualMileage[]).map((m) => (
+                {([10000, 15000, 20000, 30000, 35000, 40000] as AnnualMileage[]).map((m) => (
                   <SelectItem key={m} value={String(m)} className="font-mono tabular-nums">
-                    {m / 10000}만km
+                    {m % 10000 === 0 ? `${m / 10000}만km` : `${(m / 10000).toFixed(1)}만km`}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -172,13 +172,13 @@ export function QuoteConditionsCard(props: QuoteConditionsCardProps) {
               onValueChange={onDepositValueChange}
             />
           </FieldCell>
-          <FieldLabel>잔존가치</FieldLabel>
+          <FieldLabel>잔존가치 *</FieldLabel>
           <FieldCell>
             <input
               className="w-full h-8 px-2 text-xs bg-muted border border-border rounded font-mono tabular-nums"
               value={residualRate}
               onChange={(e) => onResidualRateChange(e.target.value)}
-              placeholder="예: 54.5%"
+              placeholder="예: 40%"
             />
           </FieldCell>
 

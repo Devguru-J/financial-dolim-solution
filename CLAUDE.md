@@ -6,7 +6,7 @@
 
 ## 프로젝트 개요
 
-한국 자동차 금융(운용리스) 견적 계산 플랫폼. 현재 MG 캐피탈 단일 금융사 지원, 향후 다수 금융사 확장 예정.
+한국 자동차 금융(운용리스) 견적 계산 플랫폼. MG 캐피탈 + BNK 캐피탈 2개 금융사 지원, 향후 다수 금융사 확장 예정.
 
 **스택:** Bun + Hono + Drizzle ORM + Supabase PostgreSQL + Cloudflare Pages
 
@@ -33,10 +33,12 @@ src/
         operating-lease-service.ts  # BNK 운용리스 계산 엔진
         workbook-parser.ts          # BNK 엑셀 파싱
         adapter.ts                  # BNK 어댑터
-        operating-lease-service.test.ts  # BNK 패리티 테스트 (1개)
+        operating-lease-service.test.ts  # BNK 패리티 테스트 (13개)
 fixtures/
-  mg-capital/operating-lease/     # MG 패리티 픽스처 (41개 JSON)
-  bnk-capital/operating-lease/    # BNK 패리티 픽스처 (1개 JSON)
+  mg-capital/operating-lease/     # MG 패리티 픽스처 (25개 JSON)
+  bnk-capital/operating-lease/    # BNK 패리티 픽스처 (13개 JSON)
+scripts/
+  dev.ts                          # 백엔드+프론트엔드 동시 실행 (bun run start)
 docs/
   platform-blueprint.md           # 전체 아키텍처 설계
   implementation-roadmap.md       # 구현 로드맵 (Phase 0-7)
@@ -91,7 +93,7 @@ docs/
 | 왼쪽 | 오른쪽 |
 |------|--------|
 | 판매사 (드롭다운, 기본 "비활성") | 기간(개월) (12~60, **기본 60**) |
-| 제휴수수료 면제 (라디오: 비해당/해당) | 약정거리 (10k~35k, 기본 20k) |
+| 제휴수수료 면제 (라디오: 비해당/해당) | 약정거리 (10k~40k, 기본 20k, BNK는 15k/40k 추가) |
 | 보증금 (금액/% 모드 토글 + 입력) | 잔존가치 (트림 선택 시 최대잔가 자동반영) |
 | 선납금 (금액/% 모드 토글 + 입력) | CM수수료 (기본 0%) |
 | 전기차 보조금 (비해당/해당 라디오 + 금액) | AG수수료 (기본 0%) |
@@ -130,20 +132,23 @@ docs/
 
 ---
 
-## 현재 진행 상태 (2026-03-29)
+## 현재 진행 상태 (2026-04-04)
 
 ### MG 캐피탈
 - ✅ 운용리스 계산 엔진 (Phase A + Phase B 완료)
-- ✅ 패리티 픽스처 41개 — 전체 통과
+- ✅ 패리티 테스트 41개 (25 픽스처 + 16 단위 테스트) — 전체 통과
 - ✅ CQ27 자동금리 계산 경로 (baseIrrRate + resolvedMatrixGroup + maximumResidualRateOverride)
 - ✅ 프론트엔드 React + shadcn 전환 완료 (playground.ts 폐기)
 - ✅ UI/UX — 좌측 사이드바, DashboardPage, ImportPage 드래그앤드롭, 숫자 폰트 font-normal
 - ✅ financedPrincipal 버그 수정 — gross acquisitionCost (upfrontPayment 차감 안 함)
 
-### BNK 캐피탈 (2026-03-29 신규)
+### BNK 캐피탈 (2026-04-04 업데이트)
 - ✅ **워크북 파서** (`workbook-parser.ts`) — CDB/RVs/Cond 시트 파싱, (brand, modelName) 중복제거
   - 3321 CDB행 → 2275개 유니크 차량 (최신 modelYear 유지)
-  - 7개 잔가사 매트릭스 (WS통합/WS수입/CB/TY/JY/CR/ADB)
+  - **통합 BNK 잔가 테이블** (RVs!AG8:CW67) 파싱 — Es1이 실제 사용하는 테이블
+    - matrixGroup = `BNK_{gradeLabel}` (예: BNK_9, BNK_3, BNK_7.5, BNK_S8)
+    - 소규모 잔가사별 테이블(WS/CB/TY 등)은 참고용 — Es1은 통합 테이블만 사용
+  - JY 잔가사 포함 — float("7.5")/string("S8"/"S10") 그레이드 모두 처리
   - Cond 시트 → 브랜드별 conditionType → baseIrr 매핑
 - ✅ **BNK 어댑터** 등록 (`adapter.ts`, `lender-registry.ts`, `app.ts`)
 - ✅ **운용리스 계산 엔진** (`operating-lease-service.ts`) — Excel Es1 시트 재현
@@ -152,20 +157,28 @@ docs/
   - 취득세: roundDown(discountedVehiclePrice/1.1 × rate, -1), 기본 7%(≥1600cc), 4%(기타)
   - financedPrincipal = gross (upfrontPayment 미차감 — MG와 동일)
   - 잔존가치: roundDown(discountedVehiclePrice × ratio, -3)
-  - 잔가보증 수수료 테이블 (gap = 표준잔가율 - 적용잔가율 기준):
-    - gap ≤ 0%: 0%, ≤1%: 1.21%, ≤2%: 1.10%, ≤3%: 0.88%, ≤4%: 0.66%, ≤5%: 0.44%, ≤6%: 0.22%, >6%: 0%
-  - Phase B 자동금리: CB/TY/CR/ADB 잔가사 중 수수료 가장 낮은 쪽 자동 선택
+  - 잔가보증 수수료 (gap = 적용잔가율 - 표준잔가율, 양수 = 적용이 높음 → 수수료 발생):
+    - gap ≤ 0%: 0%, >0%: 0.22%, >1%: 0.44%, >2%: 0.66%, >3%: 0.88%, >4%: 1.10%, >5%: 1.21%, >6%: 잔가사별 최대수수료
+  - 잔가사별 최대수수료: CB 1.35%, TY 1.32%, JY 1.45%, CR 1.35%, ADB 1.45%
+  - Phase B 자동금리: CB/TY/JY/CR/ADB 5개 잔가사 중 수수료 가장 낮은 쪽 자동 선택
+  - 마일리지 조정: 1만km +2%, 1.5만km +1%, 2만km 0%, 3만km -4%, 4만km -9%
   - `calculateBnkOperatingLeaseQuoteFromContext` 순수함수 export (테스트용)
-- ✅ **Phase A 픽스처 검증** — BMW 520i 60m, 차량가 110M, IRR 5.21% → 1,575,700원 ✓
-  - `fixtures/bnk-capital/operating-lease/bmw-520i-60-base.json`
-  - acqTax 7,000,000 / financedPrincipal 117,000,000 / residualAmount 44,000,000 — 모두 일치
-- ✅ **테스트 러너** (`operating-lease-service.test.ts`) — 42개 전체 통과 (MG 41 + BNK 1)
+- ✅ **패리티 픽스처 13개** — 전체 통과 (엑셀 월납입금/금리 오차 0원)
+  - Phase A (IRR override): base, deposit, upfront+deposit, customer, discount, 24m, 48m
+  - Phase B (auto-rate): base, high-rv(fee 0.44%), CM+AG, 36m, mileage-30k, mileage-30k+high-rv
+- ✅ **테스트 러너** (`operating-lease-service.test.ts`) — 54개 전체 통과 (MG 41 + BNK 13)
+
+### 멀티금융사 E2E 웹 플로우 (2026-04-04 완료)
+- ✅ 카탈로그 API 멀티 워크북 지원 — lenderCode 미지정 시 모든 활성 워크북의 차량 합산
+- ✅ stampDuty 금융사별 기본값 — 프론트엔드 하드코딩 제거, 엔진 기본값 사용 (MG=10000, BNK=0)
+- ✅ 마일리지 옵션 확장 — 15000km/40000km 추가 (BNK 전용, MG는 35000km)
+- ✅ BNK 잔가 카탈로그 분리 — BNK 차량은 MG 잔가 로직(summarizeMgResidualCandidates) 스킵
+- ✅ fetchModels mg-capital 하드코딩 제거 — 전체 활성 워크북에서 모델 조회
+- ✅ 단일 명령 로컬 실행 — `bun run start` (백엔드 8788 + 프론트엔드 5173 동시 실행)
 
 ### 미완료
-- 🟡 BNK Phase B 픽스처 (providerRates 포함, 자동금리 경로 검증) — 다음 세션 우선순위
-- 🟡 BNK 잔가 마일리지 조정 (RVs 테이블은 2만km 기준, 다른 거리 조정 공식 미구현)
-- 🟡 BNK JY 잔가사 (float/string 그레이드 파싱 복잡, Phase B에서 처리 예정)
-- 🟡 BNK 추가 픽스처 (기간 변형, 보증금/선납금, 고객명의, 크로스브랜드)
+- 🟡 BNK 크로스브랜드 픽스처 (벤츠/아우디/볼보 등 — 다른 policyBaseIrr 검증)
+- 🟡 BNK WS(웨스트) 잔가사 지원 — 현재 CB/TY/JY/CR/ADB만 엔진에 등록
 - ❌ 금융리스, 할부/오토론 미구현
 
 ### 검증된 픽스처 목록 (2026-03-29 기준, 42개)
@@ -197,19 +210,33 @@ docs/
 | volvo-xc40-36-promo | VOLVO XC40 B4 | 36m | APS | 잔가 프로모 0.75 |
 | lexus-rx350h-60-base | LEXUS RX 350h | 60m | APS | 하이브리드 |
 
-#### BNK 캐피탈 픽스처 (1개)
+#### BNK 캐피탈 픽스처 (13개)
 
-| 파일 | 모델 | 기간 | 잔가사 | 비고 |
-|------|------|------|--------|------|
-| bmw-520i-60-base | BMW 520i (BNK) | 60m | - | Phase A (IRR override), 110M → 1,575,700원 |
+| 파일 | 모델 | 기간 | Phase | 비고 |
+|------|------|------|-------|------|
+| bmw-520i-60-base | BMW 520i | 60m | A | IRR override, 110M → 1,575,700원 |
+| bmw-520i-24-base | BMW 520i | 24m | A | 24개월 기간 변형, 잔가 55% |
+| bmw-520i-48-base | BMW 520i | 48m | A | 48개월 기간 변형, 잔가 45% |
+| bmw-520i-60-deposit-20m | BMW 520i | 60m | A | 보증금 20M |
+| bmw-520i-60-upfront-10m-deposit-10m | BMW 520i | 60m | A | 선납 10M + 보증금 10M |
+| bmw-520i-60-customer | BMW 520i | 60m | A | 이용자명의, 10% 금리 |
+| bmw-520i-60-discount-5m | BMW 520i | 60m | A | 할인 5M, 잔가율 40% |
+| bmw-520i-60-phase-b-auto | BMW 520i | 60m | B | 자동금리, CB 선택 (fee=0%) |
+| bmw-520i-60-phase-b-high-rv | BMW 520i | 60m | B | 잔가 53%, TY 선택 (fee=0.44%) |
+| bmw-520i-60-phase-b-cm1-ag1 | BMW 520i | 60m | B | CM 1% + AG 1%, rate=7.21% |
+| bmw-520i-36-phase-b-auto | BMW 520i | 36m | B | 36개월 자동금리 |
+| bmw-520i-60-mileage-30k | BMW 520i | 60m | B | 3만km 마일리지 조정, TY 선택 |
+| bmw-520i-60-mileage-30k-high-rv | BMW 520i | 60m | B | 3만km + 잔가 50%, TY fee=0.44% |
 
 ---
 
 ## 개발 명령어
 
 ```bash
-bun run dev          # 로컬 서버 (wrangler pages dev)
-bun test             # 패리티 테스트
+bun run start        # 백엔드(8788) + 프론트엔드(5173) 동시 실행 (한 줄)
+bun run dev          # 백엔드만 (Hono API 서버)
+bun run dev:client   # 프론트엔드만 (Vite dev server)
+bun test             # 패리티 테스트 (54개)
 bun run typecheck    # TS 타입 검사
 bun run db:push      # DB 스키마 마이그레이션
 ```
@@ -266,12 +293,15 @@ bun run db:push      # DB 스키마 마이그레이션
 ### BNK 캐피탈 엔진 메모
 
 - BNK 워크북에는 차량가격 없음 — 사용자가 `quotedVehiclePrice` 직접 입력 필수
-- BNK CDB 그레이드 인덱스 (cbGrade, tyGrade, crGrade, adbGrade) → matrixGroup `{PROVIDER}_{gradeIndex}` 로 변환
-- BMW 520i 기준: cbGrade=9(CB_9) 표준잔가=37%, tyGrade=3(TY_3)=45%, crGrade=6(CR_6)=42% (60m)
-- 적용잔가 40%일 때: CB gap=-0.03 → fee=0%, TY gap=0.05 → fee=0.44%, CR gap=0.02 → fee=0.88% → CB 선택
-- BNK 잔가보증 수수료 방향 주의: gap = 표준잔가 - 적용잔가 (양수 = 적용이 표준보다 낮음 → 수수료 발생)
-- BNK RVs 테이블은 2만km 기준 (`오토데이터베이스 / 2만KM` 헤더 확인), 다른 약정거리 조정 공식은 Es1 B366 셀 참조
+- CDB 그레이드 → 통합 BNK 테이블 (RVs!AG8:CW67) 조회. matrixGroup = `BNK_{gradeValue}`
+  - cbGrade=9 → BNK_9, tyGrade=3 → BNK_3, jyGrade="7.5" → BNK_7.5, jyGrade="S8" → BNK_S8
+- BMW 520i 60m 통합 테이블 기준: grade 9=0.46, grade 3=0.52, grade 6=0.49
+- 잔가보증 수수료: gap = 적용잔가율 - 표준잔가율 (양수 = 적용이 표준보다 높음 → 수수료 발생)
+  - 적용잔가 40%, CB 표준 46%일 때: gap = -0.06 → fee=0% (CB 선택)
+  - 적용잔가 53%, TY 표준 52%일 때: gap = 0.01 → fee=0.44% (TY 선택)
+- 마일리지 조정 (Es1 B240): 1만km +2%, 1.5만km +1%, 2만km 0%, 3만km -4%, 4만km -9%
+  - 프로모션은 2만km에서만 적용 (Es1 B242: `IF(B42="2만km", VLOOKUP(...), 0)`)
 - BNK 취득세 기본값: ≥1600cc 승용 → 7%, 그 외 → 4% (MG와 동일)
 - BNK stampDuty 기본값: 0원 (MG는 10,000원 — 다름)
-- BNK Es1 잔가보증 수수료 최대값: WS=1.32%, SE/CB=1.35%, BR=0%, TY=1.32%, JY=1.45%, CR=1.35%, ADB=1.45%
-- BNK Phase B 테스트 픽스처 패턴: `annualIrrRateOverride` 제거 + `providerRates` 배열 + `policyBaseIrr` 설정
+- 잔가사별 최대수수료 (gap > 6%): WS 1.32%, CB 1.35%, BR 0%, TY 1.32%, JY 1.45%, CR 1.35%, ADB 1.45%
+- Phase B 테스트 픽스처 패턴: `annualIrrRateOverride` 제거 + `providerRates` 배열 + `policyBaseIrr` 설정

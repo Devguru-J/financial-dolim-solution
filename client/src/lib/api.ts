@@ -20,14 +20,16 @@ async function apiFetch<T>(url: string, options?: RequestInit): Promise<T> {
   return res.json() as Promise<T>
 }
 
-export async function fetchBrands(): Promise<CatalogBrand[]> {
-  const data = await apiFetch<{ brands: CatalogBrand[] }>('/api/catalog/brands')
+export async function fetchBrands(lenderCode?: string): Promise<CatalogBrand[]> {
+  const qs = lenderCode ? `?lenderCode=${encodeURIComponent(lenderCode)}` : ''
+  const data = await apiFetch<{ brands: CatalogBrand[] }>(`/api/catalog/brands${qs}`)
   return data.brands
 }
 
-export async function fetchModels(brand: string): Promise<CatalogModel[]> {
+export async function fetchModels(brand: string, lenderCode?: string): Promise<CatalogModel[]> {
+  const lc = lenderCode ? `&lenderCode=${encodeURIComponent(lenderCode)}` : ''
   const data = await apiFetch<{ models: CatalogModel[] }>(
-    `/api/catalog/models?brand=${encodeURIComponent(brand)}&lenderCode=mg-capital`
+    `/api/catalog/models?brand=${encodeURIComponent(brand)}${lc}`
   )
   return data.models
 }

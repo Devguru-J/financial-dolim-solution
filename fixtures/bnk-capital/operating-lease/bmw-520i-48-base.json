@@ -1,0 +1,40 @@
+{
+  "name": "bnk-bmw-520i-48-base",
+  "workbookVersion": "BNK Capital 2025",
+  "workbookDebug": { "note": "48-month term variant. 45% residual." },
+  "vehicle": {
+    "brand": "BMW",
+    "modelName": "The New 5 Series 가솔린 2.0 520i",
+    "vehicleClass": "승용",
+    "engineDisplacementCc": 1998,
+    "highResidualAllowed": false,
+    "hybridAllowed": false,
+    "rawRow": { "cbGrade": 9, "tyGrade": 3, "crGrade": 6, "modelYear": 2026, "vehicleClass": "승용", "eco": false }
+  },
+  "input": {
+    "lenderCode": "bnk-capital",
+    "productType": "operating_lease",
+    "brand": "BMW",
+    "modelName": "The New 5 Series 가솔린 2.0 520i",
+    "ownershipType": "company",
+    "leaseTermMonths": 48,
+    "upfrontPayment": 0,
+    "depositAmount": 0,
+    "quotedVehiclePrice": 110000000,
+    "discountAmount": 0,
+    "acquisitionTaxRateOverride": 0.07,
+    "annualIrrRateOverride": 0.0521,
+    "selectedResidualRateOverride": 0.45
+  },
+  "expected": {
+    "discountedVehiclePrice": 110000000,
+    "acquisitionTax": 7000000,
+    "stampDuty": 0,
+    "financedPrincipal": 117000000,
+    "residualAmount": 49500000,
+    "displayedAnnualRateDecimal": 0.0521,
+    "effectiveAnnualRateDecimal": 0.0521,
+    "monthlyPayment": 1775900
+  },
+  "tolerance": { "monthlyPayment": 1, "residualAmount": 0, "acquisitionTax": 0 }
+}

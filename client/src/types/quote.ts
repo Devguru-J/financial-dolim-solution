@@ -1,5 +1,5 @@
 export type LeaseTerm = 12 | 24 | 36 | 48 | 60
-export type AnnualMileage = 10000 | 20000 | 30000 | 35000
+export type AnnualMileage = 10000 | 15000 | 20000 | 30000 | 35000 | 40000
 export type AffiliateType = '비제휴사' | 'KCC오토' | 'KCC면제'
 
 export interface QuotePayload {

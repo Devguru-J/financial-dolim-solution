@@ -1,4 +1,4 @@
-import { asc, desc, eq } from "drizzle-orm";
+import { and, asc, desc, eq, inArray } from "drizzle-orm";
 
 import { residualMatrixRows, vehiclePrograms, workbookImports } from "@/db/schema";
 import { summarizeMgResidualCandidates } from "@/domain/lenders/mg-capital/operating-lease-service";
@@ -45,6 +45,44 @@ async function getActiveWorkbookRef(params: {
       connected: true,
       workbookImport: activeWorkbook ?? null,
     };
+  } finally {
+    await dispose();
+  }
+}
+
+/** Get ALL active workbook imports (one per lender that has isActive=true). */
+async function getActiveWorkbookRefs(params: {
+  databaseUrl?: string;
+  lenderCode?: string;
+}): Promise<{
+  connected: boolean;
+  workbookImports: ActiveWorkbookRef[];
+}> {
+  const { databaseUrl, lenderCode } = params;
+
+  if (!databaseUrl) {
+    return { connected: false, workbookImports: [] };
+  }
+
+  const { db, dispose } = createDbClient(databaseUrl);
+
+  try {
+    const conditions = [eq(workbookImports.isActive, true)];
+    if (lenderCode) {
+      conditions.push(eq(workbookImports.lenderCode, lenderCode));
+    }
+    const rows = await db
+      .select({
+        id: workbookImports.id,
+        versionLabel: workbookImports.versionLabel,
+        lenderCode: workbookImports.lenderCode,
+        lenderName: workbookImports.lenderName,
+      })
+      .from(workbookImports)
+      .where(and(...conditions))
+      .orderBy(desc(workbookImports.importedAt));
+
+    return { connected: true, workbookImports: rows };
   } finally {
     await dispose();
   }
@@ -102,7 +140,7 @@ function matrixRowMatchesVehicleResidualSource(
 
 export async function getActiveWorkbookBrands(params: {
   databaseUrl?: string;
-  lenderCode: string;
+  lenderCode?: string;
 }): Promise<{
   connected: boolean;
   workbookImport: ActiveWorkbookRef | null;
@@ -111,16 +149,17 @@ export async function getActiveWorkbookBrands(params: {
     modelCount: number;
   }>;
 }> {
-  const workbookResult = await getActiveWorkbookRef(params);
+  const refsResult = await getActiveWorkbookRefs(params);
 
-  if (!workbookResult.connected || !workbookResult.workbookImport) {
+  if (!refsResult.connected || refsResult.workbookImports.length === 0) {
     return {
-      connected: workbookResult.connected,
+      connected: refsResult.connected,
       workbookImport: null,
       brands: [],
     };
   }
 
+  const importIds = refsResult.workbookImports.map((w) => w.id);
   const { db, dispose } = createDbClient(params.databaseUrl!);
 
   try {
@@ -129,7 +168,7 @@ export async function getActiveWorkbookBrands(params: {
         brand: vehiclePrograms.brand,
       })
       .from(vehiclePrograms)
-      .where(eq(vehiclePrograms.workbookImportId, workbookResult.workbookImport.id))
+      .where(inArray(vehiclePrograms.workbookImportId, importIds))
       .orderBy(asc(vehiclePrograms.brand), asc(vehiclePrograms.modelName));
 
     const countByBrand = new Map<string, number>();
@@ -139,7 +178,7 @@ export async function getActiveWorkbookBrands(params: {
 
     return {
       connected: true,
-      workbookImport: workbookResult.workbookImport,
+      workbookImport: refsResult.workbookImports[0],
       brands: Array.from(countByBrand.entries()).map(([brand, modelCount]) => ({
         brand,
         modelCount,
@@ -152,7 +191,7 @@ export async function getActiveWorkbookBrands(params: {
 
 export async function getActiveWorkbookModels(params: {
   databaseUrl?: string;
-  lenderCode: string;
+  lenderCode?: string;
   brand: string;
 }): Promise<{
   connected: boolean;
@@ -176,16 +215,17 @@ export async function getActiveWorkbookModels(params: {
     maxResidualRates: Partial<Record<12 | 24 | 36 | 48 | 60, number>>;
   }>;
 }> {
-  const workbookResult = await getActiveWorkbookRef(params);
+  const refsResult = await getActiveWorkbookRefs(params);
 
-  if (!workbookResult.connected || !workbookResult.workbookImport) {
+  if (!refsResult.connected || refsResult.workbookImports.length === 0) {
     return {
-      connected: workbookResult.connected,
+      connected: refsResult.connected,
       workbookImport: null,
       models: [],
     };
   }
 
+  const importIds = refsResult.workbookImports.map((w) => w.id);
   const { db, dispose } = createDbClient(params.databaseUrl!);
 
   try {
@@ -197,7 +237,7 @@ export async function getActiveWorkbookModels(params: {
         residualRate: residualMatrixRows.residualRate,
       })
       .from(residualMatrixRows)
-      .where(eq(residualMatrixRows.workbookImportId, workbookResult.workbookImport.id));
+      .where(inArray(residualMatrixRows.workbookImportId, importIds));
 
     const rows = await db
       .select({
@@ -218,103 +258,117 @@ export async function getActiveWorkbookModels(params: {
         rawRow: vehiclePrograms.rawRow,
       })
       .from(vehiclePrograms)
-      .where(eq(vehiclePrograms.workbookImportId, workbookResult.workbookImport.id))
+      .where(inArray(vehiclePrograms.workbookImportId, importIds))
       .orderBy(asc(vehiclePrograms.modelName));
+
+    // Deduplicate by modelName — if same model exists in multiple workbooks,
+    // prefer the one with a non-zero vehiclePrice (MG has prices, BNK doesn't)
+    const seen = new Map<string, (typeof rows)[number]>();
+    for (const row of rows) {
+      if (row.brand !== params.brand) continue;
+      const existing = seen.get(row.modelName);
+      if (!existing || (Number(existing.vehiclePrice) === 0 && Number(row.vehiclePrice) > 0)) {
+        seen.set(row.modelName, row);
+      }
+    }
 
     return {
       connected: true,
-      workbookImport: workbookResult.workbookImport,
-      models: rows
-        .map((row) => ({
-          brand: row.brand,
-          modelName: row.modelName,
-          vehiclePrice: Number(row.vehiclePrice),
-          vehicleClass: row.vehicleClass,
-          engineDisplacementCc: row.engineDisplacementCc,
-          highResidualAllowed: row.highResidualAllowed,
-          hybridAllowed: row.hybridAllowed,
-          residualPromotionCode: row.residualPromotionCode,
-          snkResidualBand: row.snkResidualBand,
-          residuals: {
-            12: row.term12Residual == null ? undefined : Number(row.term12Residual),
-            24: row.term24Residual == null ? undefined : Number(row.term24Residual),
-            36: row.term36Residual == null ? undefined : Number(row.term36Residual),
-            48: row.term48Residual == null ? undefined : Number(row.term48Residual),
-            60: row.term60Residual == null ? undefined : Number(row.term60Residual),
-          },
-          snkResiduals: ((row.rawRow as Record<string, unknown> | null)?.snkResiduals as
-            | Partial<Record<12 | 24 | 36 | 48 | 60, number>>
-            | undefined) ?? {},
-          apsResidualBand:
-            ((row.rawRow as Record<string, unknown> | null)?.apsResidualBand as string | null | undefined) ?? null,
-          apsResiduals: ((row.rawRow as Record<string, unknown> | null)?.apsResiduals as
-            | Partial<Record<12 | 24 | 36 | 48 | 60, number>>
-            | undefined) ?? {},
-          chatbotResiduals: ((row.rawRow as Record<string, unknown> | null)?.chatbotResiduals as
-            | Partial<Record<12 | 24 | 36 | 48 | 60, number>>
-            | undefined) ?? {},
-          apsPromotionRate:
-            ((row.rawRow as Record<string, unknown> | null)?.apsPromotionRate as number | null | undefined) ?? null,
-          snkPromotionRate:
-            ((row.rawRow as Record<string, unknown> | null)?.snkPromotionRate as number | null | undefined) ?? null,
-          maxResidualRates: ([12, 24, 36, 48, 60] as const).reduce<Partial<Record<12 | 24 | 36 | 48 | 60, number>>>(
-            (acc, term) => {
-              const rawRow = (row.rawRow as Record<string, unknown> | null) ?? null;
-              const apsResidualBand = readRawRowText(rawRow, "apsResidualBand");
-              const matchingRows = matrixRows
-                .filter((matrixRow) => matrixRow.leaseTermMonths === term)
-                .filter((matrixRow) =>
-                  matrixRowMatchesVehicleResidualSource(matrixRow.matrixGroup, matrixRow.gradeCode, {
-                    snkResidualBand: row.snkResidualBand,
-                    apsResidualBand,
-                  }),
-                )
-                .map((matrixRow) => ({
-                  matrixGroup: matrixRow.matrixGroup,
-                  residualRate: matrixRow.residualRate,
-                }));
+      workbookImport: refsResult.workbookImports[0],
+      models: Array.from(seen.values())
+        .map((row) => {
+          const rawRow = (row.rawRow as Record<string, unknown> | null) ?? null;
+          const isBnkVehicle = rawRow?.cbGrade != null || rawRow?.tyGrade != null;
 
-              const summary = summarizeMgResidualCandidates({
-                input: {
-                  leaseTermMonths: term,
-                  ownershipType: "company",
-                },
-                vehicle: {
-                  highResidualAllowed: row.highResidualAllowed,
-                  rawRow,
-                },
-                annualMileageKm: 20000,
-                matrixRows: matchingRows,
-              });
-
-              if (summary.maxBoostedRate != null) {
-                acc[term] = summary.maxBoostedRate;
-                return acc;
-              }
-
-              const directRate = Number(
-                row.term12Residual && term === 12
-                  ? row.term12Residual
-                  : row.term24Residual && term === 24
-                    ? row.term24Residual
-                    : row.term36Residual && term === 36
-                      ? row.term36Residual
-                      : row.term48Residual && term === 48
-                        ? row.term48Residual
-                        : row.term60Residual && term === 60
-                          ? row.term60Residual
-                          : NaN,
-              );
-              if (Number.isFinite(directRate)) {
-                acc[term] = directRate + (row.highResidualAllowed ? 0.08 : 0);
-              }
-              return acc;
+          return {
+            modelName: row.modelName,
+            vehiclePrice: Number(row.vehiclePrice),
+            vehicleClass: row.vehicleClass,
+            engineDisplacementCc: row.engineDisplacementCc,
+            highResidualAllowed: row.highResidualAllowed,
+            hybridAllowed: row.hybridAllowed,
+            residualPromotionCode: row.residualPromotionCode,
+            snkResidualBand: row.snkResidualBand,
+            residuals: {
+              12: row.term12Residual == null ? undefined : Number(row.term12Residual),
+              24: row.term24Residual == null ? undefined : Number(row.term24Residual),
+              36: row.term36Residual == null ? undefined : Number(row.term36Residual),
+              48: row.term48Residual == null ? undefined : Number(row.term48Residual),
+              60: row.term60Residual == null ? undefined : Number(row.term60Residual),
             },
-            {},
-          ),
-        }))
-        .filter((row) => row.brand === params.brand)
-        .map(({ brand: _brand, ...row }) => row),
+            snkResiduals: (rawRow?.snkResiduals as
+              | Partial<Record<12 | 24 | 36 | 48 | 60, number>>
+              | undefined) ?? {},
+            apsResidualBand:
+              (rawRow?.apsResidualBand as string | null | undefined) ?? null,
+            apsResiduals: (rawRow?.apsResiduals as
+              | Partial<Record<12 | 24 | 36 | 48 | 60, number>>
+              | undefined) ?? {},
+            chatbotResiduals: (rawRow?.chatbotResiduals as
+              | Partial<Record<12 | 24 | 36 | 48 | 60, number>>
+              | undefined) ?? {},
+            apsPromotionRate:
+              (rawRow?.apsPromotionRate as number | null | undefined) ?? null,
+            snkPromotionRate:
+              (rawRow?.snkPromotionRate as number | null | undefined) ?? null,
+            maxResidualRates: isBnkVehicle
+              ? {} // BNK vehicles: residual is user-entered, no auto max rates
+              : ([12, 24, 36, 48, 60] as const).reduce<Partial<Record<12 | 24 | 36 | 48 | 60, number>>>(
+                  (acc, term) => {
+                    const apsResidualBand = readRawRowText(rawRow, "apsResidualBand");
+                    const matchingRows = matrixRows
+                      .filter((matrixRow) => matrixRow.leaseTermMonths === term)
+                      .filter((matrixRow) =>
+                        matrixRowMatchesVehicleResidualSource(matrixRow.matrixGroup, matrixRow.gradeCode, {
+                          snkResidualBand: row.snkResidualBand,
+                          apsResidualBand,
+                        }),
+                      )
+                      .map((matrixRow) => ({
+                        matrixGroup: matrixRow.matrixGroup,
+                        residualRate: matrixRow.residualRate,
+                      }));
+
+                    const summary = summarizeMgResidualCandidates({
+                      input: {
+                        leaseTermMonths: term,
+                        ownershipType: "company",
+                      },
+                      vehicle: {
+                        highResidualAllowed: row.highResidualAllowed,
+                        rawRow,
+                      },
+                      annualMileageKm: 20000,
+                      matrixRows: matchingRows,
+                    });
+
+                    if (summary.maxBoostedRate != null) {
+                      acc[term] = summary.maxBoostedRate;
+                      return acc;
+                    }
+
+                    const directRate = Number(
+                      row.term12Residual && term === 12
+                        ? row.term12Residual
+                        : row.term24Residual && term === 24
+                          ? row.term24Residual
+                          : row.term36Residual && term === 36
+                            ? row.term36Residual
+                            : row.term48Residual && term === 48
+                              ? row.term48Residual
+                              : row.term60Residual && term === 60
+                                ? row.term60Residual
+                                : NaN,
+                    );
+                    if (Number.isFinite(directRate)) {
+                      acc[term] = directRate + (row.highResidualAllowed ? 0.08 : 0);
+                    }
+                    return acc;
+                  },
+                  {},
+                ),
+          };
+        }),
     };
   } finally {
     await dispose();
