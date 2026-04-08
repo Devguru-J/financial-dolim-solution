@@ -515,8 +515,8 @@ function computeQuote(params: ComputeQuoteParams): CanonicalQuoteResult {
       if (standardRate > bestRate) bestRate = standardRate;
     }
     if (bestRate > 0) {
-      // high = max boosted rate (standard + 0.08 boost), standard = base rate
-      residualRateRaw = input.residualMode === "high" ? bestRate + 0.08 : bestRate;
+      // high = max boosted rate (standard + 0.07 boost — Es1 B243/B264/B306/B327/B349 = 7%)
+      residualRateRaw = input.residualMode === "high" ? bestRate + 0.07 : bestRate;
       residualAmount = roundDown(discountedVehiclePrice * residualRateRaw, -3);
       residualSource = "residual-matrix";
     } else {
