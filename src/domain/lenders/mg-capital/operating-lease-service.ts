@@ -940,7 +940,8 @@ export function calculateMgOperatingLeaseQuoteFromResolvedInput(
 
   if (
     residualCandidateSummary.candidates.length > 0 &&
-    !hasExplicitResidualSelection
+    !hasExplicitResidualSelection &&
+    !input.residualMode
   ) {
     warnings.push(
       "Hidden workbook residual policy is detected. BK27 behaves like a user-selected residual input in the workbook, so pass selectedResidualRateOverride or residualAmountOverride for exact Excel parity.",

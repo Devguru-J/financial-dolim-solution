@@ -205,6 +205,7 @@ docs/
 - ✅ **Trim 드롭다운 MG 전용** — BNK 차량명(vehiclePrice=0) 필터링, MG 기준만 표시
 - ✅ **.xlsm 파일 업로드 허용** — ImportPage accept에 .xlsm 추가
 - ✅ **테스트** — 130개 전체 통과 (MG 46 + BNK 17 + vehicleKey 67)
+  - BNK Phase B high-rv 픽스처 2개 lump-sum 모델 값으로 업데이트
 
 - ✅ **BNK 제휴사 딜러 매핑** — Cond 좌측 딜러별 conditionType 파싱 완료
   - 122개 정책 (49 브랜드 + 73 딜러별)
@@ -212,12 +213,20 @@ docs/
   - UI 제휴사 드롭다운 추가 (GET /api/catalog/bnk-dealers)
   - 기본값: 비제휴 (자동 선택)
 
+- ✅ **BNK 수수료 lump-sum 모델** — Es1 수식 재현 완료
+  - 잔가보증수수료: 금리 가산 → **원금 가산(lump sum)** (Es1 B168 수식)
+  - 표시금리: RATE 역산 (Es1 B167 = `RATE(n, pmt, -principal, residual)*12`)
+  - 부동소수점 gap 수정: `Math.round(gap * 100000) / 100000`
+  - 검증: BMW 320d 64.4M/55%/비제휴 → 796,000원/5.541% (엑셀 동일 ✓)
+  - 검증: BMW 520i 64.4M/53%/동성모터스 → 802,800원/5.273% (엑셀 동일 ✓)
+- ✅ **고잔가/일반잔가 토글** — 잔존가치 텍스트 입력 → 라디오 토글
+  - MG: high=maxBoostedRate(+8%), standard=base matrix rate
+  - BNK: high=bestProvider+7%(Es1 B243), standard=bestProvider base
+  - 고잔가 시 **잔가율 기여 프로바이더**가 수수료 계산에도 사용 (Es1 VLOOKUP B50 방식)
+  - 각 금융사 독립 잔가율 결정, 결과 패널에 금융사별 다른 잔가율 표시
+
 ### 미완료
-- 🟡 **BNK 수수료 적용 방식 수정** — 원본 Es1 수식 분석 완료 (10,155개 수식 추출)
-  - **핵심 차이**: 잔가보증수수료를 금리 가산이 아닌 **원금 차감** (lump sum) 방식
-  - **B185 조정**: 법인 -0.3% / 이용자 +0.3% (적용잔가 > 기준잔가 시)
-  - **표시 금리**: RATE 역산 (PMT 결과에서 실효금리 계산)
-  - 메모리: `project-bnk-es1-formula-analysis.md`에 수식 체인 전체 기록
+- 🟡 **B185 잔가 조정** — 법인 -0.3% / 이용자 +0.3% (적용잔가 > 기준잔가 시). Es1 B185 수식 확인됐으나 적용 조건이 복잡 (B56 vs B52). 검증 데이터 필요
 - 🟡 BNK WS 픽스처 — WS 그레이드 있는 차량 찾아 Phase B auto-select 검증 필요
 - ❌ 금융리스, 할부/오토론 미구현
 
