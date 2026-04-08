@@ -206,8 +206,18 @@ docs/
 - ✅ **.xlsm 파일 업로드 허용** — ImportPage accept에 .xlsm 추가
 - ✅ **테스트** — 130개 전체 통과 (MG 46 + BNK 17 + vehicleKey 67)
 
+- ✅ **BNK 제휴사 딜러 매핑** — Cond 좌측 딜러별 conditionType 파싱 완료
+  - 122개 정책 (49 브랜드 + 73 딜러별)
+  - BNK 엔진 딜러명으로 정책 조회 (bnkDealerName 필드)
+  - UI 제휴사 드롭다운 추가 (GET /api/catalog/bnk-dealers)
+  - 기본값: 비제휴 (자동 선택)
+
 ### 미완료
-- 🟡 **BNK 제휴사 금리 매핑** — Cond 시트에 딜러별 conditionType 존재 (BMW-동성모터스→운용_세영=0.0521, BMW_비제휴→운용_기타브랜드=0.0681). 현재 파서는 브랜드 기본값만 읽음. Es1 VBA의 제휴사→conditionType 매핑을 파서에 구현 + UI 제휴사 선택 드롭다운 필요
+- 🟡 **BNK 수수료 적용 방식 수정** — 원본 Es1 수식 분석 완료 (10,155개 수식 추출)
+  - **핵심 차이**: 잔가보증수수료를 금리 가산이 아닌 **원금 차감** (lump sum) 방식
+  - **B185 조정**: 법인 -0.3% / 이용자 +0.3% (적용잔가 > 기준잔가 시)
+  - **표시 금리**: RATE 역산 (PMT 결과에서 실효금리 계산)
+  - 메모리: `project-bnk-es1-formula-analysis.md`에 수식 체인 전체 기록
 - 🟡 BNK WS 픽스처 — WS 그레이드 있는 차량 찾아 Phase B auto-select 검증 필요
 - ❌ 금융리스, 할부/오토론 미구현
 
