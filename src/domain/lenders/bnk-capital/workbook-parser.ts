@@ -260,6 +260,19 @@ function parseCondBrandPolicies(rows: unknown[][]): WorkbookBrandRatePolicy[] {
     }
   }
 
+  // Step 2b: Build dealer → conditionType map from left-side entries (cols 2-3-7-11)
+  const dealerEntries: Array<{ brand: string; dealerName: string; displayName: string; condType: string }> = [];
+  for (let i = 3; i < Math.min(rows.length, 55); i++) {
+    const row = rows[i];
+    const brand = asText(row[2]);
+    const dealerName = asText(row[3]);
+    const displayName = asText(row[7]) ?? dealerName;
+    const condType = asText(row[11]);
+    if (brand && dealerName && condType && condType.startsWith("운용_")) {
+      dealerEntries.push({ brand, dealerName, displayName: displayName ?? dealerName, condType });
+    }
+  }
+
   // Step 3: Also check for EV condition
   // Es1 sheet mentions EV IRR = 0.049; handle this via the eco flag in the engine
 
@@ -281,6 +294,29 @@ function parseCondBrandPolicies(rows: unknown[][]): WorkbookBrandRatePolicy[] {
         productType: "operating_lease",
         ownershipType: "customer",
         baseIrrRate: irr.customer,
+      });
+    }
+  }
+
+  // Step 5: Emit dealer-specific policies
+  for (const dealer of dealerEntries) {
+    const irr = condTypeIrr.get(dealer.condType);
+    if (!irr) continue;
+
+    results.push({
+      brand: dealer.brand,
+      productType: "operating_lease",
+      ownershipType: "company",
+      baseIrrRate: irr.company,
+      dealerName: dealer.displayName,
+    });
+    if (irr.customer !== irr.company) {
+      results.push({
+        brand: dealer.brand,
+        productType: "operating_lease",
+        ownershipType: "customer",
+        baseIrrRate: irr.customer,
+        dealerName: dealer.displayName,
       });
     }
   }

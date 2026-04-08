@@ -137,7 +137,7 @@ export async function persistWorkbookImport(params: {
             productType: policy.productType,
             ownershipType: policy.ownershipType,
             baseIrrRate: policy.baseIrrRate.toFixed(4),
-            rawPolicy: {},
+            rawPolicy: policy.dealerName ? { dealerName: policy.dealerName } : {},
           })),
         );
       }

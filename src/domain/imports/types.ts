@@ -33,6 +33,7 @@ export type WorkbookBrandRatePolicy = {
   productType: QuoteProductType;
   ownershipType: "company" | "customer";
   baseIrrRate: number;
+  dealerName?: string; // BNK dealer-specific policy
 };
 
 export type WorkbookSheetFieldSnapshot = {
