@@ -478,6 +478,8 @@ function computeQuote(params: ComputeQuoteParams): CanonicalQuoteResult {
   let residualRateRaw: number;
   let residualAmount: number;
   let residualSource: CanonicalQuoteResult["residual"]["source"];
+  let resolvedMatrixGroup: string | null = null;
+  let selectedProviderResult: BnkProviderResult | null = null;
 
   if (input.residualAmountOverride != null && input.residualAmountOverride >= 0) {
     residualAmount = roundDown(input.residualAmountOverride, -3);
@@ -500,10 +502,12 @@ function computeQuote(params: ComputeQuoteParams): CanonicalQuoteResult {
     residualRateRaw = discountedVehiclePrice > 0 ? residualAmount / discountedVehiclePrice : 0;
     residualSource = "override";
   } else if (input.residualMode) {
-    // Auto-determine residual from provider data based on mode (high/standard)
+    // Auto-determine residual from provider data based on mode (high/standard).
+    // Track which provider gives the best rate — Es1 uses this provider for fee calculation.
     const rawRow = vehicle.rawRow;
     const mileageAdj = getMileageAdjustment(input.annualMileageKm);
     let bestRate = 0;
+    let bestProviderKey: string | null = null;
     for (const provider of BNK_PROVIDERS) {
       const mg = resolveBnkMatrixGroup(rawRow?.[provider.key]);
       if (!mg) continue;
@@ -512,13 +516,32 @@ function computeQuote(params: ComputeQuoteParams): CanonicalQuoteResult {
       const baseRate = Number(rateRow.residualRate);
       if (!Number.isFinite(baseRate) || baseRate <= 0) continue;
       const standardRate = baseRate + mileageAdj;
-      if (standardRate > bestRate) bestRate = standardRate;
+      if (standardRate > bestRate) {
+        bestRate = standardRate;
+        bestProviderKey = provider.key;
+      }
     }
     if (bestRate > 0) {
       // high = max boosted rate (standard + 0.07 boost — Es1 B243/B264/B306/B327/B349 = 7%)
       residualRateRaw = input.residualMode === "high" ? bestRate + 0.07 : bestRate;
       residualAmount = roundDown(discountedVehiclePrice * residualRateRaw, -3);
       residualSource = "residual-matrix";
+      // Pre-select the provider that contributed the best rate for fee calculation.
+      // Es1 selects based on rate range (VLOOKUP B50 in G101:H107), not lowest fee.
+      if (bestProviderKey) {
+        const mg = resolveBnkMatrixGroup(rawRow?.[bestProviderKey]);
+        if (mg) {
+          const rateRow = providerRates.find((r) => r.matrixGroup === mg);
+          if (rateRow) {
+            const stdRate = Number(rateRow.residualRate) + mileageAdj;
+            const gap = Math.round((residualRateRaw - stdRate) * 100000) / 100000;
+            const maxFee = BNK_PROVIDERS.find((p) => p.key === bestProviderKey)?.maxFee ?? 0;
+            const fee = lookupGuaranteeFeeFromGap(gap, maxFee);
+            selectedProviderResult = { matrixGroup: mg, standardRate: stdRate, gapFromStandard: gap, guaranteeFee: fee };
+            resolvedMatrixGroup = mg;
+          }
+        }
+      }
     } else {
       throw new Error("BNK Capital: 잔가사 데이터가 없어 잔존가치를 자동 결정할 수 없습니다.");
     }
@@ -536,8 +559,6 @@ function computeQuote(params: ComputeQuoteParams): CanonicalQuoteResult {
   // -----------------------------------------------------------------------
   let annualIrrRate: number;
   let guaranteeFeeRate = 0;
-  let resolvedMatrixGroup: string | null = null;
-  let selectedProviderResult: BnkProviderResult | null = null;
   let rateSource: CanonicalQuoteResult["rates"]["source"] = "brand-policy";
 
   if (input.annualIrrRateOverride != null && input.annualIrrRateOverride > 0) {
