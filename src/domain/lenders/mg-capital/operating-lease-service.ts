@@ -7,6 +7,7 @@ import {
   workbookImports,
 } from "@/db/schema";
 import type { CanonicalQuoteInput, CanonicalQuoteResult } from "@/domain/quotes/types";
+import { resolveModelNameByVehicleKey } from "@/domain/vehicles/vehicle-key";
 import { createDbClient } from "@/lib/db/client";
 
 type ActiveWorkbookContext = {
@@ -823,7 +824,8 @@ export function calculateMgOperatingLeaseQuoteFromResolvedInput(
     quotedVehiclePrice: baseVehiclePrice,
     publicBondPurchaseAmount,
   });
-  const discountedVehiclePrice = Math.max(vehiclePrice - discountAmount, 0);
+  const evSubsidyAmount = Math.max(0, input.evSubsidyAmount ?? 0);
+  const discountedVehiclePrice = Math.max(vehiclePrice - discountAmount - evSubsidyAmount, 0);
   const vehicleClass = input.manualVehicleClass ?? vehicle.vehicleClass;
   const engineDisplacementCc = input.manualEngineDisplacementCc ?? vehicle.engineDisplacementCc;
   const acquisitionTaxRate = resolveAcquisitionTaxRate({
@@ -1051,7 +1053,7 @@ export async function calculateMgOperatingLeaseQuote(params: {
   const { db, dispose } = createDbClient(databaseUrl);
 
   try {
-    const [vehicle] = await db
+    let [vehicle] = await db
       .select({
         brand: vehiclePrograms.brand,
         modelName: vehiclePrograms.modelName,
@@ -1078,6 +1080,40 @@ export async function calculateMgOperatingLeaseQuote(params: {
         ),
       )
       .limit(1);
+
+    // vehicleKey fallback: if exact modelName match failed, try cross-lender matching
+    if (!vehicle) {
+      const allBrandVehicles = await db
+        .select({
+          brand: vehiclePrograms.brand,
+          modelName: vehiclePrograms.modelName,
+          vehiclePrice: vehiclePrograms.vehiclePrice,
+          vehicleClass: vehiclePrograms.vehicleClass,
+          engineDisplacementCc: vehiclePrograms.engineDisplacementCc,
+          term12Residual: vehiclePrograms.term12Residual,
+          term24Residual: vehiclePrograms.term24Residual,
+          term36Residual: vehiclePrograms.term36Residual,
+          term48Residual: vehiclePrograms.term48Residual,
+          term60Residual: vehiclePrograms.term60Residual,
+          highResidualAllowed: vehiclePrograms.highResidualAllowed,
+          hybridAllowed: vehiclePrograms.hybridAllowed,
+          residualPromotionCode: vehiclePrograms.residualPromotionCode,
+          snkResidualBand: vehiclePrograms.snkResidualBand,
+          rawRow: vehiclePrograms.rawRow,
+        })
+        .from(vehiclePrograms)
+        .where(
+          and(
+            eq(vehiclePrograms.workbookImportId, workbookImport.id),
+            eq(vehiclePrograms.brand, input.brand),
+          ),
+        );
+
+      const resolvedName = resolveModelNameByVehicleKey(input.brand, input.modelName, allBrandVehicles);
+      if (resolvedName) {
+        vehicle = allBrandVehicles.find((v) => v.modelName === resolvedName) ?? undefined;
+      }
+    }
 
     if (!vehicle) {
       throw new Error(`Vehicle not found for '${input.brand} ${input.modelName}'.`);
