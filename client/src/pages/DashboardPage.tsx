@@ -344,69 +344,8 @@ function HistoryPanel({
   totalImports: number
 }) {
   return (
-    <div className="rounded-2xl border border-border bg-white shadow-[0_20px_60px_-15px_rgba(29,51,184,0.08)] overflow-hidden flex flex-col">
-      {/* Header */}
-      <div className="px-4 py-3.5 border-b border-border flex items-center gap-2.5">
-        <Clock size={13} className="text-primary shrink-0" strokeWidth={2} />
-        <span className="text-sm font-semibold text-foreground tracking-tight">임포트 기록</span>
-        {!loading && totalImports > 0 && (
-          <span className="ml-auto text-[11px] font-mono text-muted-foreground">{totalImports}</span>
-        )}
-      </div>
-
-      <div className="flex-1 divide-y divide-border overflow-y-auto">
-        {loading ? (
-          Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="px-4 py-3.5 flex gap-3">
-              <div className="mt-1 skeleton w-2 h-2 rounded-full shrink-0" />
-              <div className="flex-1 flex flex-col gap-1.5">
-                <div className="skeleton h-3.5 w-4/5 rounded" />
-                <div className="skeleton h-2.5 w-full rounded" />
-                <div className="skeleton h-2.5 w-1/2 rounded" />
-              </div>
-            </div>
-          ))
-        ) : recentImports.length === 0 ? (
-          <div className="flex flex-col items-center justify-center gap-3 px-4 py-10 text-center">
-            <Clock size={22} className="text-muted-foreground/30" strokeWidth={1.5} />
-            <span className="text-xs text-muted-foreground">
-              {connected === false ? 'DB 미연결' : '기록 없음'}
-            </span>
-          </div>
-        ) : (
-          recentImports.map((item, i) => (
-            <div
-              key={item.id}
-              className="px-4 py-3.5 flex gap-3 animate-fade-up"
-              style={{ animationDelay: `${i * 35}ms` }}
-            >
-              <div
-                className={`mt-[5px] w-2 h-2 rounded-full shrink-0 transition-colors ${
-                  item.isActive ? 'bg-emerald-500' : 'bg-border'
-                }`}
-              />
-              <div className="flex-1 min-w-0">
-                <div className="text-xs font-semibold text-foreground tracking-tight truncate leading-snug">
-                  {item.versionLabel}
-                </div>
-                <div className="text-[10px] text-muted-foreground mt-0.5 truncate">{item.sourceFileName}</div>
-                <div className="text-[10px] text-muted-foreground mt-0.5">
-                  {new Date(item.importedAt).toLocaleDateString('ko-KR', {
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric',
-                  })}
-                </div>
-              </div>
-              {item.isActive && (
-                <span className="shrink-0 self-start mt-0.5 text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20 tracking-wider">
-                  ON
-                </span>
-              )}
-            </div>
-          ))
-        )}
-      </div>
+    <div className="rounded-2xl border border-border bg-white shadow-[0_20px_60px_-15px_rgba(29,51,184,0.08)] overflow-hidden self-start">
+      <img src="/reference-poster.png" alt="" className="w-full block" />
     </div>
   )
 }
