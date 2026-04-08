@@ -7,6 +7,7 @@ import {
   workbookImports,
 } from "@/db/schema";
 import type { CanonicalQuoteInput, CanonicalQuoteResult } from "@/domain/quotes/types";
+import { resolveModelNameByVehicleKey } from "@/domain/vehicles/vehicle-key";
 import { createDbClient } from "@/lib/db/client";
 
 // ---------------------------------------------------------------------------
@@ -138,6 +139,7 @@ function getMileageAdjustment(annualMileageKm: number | undefined): number {
 // table.  matrixGroup in DB = "BNK_{gradeValue}".
 // maxFee = provider-specific ceiling for gap > 6% (Es1 J168:J174).
 const BNK_PROVIDERS = [
+  { key: "wsGrade", maxFee: 0.0132 },
   { key: "cbGrade", maxFee: 0.0135 },
   { key: "tyGrade", maxFee: 0.0132 },
   { key: "jyGrade", maxFee: 0.0145 },
@@ -221,7 +223,7 @@ export async function calculateBnkOperatingLeaseQuote(params: {
     }
 
     // 2. Resolve vehicle
-    const vehicleRow = await db
+    let vehicleRow = await db
       .select({
         brand: vehiclePrograms.brand,
         modelName: vehiclePrograms.modelName,
@@ -241,6 +243,33 @@ export async function calculateBnkOperatingLeaseQuote(params: {
       )
       .limit(1)
       .then((rows: ResolvedVehicle[]) => rows[0] ?? null);
+
+    // vehicleKey fallback: if exact modelName match failed, try cross-lender matching
+    if (!vehicleRow) {
+      const allBrandVehicles = await db
+        .select({
+          brand: vehiclePrograms.brand,
+          modelName: vehiclePrograms.modelName,
+          vehicleClass: vehiclePrograms.vehicleClass,
+          engineDisplacementCc: vehiclePrograms.engineDisplacementCc,
+          highResidualAllowed: vehiclePrograms.highResidualAllowed,
+          hybridAllowed: vehiclePrograms.hybridAllowed,
+          rawRow: vehiclePrograms.rawRow,
+        })
+        .from(vehiclePrograms)
+        .where(
+          and(
+            eq(vehiclePrograms.workbookImportId, activeImport.id),
+            eq(vehiclePrograms.brand, input.brand),
+          ),
+        )
+        .then((rows: ResolvedVehicle[]) => rows);
+
+      const resolvedName = resolveModelNameByVehicleKey(input.brand, input.modelName, allBrandVehicles);
+      if (resolvedName) {
+        vehicleRow = allBrandVehicles.find((v) => v.modelName === resolvedName) ?? null;
+      }
+    }
 
     if (!vehicleRow) {
       throw new Error(`Vehicle not found in BNK catalog: ${input.brand} / ${input.modelName}`);
@@ -352,16 +381,32 @@ function computeQuote(params: ComputeQuoteParams): CanonicalQuoteResult {
 
   const quotedVehiclePrice = input.quotedVehiclePrice ?? 0;
   const discountAmount = Math.max(0, input.discountAmount ?? 0);
-  const discountedVehiclePrice = quotedVehiclePrice - discountAmount;
+  const evSubsidyAmount = Math.max(0, input.evSubsidyAmount ?? 0);
+  const discountedVehiclePrice = Math.max(0, quotedVehiclePrice - discountAmount - evSubsidyAmount);
 
   // Acquisition tax: roundDown(discountedVehiclePrice / 1.1 × rate, -1) — 10원 단위 절사
-  const taxRateOverride = input.acquisitionTaxRateOverride;
+  // Supports 4 modes (matches MG Capital): automatic / ratio / reduction / amount
   const taxRate =
-    taxRateOverride != null && taxRateOverride >= 0
-      ? taxRateOverride
+    input.acquisitionTaxRateOverride != null && input.acquisitionTaxRateOverride >= 0
+      ? input.acquisitionTaxRateOverride
       : defaultAcquisitionTaxRate(vehicle.engineDisplacementCc);
-  const acquisitionTax =
+  const automaticAcquisitionTax =
     taxRate > 0 ? roundDown((discountedVehiclePrice / 1.1) * taxRate, -1) : 0;
+
+  const taxMode = input.acquisitionTaxMode ?? "automatic";
+  let acquisitionTax: number;
+  if (taxMode === "ratio") {
+    acquisitionTax = roundDown(
+      (discountedVehiclePrice / 1.1) * Math.max(0, input.acquisitionTaxRatioInput ?? 0),
+      -1,
+    );
+  } else if (taxMode === "reduction") {
+    acquisitionTax = Math.max(0, automaticAcquisitionTax - Math.max(0, input.acquisitionTaxReduction ?? 0));
+  } else if (taxMode === "amount") {
+    acquisitionTax = Math.max(0, input.acquisitionTaxAmountOverride ?? 0);
+  } else {
+    acquisitionTax = automaticAcquisitionTax;
+  }
 
   const stampDuty = Math.max(0, input.stampDuty ?? 0);
   const deliveryFee =
