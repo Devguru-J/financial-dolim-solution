@@ -13,6 +13,7 @@ export type CanonicalQuoteInput = {
   modelName: string;
   affiliateType?: QuoteAffiliateType;
   bnkDealerName?: string;
+  residualMode?: "high" | "standard";
   directModelEntry?: boolean;
   manualVehicleClass?: string;
   manualEngineDisplacementCc?: number;

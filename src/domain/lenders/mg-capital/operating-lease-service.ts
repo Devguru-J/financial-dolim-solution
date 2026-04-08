@@ -1168,7 +1168,7 @@ export async function calculateMgOperatingLeaseQuote(params: {
               residualRate: row.residualRate,
             }));
 
-    const { residualRateRaw, residualSource, resolvedMatrixGroup } = resolveMgOperatingLeaseResidualRate({
+    let { residualRateRaw, residualSource, resolvedMatrixGroup } = resolveMgOperatingLeaseResidualRate({
       input,
       vehicle,
       matrixRows,
@@ -1183,6 +1183,15 @@ export async function calculateMgOperatingLeaseQuote(params: {
             }),
           )
         : null;
+
+    // residualMode: override residual rate based on mode (high/standard)
+    if (input.residualMode && input.selectedResidualRateOverride == null && input.residualAmountOverride == null) {
+      if (input.residualMode === "high" && maximumResidualRateRaw != null) {
+        residualRateRaw = maximumResidualRateRaw;
+        residualSource = "residual-matrix";
+      }
+      // "standard" uses the already-resolved residualRateRaw (base matrix rate)
+    }
 
     const resolvedAnnualRate = resolveWorkbookDisplayedAnnualRate({
       input,

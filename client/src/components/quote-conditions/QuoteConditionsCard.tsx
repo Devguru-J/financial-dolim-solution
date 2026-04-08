@@ -18,7 +18,7 @@ interface QuoteConditionsCardProps {
   depositValue: string
   upfrontMode: 'amount' | 'percent'
   upfrontValue: string
-  residualRate: string
+  residualMode: 'high' | 'standard'
   cmFeeRate: string
   agFeeRate: string
   affiliateExempt: boolean
@@ -36,7 +36,7 @@ interface QuoteConditionsCardProps {
   onDepositValueChange: (v: string) => void
   onUpfrontModeChange: (v: 'amount' | 'percent') => void
   onUpfrontValueChange: (v: string) => void
-  onResidualRateChange: (v: string) => void
+  onResidualModeChange: (v: 'high' | 'standard') => void
   onCmFeeRateChange: (v: string) => void
   onAgFeeRateChange: (v: string) => void
   onAffiliateExemptChange: (v: boolean) => void
@@ -57,7 +57,7 @@ export function QuoteConditionsCard(props: QuoteConditionsCardProps) {
     depositValue,
     upfrontMode,
     upfrontValue,
-    residualRate,
+    residualMode,
     cmFeeRate,
     agFeeRate,
     affiliateExempt,
@@ -73,7 +73,7 @@ export function QuoteConditionsCard(props: QuoteConditionsCardProps) {
     onDepositValueChange,
     onUpfrontModeChange,
     onUpfrontValueChange,
-    onResidualRateChange,
+    onResidualModeChange,
     onCmFeeRateChange,
     onAgFeeRateChange,
     onAffiliateExemptChange,
@@ -195,14 +195,30 @@ export function QuoteConditionsCard(props: QuoteConditionsCardProps) {
               onValueChange={onDepositValueChange}
             />
           </FieldCell>
-          <FieldLabel>잔존가치 *</FieldLabel>
+          <FieldLabel>잔존가치</FieldLabel>
           <FieldCell>
-            <input
-              className="w-full h-8 px-2 text-xs bg-muted border border-border rounded font-mono tabular-nums"
-              value={residualRate}
-              onChange={(e) => onResidualRateChange(e.target.value)}
-              placeholder="예: 40%"
-            />
+            <div className="flex items-center gap-3 h-8">
+              <label className="flex items-center gap-1.5 text-xs cursor-pointer">
+                <input
+                  type="radio"
+                  name="residualMode"
+                  checked={residualMode === 'high'}
+                  onChange={() => onResidualModeChange('high')}
+                  className="accent-blue-600"
+                />
+                고잔가
+              </label>
+              <label className="flex items-center gap-1.5 text-xs cursor-pointer">
+                <input
+                  type="radio"
+                  name="residualMode"
+                  checked={residualMode === 'standard'}
+                  onChange={() => onResidualModeChange('standard')}
+                  className="accent-blue-600"
+                />
+                일반잔가
+              </label>
+            </div>
           </FieldCell>
 
           {/* Row 4: 선납금 / CM수수료 */}

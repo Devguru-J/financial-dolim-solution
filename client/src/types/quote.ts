@@ -26,6 +26,7 @@ export interface QuotePayload {
   annualIrrRateOverride?: number
   annualEffectiveRateOverride?: number
   paymentRateOverride?: number
+  residualMode?: 'high' | 'standard'
   selectedResidualRateOverride?: number
   residualAmountOverride?: number
   acquisitionTaxMode?: AcquisitionTaxMode

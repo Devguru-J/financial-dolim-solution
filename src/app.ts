@@ -43,6 +43,7 @@ const calculateQuoteSchema = z.object({
   annualIrrRateOverride: z.number().positive().optional(),
   annualEffectiveRateOverride: z.number().positive().optional(),
   paymentRateOverride: z.number().positive().optional(),
+  residualMode: z.enum(["high", "standard"]).optional(),
   residualRateOverride: z.number().positive().optional(),
   selectedResidualRateOverride: z.number().positive().optional(),
   residualMatrixGroup: z.string().min(1).optional(),

@@ -36,7 +36,7 @@ export function QuotePage() {
   const [depositValue, setDepositValue] = useState('0')
   const [upfrontMode, setUpfrontMode] = useState<'amount' | 'percent'>('amount')
   const [upfrontValue, setUpfrontValue] = useState('0')
-  const [residualRate, setResidualRate] = useState('')
+  const [residualMode, setResidualMode] = useState<'high' | 'standard'>('high')
   const [cmFeeRate, setCmFeeRate] = useState('0%')
   const [agFeeRate, setAgFeeRate] = useState('0%')
   const [affiliateExempt, setAffiliateExempt] = useState(true)
@@ -54,14 +54,10 @@ export function QuotePage() {
     void catalog.loadBrands()
   }, [])
 
-  // Auto-fill vehicle price and residual when trim changes
+  // Auto-fill vehicle price when trim changes
   useEffect(() => {
     if (!catalog.selectedModel) return
     setVehiclePrice(String(catalog.selectedModel.vehiclePrice))
-    const previews = getResidualPreviews(catalog.selectedModel, leaseTermMonths)
-    if (previews.max != null) {
-      setResidualRate(`${(previews.max * 100).toFixed(2)}%`)
-    }
   }, [catalog.selectedModel?.modelName])
 
   // Fetch BNK dealers when brand changes — default to 비제휴
@@ -79,13 +75,7 @@ export function QuotePage() {
   }, [catalog.selectedBrand])
 
   // Update residual when term changes
-  useEffect(() => {
-    if (!catalog.selectedModel) return
-    const previews = getResidualPreviews(catalog.selectedModel, leaseTermMonths)
-    if (previews.max != null) {
-      setResidualRate(`${(previews.max * 100).toFixed(2)}%`)
-    }
-  }, [leaseTermMonths])
+  // residualMode (high/standard) is sent to each engine — engines resolve their own rates
 
   // --- Derived values ---
   const rawVehiclePrice = Number(vehiclePrice.replace(/,/g, '')) || 0
@@ -147,7 +137,7 @@ export function QuotePage() {
       includeDeliveryFeeAmount: deliveryFeeIncluded,
       deliveryFeeAmount: deliveryFeeIncluded ? Number(deliveryFee) || 0 : undefined,
       bnkDealerName: bnkDealerName || undefined,
-      selectedResidualRateOverride: parsePercentInput(residualRate),
+      residualMode,
       cmFeeRate: parsePercentInput(cmFeeRate),
       agFeeRate: parsePercentInput(agFeeRate),
       insuranceYearlyAmount: 0,
@@ -217,7 +207,7 @@ export function QuotePage() {
           depositValue={depositValue}
           upfrontMode={upfrontMode}
           upfrontValue={upfrontValue}
-          residualRate={residualRate}
+          residualMode={residualMode}
           cmFeeRate={cmFeeRate}
           agFeeRate={agFeeRate}
           affiliateExempt={affiliateExempt}
@@ -233,7 +223,7 @@ export function QuotePage() {
           onDepositValueChange={setDepositValue}
           onUpfrontModeChange={setUpfrontMode}
           onUpfrontValueChange={setUpfrontValue}
-          onResidualRateChange={setResidualRate}
+          onResidualModeChange={setResidualMode}
           onCmFeeRateChange={setCmFeeRate}
           onAgFeeRateChange={setAgFeeRate}
           onAffiliateExemptChange={setAffiliateExempt}

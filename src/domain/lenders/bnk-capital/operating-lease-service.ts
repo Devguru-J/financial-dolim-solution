@@ -499,6 +499,29 @@ function computeQuote(params: ComputeQuoteParams): CanonicalQuoteResult {
     residualAmount = roundDown(Math.max(0, input.residualAmountOverride), -3);
     residualRateRaw = discountedVehiclePrice > 0 ? residualAmount / discountedVehiclePrice : 0;
     residualSource = "override";
+  } else if (input.residualMode) {
+    // Auto-determine residual from provider data based on mode (high/standard)
+    const rawRow = vehicle.rawRow;
+    const mileageAdj = getMileageAdjustment(input.annualMileageKm);
+    let bestRate = 0;
+    for (const provider of BNK_PROVIDERS) {
+      const mg = resolveBnkMatrixGroup(rawRow?.[provider.key]);
+      if (!mg) continue;
+      const rateRow = providerRates.find((r) => r.matrixGroup === mg);
+      if (!rateRow) continue;
+      const baseRate = Number(rateRow.residualRate);
+      if (!Number.isFinite(baseRate) || baseRate <= 0) continue;
+      const standardRate = baseRate + mileageAdj;
+      if (standardRate > bestRate) bestRate = standardRate;
+    }
+    if (bestRate > 0) {
+      // high = max boosted rate (standard + 0.08 boost), standard = base rate
+      residualRateRaw = input.residualMode === "high" ? bestRate + 0.08 : bestRate;
+      residualAmount = roundDown(discountedVehiclePrice * residualRateRaw, -3);
+      residualSource = "residual-matrix";
+    } else {
+      throw new Error("BNK Capital: 잔가사 데이터가 없어 잔존가치를 자동 결정할 수 없습니다.");
+    }
   } else {
     throw new Error(
       "BNK Capital: 잔존가치를 입력해 주세요. residualValueRatio, selectedResidualRateOverride, 또는 residualAmountOverride 중 하나를 설정하세요.",
