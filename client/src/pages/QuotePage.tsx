@@ -4,6 +4,7 @@ import { AcquisitionCostCard } from '@/components/acquisition/AcquisitionCostCar
 import { QuoteConditionsCard } from '@/components/quote-conditions/QuoteConditionsCard'
 import { QuoteResultCard } from '@/components/results/QuoteResultCard'
 import { useCatalog, getResidualPreviews } from '@/hooks/useCatalog'
+import { fetchBnkDealers, type BnkDealer } from '@/lib/api'
 import { useMultiQuote } from '@/hooks/useMultiQuote'
 import { parsePercentInput } from '@/lib/residual'
 import type { LeaseTerm, AnnualMileage, QuotePayload, AcquisitionTaxMode } from '@/types/quote'
@@ -41,6 +42,8 @@ export function QuotePage() {
   const [affiliateExempt, setAffiliateExempt] = useState(true)
   const [evSubsidy, setEvSubsidy] = useState(false)
   const [evSubsidyAmount, setEvSubsidyAmount] = useState('0')
+  const [bnkDealers, setBnkDealers] = useState<BnkDealer[]>([])
+  const [bnkDealerName, setBnkDealerName] = useState('')
   const [showAdvanced, setShowAdvanced] = useState(false)
   const [annualIrrRateOverride, setAnnualIrrRateOverride] = useState('')
   const [annualEffectiveRateOverride, setAnnualEffectiveRateOverride] = useState('')
@@ -60,6 +63,16 @@ export function QuotePage() {
       setResidualRate(`${(previews.max * 100).toFixed(2)}%`)
     }
   }, [catalog.selectedModel?.modelName])
+
+  // Fetch BNK dealers when brand changes
+  useEffect(() => {
+    setBnkDealerName('')
+    if (catalog.selectedBrand) {
+      fetchBnkDealers(catalog.selectedBrand).then(setBnkDealers).catch(() => setBnkDealers([]))
+    } else {
+      setBnkDealers([])
+    }
+  }, [catalog.selectedBrand])
 
   // Update residual when term changes
   useEffect(() => {
@@ -129,6 +142,7 @@ export function QuotePage() {
       miscFeeAmount: miscFeeIncluded ? Number(miscFee) || 0 : undefined,
       includeDeliveryFeeAmount: deliveryFeeIncluded,
       deliveryFeeAmount: deliveryFeeIncluded ? Number(deliveryFee) || 0 : undefined,
+      bnkDealerName: bnkDealerName || undefined,
       selectedResidualRateOverride: parsePercentInput(residualRate),
       cmFeeRate: parsePercentInput(cmFeeRate),
       agFeeRate: parsePercentInput(agFeeRate),
@@ -225,6 +239,9 @@ export function QuotePage() {
           onAnnualIrrRateOverrideChange={setAnnualIrrRateOverride}
           onAnnualEffectiveRateOverrideChange={setAnnualEffectiveRateOverride}
           onPaymentRateOverrideChange={setPaymentRateOverride}
+          bnkDealers={bnkDealers}
+          bnkDealerName={bnkDealerName}
+          onBnkDealerNameChange={setBnkDealerName}
         />
 
         {/* Action row */}

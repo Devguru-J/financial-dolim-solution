@@ -9,6 +9,8 @@ import {
 } from '@/components/ui/select'
 import type { LeaseTerm, AnnualMileage } from '@/types/quote'
 
+export type BnkDealerOption = { dealerName: string; baseIrrRate: number }
+
 interface QuoteConditionsCardProps {
   leaseTermMonths: LeaseTerm
   annualMileageKm: AnnualMileage
@@ -26,6 +28,8 @@ interface QuoteConditionsCardProps {
   annualIrrRateOverride: string
   annualEffectiveRateOverride: string
   paymentRateOverride: string
+  bnkDealers: BnkDealerOption[]
+  bnkDealerName: string
   onTermChange: (v: LeaseTerm) => void
   onMileageChange: (v: AnnualMileage) => void
   onDepositModeChange: (v: 'amount' | 'percent') => void
@@ -42,6 +46,7 @@ interface QuoteConditionsCardProps {
   onAnnualIrrRateOverrideChange: (v: string) => void
   onAnnualEffectiveRateOverrideChange: (v: string) => void
   onPaymentRateOverrideChange: (v: string) => void
+  onBnkDealerNameChange: (v: string) => void
 }
 
 export function QuoteConditionsCard(props: QuoteConditionsCardProps) {
@@ -78,6 +83,9 @@ export function QuoteConditionsCard(props: QuoteConditionsCardProps) {
     onAnnualIrrRateOverrideChange,
     onAnnualEffectiveRateOverrideChange,
     onPaymentRateOverrideChange,
+    bnkDealers,
+    bnkDealerName,
+    onBnkDealerNameChange,
   } = props
 
   const uid = useId()
@@ -93,12 +101,27 @@ export function QuoteConditionsCard(props: QuoteConditionsCardProps) {
           {/* Row 1: 판매사 / 기간 */}
           <FieldLabel>판매사</FieldLabel>
           <FieldCell borderRight>
-            <select
-              className="w-full h-8 px-2 text-xs bg-muted border border-border rounded opacity-50"
-              disabled
-            >
-              <option>비활성</option>
-            </select>
+            {bnkDealers.length > 0 ? (
+              <select
+                value={bnkDealerName}
+                onChange={(e) => onBnkDealerNameChange(e.target.value)}
+                className="w-full h-8 px-2 text-xs bg-muted border border-border rounded"
+              >
+                <option value="">자동 (첫번째 제휴사)</option>
+                {bnkDealers.map((d) => (
+                  <option key={d.dealerName} value={d.dealerName}>
+                    {d.dealerName} ({(d.baseIrrRate * 100).toFixed(2)}%)
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <select
+                className="w-full h-8 px-2 text-xs bg-muted border border-border rounded opacity-50"
+                disabled
+              >
+                <option>비활성</option>
+              </select>
+            )}
           </FieldCell>
           <FieldLabel>기간(개월)</FieldLabel>
           <FieldCell>

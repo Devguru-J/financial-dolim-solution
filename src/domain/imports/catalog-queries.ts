@@ -1,6 +1,6 @@
 import { and, asc, desc, eq, inArray } from "drizzle-orm";
 
-import { residualMatrixRows, vehiclePrograms, workbookImports } from "@/db/schema";
+import { brandRatePolicies, residualMatrixRows, vehiclePrograms, workbookImports } from "@/db/schema";
 import { summarizeMgResidualCandidates } from "@/domain/lenders/mg-capital/operating-lease-service";
 import { createDbClient } from "@/lib/db/client";
 
@@ -372,6 +372,48 @@ export async function getActiveWorkbookModels(params: {
           };
         }),
     };
+  } finally {
+    await dispose();
+  }
+}
+
+/** Get BNK dealer list for a brand from active BNK workbook's brandRatePolicies. */
+export async function getBnkDealersForBrand(params: {
+  databaseUrl?: string;
+  brand: string;
+}): Promise<{ dealers: Array<{ dealerName: string; baseIrrRate: number }> }> {
+  if (!params.databaseUrl) return { dealers: [] };
+
+  const refsResult = await getActiveWorkbookRefs({ databaseUrl: params.databaseUrl, lenderCode: "bnk-capital" });
+  if (!refsResult.connected || refsResult.workbookImports.length === 0) return { dealers: [] };
+
+  const importId = refsResult.workbookImports[0].id;
+  const { db, dispose } = createDbClient(params.databaseUrl);
+
+  try {
+    const rows = await db
+      .select({
+        baseIrrRate: brandRatePolicies.baseIrrRate,
+        rawPolicy: brandRatePolicies.rawPolicy,
+      })
+      .from(brandRatePolicies)
+      .where(
+        and(
+          eq(brandRatePolicies.workbookImportId, importId),
+          eq(brandRatePolicies.brand, params.brand),
+          eq(brandRatePolicies.productType, "operating_lease"),
+          eq(brandRatePolicies.ownershipType, "company"),
+        ),
+      );
+
+    const dealers = rows
+      .filter((r) => (r.rawPolicy as Record<string, unknown>)?.dealerName)
+      .map((r) => ({
+        dealerName: String((r.rawPolicy as Record<string, unknown>).dealerName),
+        baseIrrRate: Number(r.baseIrrRate),
+      }));
+
+    return { dealers };
   } finally {
     await dispose();
   }

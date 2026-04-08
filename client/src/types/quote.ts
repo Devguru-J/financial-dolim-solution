@@ -41,6 +41,7 @@ export interface QuotePayload {
   lossDamageAmount?: number
   manualVehicleClass?: string
   manualEngineDisplacementCc?: number
+  bnkDealerName?: string
 }
 
 export interface QuoteResidual {

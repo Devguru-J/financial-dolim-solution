@@ -4,7 +4,7 @@ import { z } from "zod";
 
 import { persistWorkbookImport } from "@/domain/imports/import-service";
 import { getActiveWorkbookSheetContracts, listWorkbookImports } from "@/domain/imports/import-queries";
-import { getActiveWorkbookBrands, getActiveWorkbookModels } from "@/domain/imports/catalog-queries";
+import { getActiveWorkbookBrands, getActiveWorkbookModels, getBnkDealersForBrand } from "@/domain/imports/catalog-queries";
 import { getLenderAdapter } from "@/domain/imports/lender-registry";
 import { calculateMgOperatingLeaseQuote } from "@/domain/lenders/mg-capital/operating-lease-service";
 import { calculateBnkOperatingLeaseQuote } from "@/domain/lenders/bnk-capital/operating-lease-service";
@@ -153,6 +153,16 @@ app.get("/api/catalog/models", zValidator("query", catalogModelsQuerySchema), as
     ok: true,
     ...result,
   });
+});
+
+const catalogDealersQuerySchema = z.object({
+  brand: z.string().min(1),
+});
+
+app.get("/api/catalog/bnk-dealers", zValidator("query", catalogDealersQuerySchema), async (c) => {
+  const { brand } = c.req.valid("query");
+  const result = await getBnkDealersForBrand({ databaseUrl: c.env.DATABASE_URL, brand });
+  return c.json({ ok: true, ...result });
 });
 
 app.post("/api/imports/preview", zValidator("query", previewQuerySchema), async (c) => {

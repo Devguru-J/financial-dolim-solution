@@ -34,6 +34,15 @@ export async function fetchModels(brand: string, lenderCode?: string): Promise<C
   return data.models
 }
 
+export type BnkDealer = { dealerName: string; baseIrrRate: number }
+
+export async function fetchBnkDealers(brand: string): Promise<BnkDealer[]> {
+  const data = await apiFetch<{ dealers: BnkDealer[] }>(
+    `/api/catalog/bnk-dealers?brand=${encodeURIComponent(brand)}`
+  )
+  return data.dealers ?? []
+}
+
 export async function calculateQuote(payload: QuotePayload): Promise<QuoteResult> {
   const data = await apiFetch<{ ok: boolean; quote: QuoteResult }>('/api/quotes/calculate', {
     method: 'POST',
