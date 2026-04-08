@@ -592,11 +592,11 @@ function computeQuote(params: ComputeQuoteParams): CanonicalQuoteResult {
       providerResults.push({ matrixGroup: mg, standardRate, gapFromStandard: gap, guaranteeFee });
     }
 
-    if (providerResults.length > 0) {
+    if (selectedProviderResult) {
+      // Provider already pre-selected by residualMode — keep it
+      resolvedMatrixGroup = selectedProviderResult.matrixGroup;
+    } else if (providerResults.length > 0) {
       // Select provider with lowest guarantee fee.
-      // Equivalent to Excel's "highest base rate" selection (VLOOKUP B50 in G101:H107),
-      // since a higher base → smaller gap → lower fee for the same applied rate.
-      // Tie-break: prefer the provider where applied rate is closest to base (smallest |gap|).
       selectedProviderResult = providerResults.reduce((best, curr) => {
         if (curr.guaranteeFee < best.guaranteeFee) return curr;
         if (curr.guaranteeFee === best.guaranteeFee && Math.abs(curr.gapFromStandard) < Math.abs(best.gapFromStandard)) return curr;
