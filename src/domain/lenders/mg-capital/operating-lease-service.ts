@@ -952,17 +952,8 @@ export function calculateMgOperatingLeaseQuoteFromResolvedInput(
     warnings.push("Annual mileage defaults to 20,000km unless explicitly provided.");
   }
 
-  if (input.publicBondCost == null) {
-    warnings.push("Public bond cost is currently assumed as 0 unless explicitly provided.");
-  }
-
-  if (input.depositAmount == null) {
-    warnings.push("Deposit amount defaults to 0 unless explicitly provided.");
-  }
-
-  if (input.insuranceMonthly != null || input.insuranceYearlyAmount != null || input.lossDamageAmount != null) {
-    warnings.push("Insurance and loss-damage values are partially modeled; additional workbook-specific cases may still remain.");
-  }
+  // Dev-only warnings suppressed — these are normal defaults, not user-facing issues
+  // Public bond cost defaults to 0, deposit defaults to 0, insurance partially modeled
 
   return {
     lenderCode: input.lenderCode,
