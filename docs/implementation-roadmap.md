@@ -130,6 +130,10 @@ Completed:
 35. BNK RVs parser .xlsm fix: headerRow/dataRowStart offset corrected for blankrows:false — matrixGroups now BNK_9/BNK_S1 instead of BNK_0.61 — 2026-04-08
 36. Trim dropdown MG-only filter: BNK vehicles (vehiclePrice=0) excluded from catalog model list — 2026-04-08
 37. .xlsm upload support: ImportPage accept attribute extended — 2026-04-08
+38. BNK dealer rate mapping: Cond left-side dealer→conditionType parsing (122 policies), dealer dropdown UI, default to 비제휴 — 2026-04-08
+39. BNK guarantee fee lump-sum model: fee as PV addition (not rate), RATE back-calc for displayed rate, floating-point gap fix (ROUND 5 decimals) — 2026-04-08
+40. 고잔가/일반잔가 toggle: residualMode replaces text input, MG +8% / BNK +7% boost, best-rate provider for fee calc — 2026-04-08
+41. MG dev warnings suppressed (public bond, insurance, BK27 residual policy) — 2026-04-08
 
 Remaining:
 

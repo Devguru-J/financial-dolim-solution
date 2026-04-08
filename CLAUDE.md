@@ -219,11 +219,13 @@ docs/
   - 부동소수점 gap 수정: `Math.round(gap * 100000) / 100000`
   - 검증: BMW 320d 64.4M/55%/비제휴 → 796,000원/5.541% (엑셀 동일 ✓)
   - 검증: BMW 520i 64.4M/53%/동성모터스 → 802,800원/5.273% (엑셀 동일 ✓)
+  - 검증: BMW 320d 64.4M/56.5%고잔가/비제휴 → 784,800원/5.603% (엑셀 동일 ✓)
 - ✅ **고잔가/일반잔가 토글** — 잔존가치 텍스트 입력 → 라디오 토글
   - MG: high=maxBoostedRate(+8%), standard=base matrix rate
   - BNK: high=bestProvider+7%(Es1 B243), standard=bestProvider base
   - 고잔가 시 **잔가율 기여 프로바이더**가 수수료 계산에도 사용 (Es1 VLOOKUP B50 방식)
   - 각 금융사 독립 잔가율 결정, 결과 패널에 금융사별 다른 잔가율 표시
+- ✅ **MG 경고 메시지 정리** — 개발용 warnings (public bond, insurance, deposit) 숨김, BK27 경고 residualMode 시 숨김
 
 ### 미완료
 - 🟡 **B185 잔가 조정** — 법인 -0.3% / 이용자 +0.3% (적용잔가 > 기준잔가 시). Es1 B185 수식 확인됐으나 적용 조건이 복잡 (B56 vs B52). 검증 데이터 필요
