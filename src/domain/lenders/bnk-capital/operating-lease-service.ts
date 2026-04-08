@@ -541,7 +541,8 @@ function computeQuote(params: ComputeQuoteParams): CanonicalQuoteResult {
 
       // Gap = applied - standard. Positive = applied exceeds base → guarantor takes
       // more risk → fee increases.  Matches Es1 B54 = applied_rate - base_rate.
-      const gap = residualRateRaw - standardRate;
+      // Round to 5 decimals to match Es1 B54: ROUND(gap, 5) — avoids IEEE 754 drift
+      const gap = Math.round((residualRateRaw - standardRate) * 100000) / 100000;
       const guaranteeFee = lookupGuaranteeFeeFromGap(gap, provider.maxFee);
 
       providerResults.push({ matrixGroup: mg, standardRate, gapFromStandard: gap, guaranteeFee });
@@ -567,30 +568,42 @@ function computeQuote(params: ComputeQuoteParams): CanonicalQuoteResult {
     const agFee = Math.max(0, input.agFeeRate ?? 0);
 
     // TODO: B185 residual rate adjustment (company -0.3%, customer +0.3% when applied > base)
-    // Conditions for B185 are complex (B56 vs B52, not simple applied vs standard).
-    // Needs full Es1 formula tracing with verified fixture data to implement correctly.
+    // Conditions for B185 are complex (B56 vs B52). Needs verified fixture data.
 
-    annualIrrRate = policyBaseIrr + guaranteeFeeRate + cmFee + agFee;
+    // Composed rate = base + CM + AG (WITHOUT guarantee fee — fee is lump sum)
+    annualIrrRate = policyBaseIrr + cmFee + agFee;
     rateSource = "brand-policy";
   }
 
   // -----------------------------------------------------------------------
-  // Monthly payment calculation
-  // monthlyRate = annualRate / 12 (simple division — matches BNK Es1 formula)
-  // PMT: ((PV - FV/factor) * rate) / (1 - 1/factor)
-  //   PV = financedPrincipal - upfront - deposit
+  // Monthly payment calculation (Es1 B168 model)
+  //
+  // Guarantee fee is a LUMP SUM added to financed PV (not added to rate).
+  //   feeAmount = guaranteeFeeRate × discountedVehiclePrice (Es1 B47)
+  //   PV = financedPrincipal + feeAmount - upfront - deposit
   //   FV = residualAmount - deposit
-  // displayedMonthlyPayment = ROUNDUP(rawPayment, -2) — 100원 단위 올림
+  //   rate = composedRate (base + CM + AG, no guarantee fee)
+  //
+  // Displayed rate = RATE back-calc from payment on CLEAN PV (Es1 B167)
+  //   RATE(months, payment, -(principal - upfront - deposit), FV) × 12
+  // This gives an effective rate HIGHER than composedRate because the payment
+  // amortizes the guarantee fee over the loan term.
   // -----------------------------------------------------------------------
+  const guaranteeFeeAmount = Math.round(guaranteeFeeRate * discountedVehiclePrice);
   const monthlyRate = annualIrrRate / 12;
-  const pv = Math.max(0, financedPrincipal - upfrontPayment - depositAmount);
+  const pv = Math.max(0, financedPrincipal + guaranteeFeeAmount - upfrontPayment - depositAmount);
   const fv = Math.max(0, residualAmount - depositAmount);
 
   const rawPayment = computeLeasePaymentRaw({ pv, fv, rate: monthlyRate, n: term });
   const displayedMonthlyPayment = roundUp(rawPayment, -2);
 
-  // Effective rate (back-solve from payment for reporting)
-  const effectiveAnnualRateDecimal = input.annualEffectiveRateOverride ?? annualIrrRate;
+  // Displayed rate: RATE back-calc from clean PV (without fee) — Es1 B167
+  const cleanPv = Math.max(0, financedPrincipal - upfrontPayment - depositAmount);
+  const effectiveAnnualRateDecimal =
+    input.annualEffectiveRateOverride ??
+    (guaranteeFeeAmount > 0
+      ? solveAnnualRate(term, displayedMonthlyPayment, cleanPv, fv)
+      : annualIrrRate);
 
   return {
     lenderCode: "bnk-capital",
@@ -634,7 +647,7 @@ function computeQuote(params: ComputeQuoteParams): CanonicalQuoteResult {
     },
     rates: {
       source: rateSource,
-      annualRateDecimal: annualIrrRate,
+      annualRateDecimal: effectiveAnnualRateDecimal,
       effectiveAnnualRateDecimal,
       monthlyRateDecimal: monthlyRate,
     },

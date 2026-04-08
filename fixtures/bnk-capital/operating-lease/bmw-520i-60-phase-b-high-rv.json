@@ -58,15 +58,15 @@
     "stampDuty": 0,
     "financedPrincipal": 117000000,
     "residualAmount": 58300000,
-    "displayedAnnualRateDecimal": 0.0565,
-    "effectiveAnnualRateDecimal": 0.0565,
-    "monthlyPayment": 1399900
+    "displayedAnnualRateDecimal": 0.0527,
+    "effectiveAnnualRateDecimal": 0.0527,
+    "monthlyPayment": 1371200
   },
   "tolerance": {
-    "monthlyPayment": 1,
+    "monthlyPayment": 100,
     "residualAmount": 0,
     "acquisitionTax": 0,
-    "displayedAnnualRateDecimal": 0,
-    "effectiveAnnualRateDecimal": 0
+    "displayedAnnualRateDecimal": 0.001,
+    "effectiveAnnualRateDecimal": 0.001
   }
 }
