@@ -64,13 +64,17 @@ export function QuotePage() {
     }
   }, [catalog.selectedModel?.modelName])
 
-  // Fetch BNK dealers when brand changes
+  // Fetch BNK dealers when brand changes — default to 비제휴
   useEffect(() => {
-    setBnkDealerName('')
     if (catalog.selectedBrand) {
-      fetchBnkDealers(catalog.selectedBrand).then(setBnkDealers).catch(() => setBnkDealers([]))
+      fetchBnkDealers(catalog.selectedBrand).then((dealers) => {
+        setBnkDealers(dealers)
+        const nonAffiliate = dealers.find((d) => d.dealerName.includes('비제휴'))
+        setBnkDealerName(nonAffiliate?.dealerName ?? '')
+      }).catch(() => { setBnkDealers([]); setBnkDealerName('') })
     } else {
       setBnkDealers([])
+      setBnkDealerName('')
     }
   }, [catalog.selectedBrand])
 

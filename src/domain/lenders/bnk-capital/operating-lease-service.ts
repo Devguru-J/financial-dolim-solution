@@ -313,15 +313,16 @@ export async function calculateBnkOperatingLeaseQuote(params: {
       );
       policyBaseIrr = dealerMatch ? Number(dealerMatch.baseIrrRate) : 0.0681;
     } else {
-      // No dealer — prefer first dealer policy (primary affiliate), else brand default
-      const firstDealer = policies.find(
-        (p) => (p.rawPolicy as Record<string, unknown>)?.dealerName,
-      );
+      // No dealer specified — default to 비제휴 dealer policy, else brand default
+      const nonAffiliate = policies.find((p) => {
+        const dn = (p.rawPolicy as Record<string, unknown>)?.dealerName;
+        return typeof dn === "string" && dn.includes("비제휴");
+      });
       const brandDefault = policies.find(
         (p) => !(p.rawPolicy as Record<string, unknown>)?.dealerName,
       );
-      policyBaseIrr = firstDealer
-        ? Number(firstDealer.baseIrrRate)
+      policyBaseIrr = nonAffiliate
+        ? Number(nonAffiliate.baseIrrRate)
         : brandDefault
           ? Number(brandDefault.baseIrrRate)
           : 0.0681;
