@@ -275,9 +275,9 @@ export async function calculateBnkOperatingLeaseQuote(params: {
       throw new Error(`Vehicle not found in BNK catalog: ${input.brand} / ${input.modelName}`);
     }
 
-    // 3. Base IRR from brand rate policy
-    const policyRow = await db
-      .select({ baseIrrRate: brandRatePolicies.baseIrrRate })
+    // 3. Base IRR from brand rate policy (dealer-aware)
+    const allPolicies = await db
+      .select({ baseIrrRate: brandRatePolicies.baseIrrRate, rawPolicy: brandRatePolicies.rawPolicy })
       .from(brandRatePolicies)
       .where(
         and(
@@ -287,27 +287,45 @@ export async function calculateBnkOperatingLeaseQuote(params: {
           eq(brandRatePolicies.ownershipType, input.ownershipType),
         ),
       )
-      .limit(1)
-      .then((rows: { baseIrrRate: string | null }[]) => rows[0] ?? null);
+      .then((rows) => rows);
 
-    // Fallback to company policy if individual not found
-    const policyFallback =
-      policyRow ??
-      (await db
-        .select({ baseIrrRate: brandRatePolicies.baseIrrRate })
-        .from(brandRatePolicies)
-        .where(
-          and(
-            eq(brandRatePolicies.workbookImportId, activeImport.id),
-            eq(brandRatePolicies.brand, input.brand),
-            eq(brandRatePolicies.productType, "operating_lease"),
-            eq(brandRatePolicies.ownershipType, "company"),
-          ),
-        )
-        .limit(1)
-        .then((rows: { baseIrrRate: string | null }[]) => rows[0] ?? null));
+    // Fallback to company policies if no match for the requested ownershipType
+    const policies = allPolicies.length > 0
+      ? allPolicies
+      : await db
+          .select({ baseIrrRate: brandRatePolicies.baseIrrRate, rawPolicy: brandRatePolicies.rawPolicy })
+          .from(brandRatePolicies)
+          .where(
+            and(
+              eq(brandRatePolicies.workbookImportId, activeImport.id),
+              eq(brandRatePolicies.brand, input.brand),
+              eq(brandRatePolicies.productType, "operating_lease"),
+              eq(brandRatePolicies.ownershipType, "company"),
+            ),
+          )
+          .then((rows) => rows);
 
-    const policyBaseIrr = policyFallback ? Number(policyFallback.baseIrrRate) : 0.0681;
+    let policyBaseIrr: number;
+    if (input.bnkDealerName) {
+      // Dealer specified — find matching dealer policy
+      const dealerMatch = policies.find(
+        (p) => (p.rawPolicy as Record<string, unknown>)?.dealerName === input.bnkDealerName,
+      );
+      policyBaseIrr = dealerMatch ? Number(dealerMatch.baseIrrRate) : 0.0681;
+    } else {
+      // No dealer — prefer first dealer policy (primary affiliate), else brand default
+      const firstDealer = policies.find(
+        (p) => (p.rawPolicy as Record<string, unknown>)?.dealerName,
+      );
+      const brandDefault = policies.find(
+        (p) => !(p.rawPolicy as Record<string, unknown>)?.dealerName,
+      );
+      policyBaseIrr = firstDealer
+        ? Number(firstDealer.baseIrrRate)
+        : brandDefault
+          ? Number(brandDefault.baseIrrRate)
+          : 0.0681;
+    }
 
     // 4. Resolve matrixGroups for provider lookup (Phase B auto-rate path)
     // CDB grades can be numbers (9, 3.5) or strings ("S8", "S10").

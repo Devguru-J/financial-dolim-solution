@@ -66,6 +66,7 @@ const calculateQuoteSchema = z.object({
   cmFeeRate: z.number().min(0).optional(),
   insuranceYearlyAmount: z.number().min(0).optional(),
   lossDamageAmount: z.number().min(0).optional(),
+  bnkDealerName: z.string().min(1).optional(),
 });
 
 export const app = new Hono<{ Bindings: Bindings }>();
