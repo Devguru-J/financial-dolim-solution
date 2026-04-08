@@ -265,9 +265,9 @@ export async function calculateBnkOperatingLeaseQuote(params: {
         )
         .then((rows: ResolvedVehicle[]) => rows);
 
-      const resolvedName = resolveModelNameByVehicleKey(input.brand, input.modelName, allBrandVehicles);
-      if (resolvedName) {
-        vehicleRow = allBrandVehicles.find((v) => v.modelName === resolvedName) ?? null;
+      const resolved = resolveModelNameByVehicleKey(input.brand, input.modelName, allBrandVehicles);
+      if (resolved) {
+        vehicleRow = resolved;
       }
     }
 

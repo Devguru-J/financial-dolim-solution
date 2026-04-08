@@ -1,6 +1,7 @@
 export type LeaseTerm = 12 | 24 | 36 | 48 | 60
 export type AnnualMileage = 10000 | 15000 | 20000 | 30000 | 35000 | 40000
 export type AffiliateType = '비제휴사' | 'KCC오토' | 'KCC면제'
+export type AcquisitionTaxMode = 'automatic' | 'ratio' | 'reduction' | 'amount'
 
 export interface QuotePayload {
   lenderCode: string
@@ -27,7 +28,12 @@ export interface QuotePayload {
   paymentRateOverride?: number
   selectedResidualRateOverride?: number
   residualAmountOverride?: number
+  acquisitionTaxMode?: AcquisitionTaxMode
   acquisitionTaxRateOverride?: number
+  acquisitionTaxRatioInput?: number
+  acquisitionTaxReduction?: number
+  acquisitionTaxAmountOverride?: number
+  evSubsidyAmount?: number
   stampDuty?: number
   agFeeRate?: number
   cmFeeRate?: number

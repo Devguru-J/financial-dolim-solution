@@ -1,0 +1,53 @@
+{
+  "name": "bnk-bmw-520i-90m-60-base",
+  "workbookVersion": "BNK Capital 2025",
+  "workbookDebug": {
+    "selectedResidualRatio": 0.595,
+    "note": "BMW 520i at 90M (vs existing 110M fixtures), 60m, 고잔가 59.50%, 적용률 5.597%. Phase A (IRR override)."
+  },
+  "vehicle": {
+    "brand": "BMW",
+    "modelName": "The New 5 Series 가솔린 2.0 520i",
+    "vehicleClass": "승용",
+    "engineDisplacementCc": 1998,
+    "highResidualAllowed": false,
+    "hybridAllowed": false,
+    "rawRow": {
+      "modelYear": 2026,
+      "vehicleClass": "승용",
+      "eco": false
+    }
+  },
+  "input": {
+    "lenderCode": "bnk-capital",
+    "productType": "operating_lease",
+    "brand": "BMW",
+    "modelName": "The New 5 Series 가솔린 2.0 520i",
+    "ownershipType": "company",
+    "leaseTermMonths": 60,
+    "upfrontPayment": 0,
+    "depositAmount": 0,
+    "quotedVehiclePrice": 90000000,
+    "discountAmount": 0,
+    "acquisitionTaxRateOverride": 0.07,
+    "annualIrrRateOverride": 0.05597,
+    "residualAmountOverride": 53550000
+  },
+  "expected": {
+    "discountedVehiclePrice": 90000000,
+    "acquisitionTax": 5727270,
+    "stampDuty": 0,
+    "financedPrincipal": 95727270,
+    "residualAmount": 53550000,
+    "displayedAnnualRateDecimal": 0.05597,
+    "effectiveAnnualRateDecimal": 0.05597,
+    "monthlyPayment": 1057300
+  },
+  "tolerance": {
+    "monthlyPayment": 100,
+    "residualAmount": 0,
+    "acquisitionTax": 10,
+    "displayedAnnualRateDecimal": 0,
+    "effectiveAnnualRateDecimal": 0
+  }
+}

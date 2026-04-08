@@ -1,10 +1,13 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { formatKrw } from '@/lib/residual'
+import type { AcquisitionTaxMode } from '@/types/quote'
 
 interface AcquisitionCostCardProps {
   acquisitionTaxIncluded: boolean
-  acquisitionTaxRate: number
+  acquisitionTaxMode: AcquisitionTaxMode
   acquisitionTaxAmount: number
+  acquisitionTaxReduction: string
+  acquisitionTaxAmountOverride: string
   deliveryFeeIncluded: boolean
   deliveryFee: string
   miscFeeIncluded: boolean
@@ -13,7 +16,9 @@ interface AcquisitionCostCardProps {
   publicBondCost: string
   totalAcquisitionCost: number
   onAcquisitionTaxIncludedToggle: (checked: boolean) => void
-  onAcquisitionTaxRateChange: (fullRate: boolean) => void
+  onAcquisitionTaxModeChange: (mode: AcquisitionTaxMode) => void
+  onAcquisitionTaxReductionChange: (value: string) => void
+  onAcquisitionTaxAmountOverrideChange: (value: string) => void
   onDeliveryFeeToggle: (checked: boolean) => void
   onDeliveryFeeChange: (value: string) => void
   onMiscFeeToggle: (checked: boolean) => void
@@ -24,8 +29,10 @@ interface AcquisitionCostCardProps {
 
 export function AcquisitionCostCard({
   acquisitionTaxIncluded,
-  acquisitionTaxRate,
+  acquisitionTaxMode,
   acquisitionTaxAmount,
+  acquisitionTaxReduction,
+  acquisitionTaxAmountOverride,
   deliveryFeeIncluded,
   deliveryFee,
   miscFeeIncluded,
@@ -34,7 +41,9 @@ export function AcquisitionCostCard({
   publicBondCost,
   totalAcquisitionCost,
   onAcquisitionTaxIncludedToggle,
-  onAcquisitionTaxRateChange,
+  onAcquisitionTaxModeChange,
+  onAcquisitionTaxReductionChange,
+  onAcquisitionTaxAmountOverrideChange,
   onDeliveryFeeToggle,
   onDeliveryFeeChange,
   onMiscFeeToggle,
@@ -53,14 +62,34 @@ export function AcquisitionCostCard({
           {/* Row 1: 취득세 감면 / 탁송료 */}
           <FieldLabel>취득세 감면</FieldLabel>
           <FieldCell borderRight>
-            <select
-              className="w-full h-8 px-2 text-xs bg-muted border border-border rounded"
-              value={acquisitionTaxRate === 0 ? 'exempt' : 'full'}
-              onChange={(e) => onAcquisitionTaxRateChange(e.target.value !== 'exempt')}
-            >
-              <option value="full">해당없음 (7%)</option>
-              <option value="exempt">감면 (0%)</option>
-            </select>
+            <div className="flex items-center gap-1.5 w-full">
+              <select
+                className="h-8 px-2 text-xs bg-muted border border-border rounded flex-1 min-w-0"
+                value={acquisitionTaxMode}
+                onChange={(e) => onAcquisitionTaxModeChange(e.target.value as AcquisitionTaxMode)}
+              >
+                <option value="automatic">자동 (7%)</option>
+                <option value="ratio">면제 (0%)</option>
+                <option value="reduction">금액 감면</option>
+                <option value="amount">고정 금액</option>
+              </select>
+              {acquisitionTaxMode === 'reduction' && (
+                <input
+                  className="w-24 h-8 px-2 text-xs bg-muted border border-border rounded font-mono tabular-nums"
+                  value={acquisitionTaxReduction}
+                  onChange={(e) => onAcquisitionTaxReductionChange(e.target.value)}
+                  placeholder="감면액"
+                />
+              )}
+              {acquisitionTaxMode === 'amount' && (
+                <input
+                  className="w-24 h-8 px-2 text-xs bg-muted border border-border rounded font-mono tabular-nums"
+                  value={acquisitionTaxAmountOverride}
+                  onChange={(e) => onAcquisitionTaxAmountOverrideChange(e.target.value)}
+                  placeholder="세액"
+                />
+              )}
+            </div>
           </FieldCell>
           <FieldLabel>탁송료</FieldLabel>
           <FieldCell>

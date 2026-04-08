@@ -49,13 +49,18 @@ const calculateQuoteSchema = z.object({
   residualValueMode: z.enum(["vehicle-price-ratio", "acquisition-cost-ratio", "amount"]).optional(),
   residualValueRatio: z.number().min(0).optional(),
   residualAmountOverride: z.number().min(0).optional(),
+  acquisitionTaxMode: z.enum(["automatic", "ratio", "reduction", "amount"]).optional(),
   acquisitionTaxRateOverride: z.number().min(0).max(1).optional(),
+  acquisitionTaxRatioInput: z.number().min(0).max(1).optional(),
+  acquisitionTaxReduction: z.number().min(0).optional(),
+  acquisitionTaxAmountOverride: z.number().min(0).optional(),
   includePublicBondCost: z.boolean().optional(),
   publicBondCost: z.number().min(0).optional(),
   includeMiscFeeAmount: z.boolean().optional(),
   miscFeeAmount: z.number().min(0).optional(),
   includeDeliveryFeeAmount: z.boolean().optional(),
   deliveryFeeAmount: z.number().min(0).optional(),
+  evSubsidyAmount: z.number().min(0).optional(),
   stampDuty: z.number().min(0).optional(),
   agFeeRate: z.number().min(0).optional(),
   cmFeeRate: z.number().min(0).optional(),
@@ -239,3 +244,4 @@ app.post("/api/quotes/calculate", zValidator("json", calculateQuoteSchema), asyn
     );
   }
 });
+

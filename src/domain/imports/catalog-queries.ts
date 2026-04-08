@@ -261,13 +261,15 @@ export async function getActiveWorkbookModels(params: {
       .where(inArray(vehiclePrograms.workbookImportId, importIds))
       .orderBy(asc(vehiclePrograms.modelName));
 
-    // Deduplicate by modelName — if same model exists in multiple workbooks,
-    // prefer the one with a non-zero vehiclePrice (MG has prices, BNK doesn't)
+    // Show MG vehicles (vehiclePrice > 0) as the primary catalog.
+    // BNK vehicles (vehiclePrice = 0) use different naming and would confuse the
+    // trim dropdown.  They are matched at quote-time via vehicleKey fallback.
     const seen = new Map<string, (typeof rows)[number]>();
     for (const row of rows) {
       if (row.brand !== params.brand) continue;
+      if (Number(row.vehiclePrice) === 0) continue; // skip BNK-only entries
       const existing = seen.get(row.modelName);
-      if (!existing || (Number(existing.vehiclePrice) === 0 && Number(row.vehiclePrice) > 0)) {
+      if (!existing) {
         seen.set(row.modelName, row);
       }
     }

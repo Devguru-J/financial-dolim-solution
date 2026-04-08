@@ -1,0 +1,57 @@
+{
+  "name": "bmw-x3-20d-xdrive-36m",
+  "workbookVersion": "복사본 ★MG캐피탈_수입견적_26.03월_외부용_2603_vol1_잠금해제",
+  "workbookDebug": {
+    "selectedResidualRatio": 0.525,
+    "maxResidualRatio": 0.72500000001,
+    "residualGapRatio": 0.20000669344,
+    "residualGuaranteeCompany": "에스앤케이모터스",
+    "guaranteeBaseRatio": 0.645,
+    "guaranteePromoRatio": 0.645
+  },
+  "vehicle": {
+    "vehiclePrice": "74700000",
+    "vehicleClass": "승용SUV(~5인)",
+    "engineDisplacementCc": 1995,
+    "highResidualAllowed": true,
+    "hybridAllowed": false,
+    "residualPromotionCode": "0",
+    "snkResidualBand": "F"
+  },
+  "input": {
+    "lenderCode": "mg-capital",
+    "productType": "operating_lease",
+    "brand": "BMW",
+    "modelName": "X3 20d xDrive",
+    "ownershipType": "company",
+    "leaseTermMonths": 36,
+    "annualMileageKm": 20000,
+    "upfrontPayment": 0,
+    "depositAmount": 0,
+    "quotedVehiclePrice": 74700000,
+    "discountAmount": 0,
+    "annualIrrRateOverride": 0.047,
+    "annualEffectiveRateOverride": 0.047000976349,
+    "paymentRateOverride": 0.04706,
+    "residualValueMode": "amount",
+    "residualAmountOverride": 39217000,
+    "acquisitionTaxRateOverride": 0.07,
+    "publicBondCost": 0,
+    "stampDuty": 10000
+  },
+  "expected": {
+    "discountedVehiclePrice": 74700000,
+    "acquisitionTax": 4753630,
+    "stampDuty": 10000,
+    "financedPrincipal": 79463630,
+    "residualAmount": 39217000,
+    "displayedAnnualRateDecimal": 0.047,
+    "effectiveAnnualRateDecimal": 0.047000976349,
+    "monthlyPayment": 1354419
+  },
+  "tolerance": {
+    "monthlyPayment": 0,
+    "residualAmount": 0,
+    "acquisitionTax": 0
+  }
+}

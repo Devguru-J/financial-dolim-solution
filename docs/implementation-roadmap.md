@@ -121,6 +121,15 @@ Completed:
 26. removed unimplemented utility buttons from QuotePage ("엑셀 기본값 적용", "잔가 선택값 지우기") — 2026-03-29
 27. multi-lender E2E web flow: catalog queries merged across all active workbooks, stampDuty lender-specific defaults, mileage options 15k/40k for BNK, fetchModels mg-capital hardcode removed — 2026-04-04
 28. single-command local dev: `bun run start` launches backend(8788) + frontend(5173) via scripts/dev.ts — 2026-04-04
+29. MG 36m variant fixtures added: BMW 520i/320d/X5 30d/X3 20d + BENZ E220d Exclusive — 5 new Excel-verified fixtures (46 MG total) — 2026-04-05
+30. BNK WS(웨스트) residual provider registered: BNK_PROVIDERS adds wsGrade (maxFee 1.32%); workbook-parser reads CDB col 10/11 for wsGrade/wsPGrade — 2026-04-05
+31. Acquisition tax 4-mode UI exposed: automatic/ratio/reduction/amount — previously backend-only now surfaced in AcquisitionCostCard dropdown; BNK engine gains all 4 modes (was rateOverride only) — 2026-04-05
+32. EV subsidy wired end-to-end: evSubsidyAmount added to Zod schema / CanonicalQuoteInput / both engines (subtracted from vehicle price like discount) / QuotePage payload — 2026-04-05
+33. vehicleKey cross-lender matching: extractVehicleKey utility (BMW/BENZ/AUDI/VOLVO/LEXUS/GENESIS), both engines gain fallback (exact modelName first, then vehicleKey), 67 unit tests — 2026-04-08
+34. BNK cross-brand fixtures: BENZ CLE53, AUDI A7, VOLVO XC40, BMW 520i 90M — Phase A IRR override, 17 BNK fixtures total — 2026-04-08
+35. BNK RVs parser .xlsm fix: headerRow/dataRowStart offset corrected for blankrows:false — matrixGroups now BNK_9/BNK_S1 instead of BNK_0.61 — 2026-04-08
+36. Trim dropdown MG-only filter: BNK vehicles (vehiclePrice=0) excluded from catalog model list — 2026-04-08
+37. .xlsm upload support: ImportPage accept attribute extended — 2026-04-08
 
 Remaining:
 
@@ -240,12 +249,11 @@ Safe monthly production workflow.
 
 If work resumes in a fresh thread, do this in order:
 
-1. BNK cross-brand parity fixtures (BENZ, AUDI, VOLVO — different policyBaseIrr values)
-2. BNK WS(웨스트) residual provider support — currently CB/TY/JY/CR/ADB only
-3. add 36m variants for MG models (BMW 520i, 320d, X5, X3, BENZ E220d)
-4. add deposit/upfront scenario fixtures for non-BMW MG models
-5. model remaining hidden fee and exception rules in the MG calculator
-6. start `금융리스` (financial lease)
+1. **BNK 제휴사(딜러) 금리 매핑** — Cond 시트 좌측에 딜러별 conditionType 존재 (BMW-동성모터스→운용_세영=0.0521, BMW_비제휴→운용_기타브랜드=0.0681 등). 파서가 딜러별 conditionType을 추출하고, UI에 제휴사 드롭다운 추가, 엔진이 선택된 제휴사에 따라 baseIrr 결정. 데이터: Cond 시트 cols 2(brand)+3(dealer)+11(condType), 제조사별 선택표 시트 참조.
+2. BNK WS(웨스트) validation fixture — WS engine registered (2026-04-05). Need CDB vehicle with wsGrade populated to prove Phase B auto-select.
+3. add deposit/upfront scenario fixtures for non-BMW MG models (36m already covered)
+4. model remaining hidden fee and exception rules in the MG calculator
+5. start `금융리스` (financial lease)
 
 ## Future lender readiness checklist
 

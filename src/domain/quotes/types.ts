@@ -45,6 +45,7 @@ export type CanonicalQuoteInput = {
   miscFeeAmount?: number;
   includeDeliveryFeeAmount?: boolean;
   deliveryFeeAmount?: number;
+  evSubsidyAmount?: number;
   stampDuty?: number;
   agFeeRate?: number;
   cmFeeRate?: number;

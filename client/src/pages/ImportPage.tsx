@@ -137,7 +137,7 @@ export function ImportPage() {
           <input
             ref={fileInputRef}
             type="file"
-            accept=".xlsx,.xls"
+            accept=".xlsx,.xlsm,.xls"
             className="hidden"
             onChange={handleFileInput}
           />

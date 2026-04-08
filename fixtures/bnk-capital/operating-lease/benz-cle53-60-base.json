@@ -1,0 +1,53 @@
+{
+  "name": "bnk-benz-cle53-60-base",
+  "workbookVersion": "BNK Capital 2025",
+  "workbookDebug": {
+    "selectedResidualRatio": 0.50,
+    "note": "Cross-brand fixture — BENZ CLE 53 AMG 4Matic+, 90M, 60m, 적용률 5.887%. Phase A (IRR override)."
+  },
+  "vehicle": {
+    "brand": "BENZ",
+    "modelName": "The All New CLE 가솔린 3.0 AMG 카브리올레 CLE 53 AMG 4Matic+",
+    "vehicleClass": "승용",
+    "engineDisplacementCc": 2998,
+    "highResidualAllowed": false,
+    "hybridAllowed": false,
+    "rawRow": {
+      "modelYear": 2026,
+      "vehicleClass": "승용",
+      "eco": false
+    }
+  },
+  "input": {
+    "lenderCode": "bnk-capital",
+    "productType": "operating_lease",
+    "brand": "BENZ",
+    "modelName": "The All New CLE 가솔린 3.0 AMG 카브리올레 CLE 53 AMG 4Matic+",
+    "ownershipType": "company",
+    "leaseTermMonths": 60,
+    "upfrontPayment": 0,
+    "depositAmount": 0,
+    "quotedVehiclePrice": 90000000,
+    "discountAmount": 0,
+    "acquisitionTaxRateOverride": 0.07,
+    "annualIrrRateOverride": 0.05887,
+    "residualAmountOverride": 45000000
+  },
+  "expected": {
+    "discountedVehiclePrice": 90000000,
+    "acquisitionTax": 5727270,
+    "stampDuty": 0,
+    "financedPrincipal": 95727270,
+    "residualAmount": 45000000,
+    "displayedAnnualRateDecimal": 0.05887,
+    "effectiveAnnualRateDecimal": 0.05887,
+    "monthlyPayment": 1198800
+  },
+  "tolerance": {
+    "monthlyPayment": 100,
+    "residualAmount": 0,
+    "acquisitionTax": 10,
+    "displayedAnnualRateDecimal": 0,
+    "effectiveAnnualRateDecimal": 0
+  }
+}

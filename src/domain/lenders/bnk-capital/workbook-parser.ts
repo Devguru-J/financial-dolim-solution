@@ -81,6 +81,8 @@ function parseVehiclePrograms(rows: unknown[][]): WorkbookVehicleProgram[] {
     const cc = asNumber(row[13]);
     const eco = asNumber(row[14]) === 1 || asBool(row[14]);
 
+    const wsGrade = asNumber(row[10]);
+    const wsPGrade = asNumber(row[11]);
     const cbGrade = asNumber(row[15]);
     const cbPGrade = asNumber(row[20]);
     const tyGrade = asNumber(row[17]);
@@ -93,7 +95,7 @@ function parseVehiclePrograms(rows: unknown[][]): WorkbookVehicleProgram[] {
     const adbPGrade = asNumber(row[36]);
     const promoCode = asText(row[34]);
 
-    const hasHighResidual = cbPGrade != null || tyPGrade != null || jyPGrade != null || crPGrade != null || adbPGrade != null;
+    const hasHighResidual = wsPGrade != null || cbPGrade != null || tyPGrade != null || jyPGrade != null || crPGrade != null || adbPGrade != null;
 
     seen.set(key, {
       modelYear,
@@ -115,6 +117,8 @@ function parseVehiclePrograms(rows: unknown[][]): WorkbookVehicleProgram[] {
         apsPromotionRate: null,
         snkPromotionRate: null,
         rawRow: {
+          wsGrade,
+          wsPGrade,
           cbGrade,
           cbPGrade,
           tyGrade,
@@ -158,12 +162,12 @@ function parseVehiclePrograms(rows: unknown[][]): WorkbookVehicleProgram[] {
 // ---------------------------------------------------------------------------
 
 const BNK_UNIFIED_TABLE = {
-  headerRow: 6,       // 0-indexed row containing grade labels
+  headerRow: 4,       // array idx with blankrows:false — grade labels (S1..S10, 1, 1.5, ..., 29)
   termCol: 31,        // 0-indexed col AF (lease term months)
   gradeColStart: 32,  // 0-indexed col AG (first grade column)
   gradeColEnd: 98,    // 0-indexed col CU (scan up to here)
-  dataRowStart: 7,    // 0-indexed first data row (month 1)
-  dataRowEnd: 66,     // 0-indexed last data row (month 60)
+  dataRowStart: 5,    // array idx — first data row (month 1)
+  dataRowEnd: 64,     // array idx — last data row (month 60)
 } as const;
 
 function parseResidualMatrixRows(rows: unknown[][]): WorkbookResidualMatrixRow[] {

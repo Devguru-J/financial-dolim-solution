@@ -1109,9 +1109,9 @@ export async function calculateMgOperatingLeaseQuote(params: {
           ),
         );
 
-      const resolvedName = resolveModelNameByVehicleKey(input.brand, input.modelName, allBrandVehicles);
-      if (resolvedName) {
-        vehicle = allBrandVehicles.find((v) => v.modelName === resolvedName) ?? undefined;
+      const resolved = resolveModelNameByVehicleKey(input.brand, input.modelName, allBrandVehicles);
+      if (resolved) {
+        vehicle = resolved;
       }
     }
 

@@ -1,0 +1,53 @@
+{
+  "name": "bnk-volvo-xc40-60-base",
+  "workbookVersion": "BNK Capital 2025",
+  "workbookDebug": {
+    "selectedResidualRatio": 0.515,
+    "note": "Cross-brand fixture — VOLVO XC40 B4 Plus Bright AWD, 90M, 60m, 적용률 6.924%. Phase A (IRR override)."
+  },
+  "vehicle": {
+    "brand": "VOLVO",
+    "modelName": "The New XC40 가솔린 2.0 MHEV B4 Plus Bright AWD",
+    "vehicleClass": "승용",
+    "engineDisplacementCc": 1969,
+    "highResidualAllowed": false,
+    "hybridAllowed": false,
+    "rawRow": {
+      "modelYear": 2025,
+      "vehicleClass": "승용",
+      "eco": false
+    }
+  },
+  "input": {
+    "lenderCode": "bnk-capital",
+    "productType": "operating_lease",
+    "brand": "VOLVO",
+    "modelName": "The New XC40 가솔린 2.0 MHEV B4 Plus Bright AWD",
+    "ownershipType": "company",
+    "leaseTermMonths": 60,
+    "upfrontPayment": 0,
+    "depositAmount": 0,
+    "quotedVehiclePrice": 90000000,
+    "discountAmount": 0,
+    "acquisitionTaxRateOverride": 0.07,
+    "annualIrrRateOverride": 0.06924,
+    "residualAmountOverride": 46350000
+  },
+  "expected": {
+    "discountedVehiclePrice": 90000000,
+    "acquisitionTax": 5727270,
+    "stampDuty": 0,
+    "financedPrincipal": 95727270,
+    "residualAmount": 46350000,
+    "displayedAnnualRateDecimal": 0.06924,
+    "effectiveAnnualRateDecimal": 0.06924,
+    "monthlyPayment": 1243400
+  },
+  "tolerance": {
+    "monthlyPayment": 100,
+    "residualAmount": 0,
+    "acquisitionTax": 10,
+    "displayedAnnualRateDecimal": 0,
+    "effectiveAnnualRateDecimal": 0
+  }
+}

@@ -1,0 +1,53 @@
+{
+  "name": "bnk-audi-a7-60-base",
+  "workbookVersion": "BNK Capital 2025",
+  "workbookDebug": {
+    "selectedResidualRatio": 0.32,
+    "note": "Cross-brand fixture — AUDI A7 50 TDI Quattro Premium, 90M, 60m, 적용률 6.051%. Phase A (IRR override)."
+  },
+  "vehicle": {
+    "brand": "AUDI",
+    "modelName": "The New A7 디젤 3.0 50 TDI Quattro Premium",
+    "vehicleClass": "승용",
+    "engineDisplacementCc": 2967,
+    "highResidualAllowed": false,
+    "hybridAllowed": false,
+    "rawRow": {
+      "modelYear": 2024,
+      "vehicleClass": "승용",
+      "eco": false
+    }
+  },
+  "input": {
+    "lenderCode": "bnk-capital",
+    "productType": "operating_lease",
+    "brand": "AUDI",
+    "modelName": "The New A7 디젤 3.0 50 TDI Quattro Premium",
+    "ownershipType": "company",
+    "leaseTermMonths": 60,
+    "upfrontPayment": 0,
+    "depositAmount": 0,
+    "quotedVehiclePrice": 90000000,
+    "discountAmount": 0,
+    "acquisitionTaxRateOverride": 0.07,
+    "annualIrrRateOverride": 0.06051,
+    "residualAmountOverride": 28800000
+  },
+  "expected": {
+    "discountedVehiclePrice": 90000000,
+    "acquisitionTax": 5727270,
+    "stampDuty": 0,
+    "financedPrincipal": 95727270,
+    "residualAmount": 28800000,
+    "displayedAnnualRateDecimal": 0.06051,
+    "effectiveAnnualRateDecimal": 0.06051,
+    "monthlyPayment": 1440700
+  },
+  "tolerance": {
+    "monthlyPayment": 100,
+    "residualAmount": 0,
+    "acquisitionTax": 10,
+    "displayedAnnualRateDecimal": 0,
+    "effectiveAnnualRateDecimal": 0
+  }
+}

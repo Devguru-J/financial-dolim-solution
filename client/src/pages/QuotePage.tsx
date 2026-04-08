@@ -6,7 +6,7 @@ import { QuoteResultCard } from '@/components/results/QuoteResultCard'
 import { useCatalog, getResidualPreviews } from '@/hooks/useCatalog'
 import { useMultiQuote } from '@/hooks/useMultiQuote'
 import { parsePercentInput } from '@/lib/residual'
-import type { LeaseTerm, AnnualMileage, QuotePayload } from '@/types/quote'
+import type { LeaseTerm, AnnualMileage, QuotePayload, AcquisitionTaxMode } from '@/types/quote'
 
 export function QuotePage() {
   const catalog = useCatalog()
@@ -18,7 +18,9 @@ export function QuotePage() {
 
   // --- Acquisition cost ---
   const [acquisitionTaxIncluded, setAcquisitionTaxIncluded] = useState(true)
-  const [acquisitionTaxFullRate, setAcquisitionTaxFullRate] = useState(true) // true=0.07, false=0
+  const [acquisitionTaxMode, setAcquisitionTaxMode] = useState<AcquisitionTaxMode>('automatic')
+  const [acquisitionTaxReduction, setAcquisitionTaxReduction] = useState('0')
+  const [acquisitionTaxAmountOverride, setAcquisitionTaxAmountOverride] = useState('0')
   const [deliveryFeeIncluded, setDeliveryFeeIncluded] = useState(false)
   const [deliveryFee, setDeliveryFee] = useState('0')
   const [miscFeeIncluded, setMiscFeeIncluded] = useState(false)
@@ -73,10 +75,15 @@ export function QuotePage() {
   const rawDiscount = Number(discountPrice.replace(/,/g, '')) || 0
   const discountedPrice = rawVehiclePrice - rawDiscount
 
-  const acquisitionTaxRate = (acquisitionTaxIncluded && acquisitionTaxFullRate) ? 0.07 : 0
-  const acquisitionTaxAmount = acquisitionTaxIncluded && acquisitionTaxFullRate
-    ? Math.floor((discountedPrice / 1.1) * 0.07 / 10) * 10
-    : 0
+  const automaticAcquisitionTax = Math.floor((discountedPrice / 1.1) * 0.07 / 10) * 10
+  const numericReduction = Number(acquisitionTaxReduction.replace(/,/g, '')) || 0
+  const numericAmountOverride = Number(acquisitionTaxAmountOverride.replace(/,/g, '')) || 0
+  const computedAcquisitionTax =
+    acquisitionTaxMode === 'ratio' ? 0
+    : acquisitionTaxMode === 'reduction' ? Math.max(0, automaticAcquisitionTax - numericReduction)
+    : acquisitionTaxMode === 'amount' ? numericAmountOverride
+    : automaticAcquisitionTax
+  const acquisitionTaxAmount = acquisitionTaxIncluded ? computedAcquisitionTax : 0
 
   const totalAcquisitionCost =
     discountedPrice +
@@ -110,7 +117,11 @@ export function QuotePage() {
       depositAmount,
       quotedVehiclePrice: rawVehiclePrice,
       discountAmount: rawDiscount,
-      acquisitionTaxRateOverride: acquisitionTaxRate,
+      evSubsidyAmount: evSubsidy ? Number(evSubsidyAmount.replace(/,/g, '')) || 0 : undefined,
+      acquisitionTaxMode,
+      acquisitionTaxRateOverride: acquisitionTaxMode === 'ratio' ? 0 : undefined,
+      acquisitionTaxReduction: acquisitionTaxMode === 'reduction' ? numericReduction : undefined,
+      acquisitionTaxAmountOverride: acquisitionTaxMode === 'amount' ? numericAmountOverride : undefined,
       // stampDuty omitted — each lender engine uses its own default (MG=10000, BNK=0)
       includePublicBondCost: publicBondIncluded,
       publicBondCost: publicBondIncluded ? Number(publicBondCost) || 0 : undefined,
@@ -158,8 +169,10 @@ export function QuotePage() {
 
         <AcquisitionCostCard
           acquisitionTaxIncluded={acquisitionTaxIncluded}
-          acquisitionTaxRate={acquisitionTaxFullRate ? 0.07 : 0}
+          acquisitionTaxMode={acquisitionTaxMode}
           acquisitionTaxAmount={acquisitionTaxAmount}
+          acquisitionTaxReduction={acquisitionTaxReduction}
+          acquisitionTaxAmountOverride={acquisitionTaxAmountOverride}
           deliveryFeeIncluded={deliveryFeeIncluded}
           deliveryFee={deliveryFee}
           miscFeeIncluded={miscFeeIncluded}
@@ -168,7 +181,9 @@ export function QuotePage() {
           publicBondCost={publicBondCost}
           totalAcquisitionCost={totalAcquisitionCost}
           onAcquisitionTaxIncludedToggle={setAcquisitionTaxIncluded}
-          onAcquisitionTaxRateChange={setAcquisitionTaxFullRate}
+          onAcquisitionTaxModeChange={setAcquisitionTaxMode}
+          onAcquisitionTaxReductionChange={setAcquisitionTaxReduction}
+          onAcquisitionTaxAmountOverrideChange={setAcquisitionTaxAmountOverride}
           onDeliveryFeeToggle={setDeliveryFeeIncluded}
           onDeliveryFeeChange={setDeliveryFee}
           onMiscFeeToggle={setMiscFeeIncluded}
