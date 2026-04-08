@@ -52,6 +52,33 @@ function computeLeasePaymentRaw(params: {
   return ((pv - fv / factor) * rate) / (1 - factor ** -1);
 }
 
+/**
+ * Solve annual rate from PMT result (Excel RATE equivalent).
+ * Newton-Raphson: find r such that PMT(r/12, n, -pv, fv) ≈ payment.
+ * Returns annual rate decimal. Matches Es1 B167 = RATE(n, pmt, -pv, fv)*12.
+ */
+function solveAnnualRate(n: number, payment: number, pv: number, fv: number): number {
+  if (n <= 0 || pv <= 0) return 0;
+  let r = 0.05 / 12; // initial guess (monthly rate)
+  for (let i = 0; i < 200; i++) {
+    const factor = (1 + r) ** n;
+    const calcPmt = ((pv - fv / factor) * r) / (1 - 1 / factor);
+    const diff = calcPmt - payment;
+    if (Math.abs(diff) < 0.01) return r * 12;
+
+    // Numerical derivative
+    const h = Math.max(r * 1e-6, 1e-10);
+    const factor2 = (1 + r + h) ** n;
+    const calcPmt2 = ((pv - fv / factor2) * (r + h)) / (1 - 1 / factor2);
+    const dPmt = (calcPmt2 - calcPmt) / h;
+    if (Math.abs(dPmt) < 1e-12) break;
+
+    r -= diff / dPmt;
+    if (r < 1e-8) r = 1e-8;
+  }
+  return r * 12;
+}
+
 function roundDown(value: number, digits: number): number {
   const factor = Math.pow(10, -digits);
   return Math.floor(value / factor) * factor;
@@ -485,12 +512,13 @@ function computeQuote(params: ComputeQuoteParams): CanonicalQuoteResult {
   // Phase A: annualIrrRateOverride bypasses all auto logic.
   // -----------------------------------------------------------------------
   let annualIrrRate: number;
+  let guaranteeFeeRate = 0;
   let resolvedMatrixGroup: string | null = null;
   let selectedProviderResult: BnkProviderResult | null = null;
   let rateSource: CanonicalQuoteResult["rates"]["source"] = "brand-policy";
 
   if (input.annualIrrRateOverride != null && input.annualIrrRateOverride > 0) {
-    // Phase A override path
+    // Phase A override path — fee is baked into the override rate
     annualIrrRate = input.annualIrrRateOverride;
     rateSource = "override";
   } else {
@@ -534,10 +562,15 @@ function computeQuote(params: ComputeQuoteParams): CanonicalQuoteResult {
       warnings.push("BNK: 잔가사 데이터를 찾지 못했습니다. 잔가보장 수수료 = 0%로 계산합니다.");
     }
 
-    const guaranteeFee = selectedProviderResult?.guaranteeFee ?? 0;
+    guaranteeFeeRate = selectedProviderResult?.guaranteeFee ?? 0;
     const cmFee = Math.max(0, input.cmFeeRate ?? 0);
     const agFee = Math.max(0, input.agFeeRate ?? 0);
-    annualIrrRate = policyBaseIrr + guaranteeFee + cmFee + agFee;
+
+    // TODO: B185 residual rate adjustment (company -0.3%, customer +0.3% when applied > base)
+    // Conditions for B185 are complex (B56 vs B52, not simple applied vs standard).
+    // Needs full Es1 formula tracing with verified fixture data to implement correctly.
+
+    annualIrrRate = policyBaseIrr + guaranteeFeeRate + cmFee + agFee;
     rateSource = "brand-policy";
   }
 
