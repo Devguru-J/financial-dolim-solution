@@ -7,7 +7,6 @@ import {
   lenderProducts,
   lenders,
   residualMatrixRows,
-  vehiclePrograms,
   workbookImports,
 } from "@/db/schema";
 import { populateNormalizedTablesForImport } from "@/domain/imports/normalize-to-offerings";
@@ -85,38 +84,6 @@ export async function persistWorkbookImport(params: {
         .returning({ id: workbookImports.id });
 
       const workbookImportId = createdImport.id;
-
-      if (workbook.vehiclePrograms.length > 0) {
-        await tx.insert(vehiclePrograms).values(
-          workbook.vehiclePrograms.map((program) => ({
-            workbookImportId,
-            brand: program.brand,
-            modelName: program.modelName,
-            engineDisplacementCc: program.engineDisplacementCc,
-            vehicleClass: program.vehicleClass,
-            vehiclePrice: String(Math.trunc(program.vehiclePrice)),
-            term12Residual: program.residuals[12]?.toFixed(4),
-            term24Residual: program.residuals[24]?.toFixed(4),
-            term36Residual: program.residuals[36]?.toFixed(4),
-            term48Residual: program.residuals[48]?.toFixed(4),
-            term60Residual: program.residuals[60]?.toFixed(4),
-            highResidualAllowed: program.highResidualAllowed,
-            hybridAllowed: program.hybridAllowed,
-            residualPromotionCode: program.residualPromotionCode,
-            snkResidualBand: program.snkResidualBand,
-            rawRow: {
-              residuals: program.residuals,
-              snkResiduals: program.snkResiduals,
-              apsResidualBand: program.apsResidualBand,
-              apsResiduals: program.apsResiduals,
-              chatbotResiduals: program.chatbotResiduals,
-              apsPromotionRate: program.apsPromotionRate,
-              snkPromotionRate: program.snkPromotionRate,
-              ...(program.rawRow ?? {}),
-            },
-          })),
-        );
-      }
 
       if (workbook.residualMatrixRows.length > 0) {
         await tx.insert(residualMatrixRows).values(

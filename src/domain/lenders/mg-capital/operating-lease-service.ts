@@ -1,16 +1,15 @@
-import { and, desc, eq, inArray, or } from "drizzle-orm";
+import { and, desc, eq } from "drizzle-orm";
 
 import {
   brandRatePolicies,
   lenderVehicleOfferings,
   residualMatrixRows,
   vehicleModels,
-  vehiclePrograms,
   vehicleTrims,
   workbookImports,
 } from "@/db/schema";
 import type { CanonicalQuoteInput, CanonicalQuoteResult } from "@/domain/quotes/types";
-import { extractVehicleKey, resolveBrandAliases, resolveModelNameByVehicleKey } from "@/domain/vehicles/vehicle-key";
+import { extractVehicleKey } from "@/domain/vehicles/vehicle-key";
 import { createDbClient } from "@/lib/db/client";
 
 type ActiveWorkbookContext = {
@@ -1065,8 +1064,6 @@ export async function calculateMgOperatingLeaseQuote(params: {
     // 1. Exact match on (workbook, lenderModelName) — user picked this trim
     // 2. Cross-lender fallback via vehicle_trims.vehicle_key — for when
     //    the user picks a trim from another lender's dropdown
-    // 3. Legacy fallback: vehicle_programs exact match (for trims not yet
-    //    in the normalized schema, e.g., null-key vehicles)
     // ------------------------------------------------------------------
     const offeringSelect = {
       brand: lenderVehicleOfferings.lenderBrand,
@@ -1121,38 +1118,6 @@ export async function calculateMgOperatingLeaseQuote(params: {
           .limit(1);
         if (keyMatch) vehicle = keyMatch;
       }
-    }
-
-    // 3. Legacy fallback: vehicle_programs table (for null-key edge cases)
-    if (!vehicle) {
-      const [legacy] = await db
-        .select({
-          brand: vehiclePrograms.brand,
-          modelName: vehiclePrograms.modelName,
-          vehiclePrice: vehiclePrograms.vehiclePrice,
-          vehicleClass: vehiclePrograms.vehicleClass,
-          engineDisplacementCc: vehiclePrograms.engineDisplacementCc,
-          term12Residual: vehiclePrograms.term12Residual,
-          term24Residual: vehiclePrograms.term24Residual,
-          term36Residual: vehiclePrograms.term36Residual,
-          term48Residual: vehiclePrograms.term48Residual,
-          term60Residual: vehiclePrograms.term60Residual,
-          highResidualAllowed: vehiclePrograms.highResidualAllowed,
-          hybridAllowed: vehiclePrograms.hybridAllowed,
-          residualPromotionCode: vehiclePrograms.residualPromotionCode,
-          snkResidualBand: vehiclePrograms.snkResidualBand,
-          rawRow: vehiclePrograms.rawRow,
-        })
-        .from(vehiclePrograms)
-        .where(
-          and(
-            eq(vehiclePrograms.workbookImportId, workbookImport.id),
-            eq(vehiclePrograms.brand, input.brand),
-            eq(vehiclePrograms.modelName, input.modelName),
-          ),
-        )
-        .limit(1);
-      if (legacy) vehicle = legacy;
     }
 
     if (!vehicle) {

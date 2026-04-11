@@ -204,12 +204,12 @@ export async function populateNormalizedTablesForImport(
       brandCache.set(canonicalBrand, brandId);
     }
 
-    // Compute vehicleKey — skip if null (trim can still live in vehicle_programs)
-    const vehicleKey = extractVehicleKey(p.brand, p.modelName);
-    if (!vehicleKey) continue;
+    // Compute vehicleKey. Fallback for null-key: synthesize from brand + modelName.
+    const extracted = extractVehicleKey(p.brand, p.modelName);
+    const vehicleKey = extracted ?? `${canonicalBrand}_${p.modelName.toUpperCase().replace(/[^A-Z0-9]+/g, "_").replace(/^_|_$/g, "")}`;
 
-    // Upsert model
-    const modelLine = deriveModelLine(vehicleKey);
+    // Upsert model (fallback to "Other" bucket when key was synthetic)
+    const modelLine = extracted ? deriveModelLine(vehicleKey) : "Other";
     const modelCacheKey = `${brandId}|${modelLine}`;
     let modelId = modelCache.get(modelCacheKey);
     if (!modelId) {

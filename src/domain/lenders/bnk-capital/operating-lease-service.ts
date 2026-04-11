@@ -5,12 +5,11 @@ import {
   lenderVehicleOfferings,
   residualMatrixRows,
   vehicleModels,
-  vehiclePrograms,
   vehicleTrims,
   workbookImports,
 } from "@/db/schema";
 import type { CanonicalQuoteInput, CanonicalQuoteResult } from "@/domain/quotes/types";
-import { extractVehicleKey, resolveBrandAliases, resolveModelNameByVehicleKey } from "@/domain/vehicles/vehicle-key";
+import { extractVehicleKey } from "@/domain/vehicles/vehicle-key";
 import { createDbClient } from "@/lib/db/client";
 
 // ---------------------------------------------------------------------------
@@ -297,7 +296,6 @@ export async function calculateBnkOperatingLeaseQuote(params: {
     // 2. Resolve vehicle via normalized schema.
     // 1st: exact match on lender_model_name (user picked this specific trim)
     // 2nd: cross-lender fallback via vehicle_trims.vehicle_key
-    // 3rd: legacy vehicle_programs table (null-key edge cases)
     const offeringSelect = {
       brand: lenderVehicleOfferings.lenderBrand,
       modelName: lenderVehicleOfferings.lenderModelName,
@@ -343,30 +341,6 @@ export async function calculateBnkOperatingLeaseQuote(params: {
           .limit(1);
         if (keyMatch) vehicleRow = keyMatch;
       }
-    }
-
-    // 3. Legacy fallback: vehicle_programs (null-key edge cases)
-    if (!vehicleRow) {
-      const [legacy] = await db
-        .select({
-          brand: vehiclePrograms.brand,
-          modelName: vehiclePrograms.modelName,
-          vehicleClass: vehiclePrograms.vehicleClass,
-          engineDisplacementCc: vehiclePrograms.engineDisplacementCc,
-          highResidualAllowed: vehiclePrograms.highResidualAllowed,
-          hybridAllowed: vehiclePrograms.hybridAllowed,
-          rawRow: vehiclePrograms.rawRow,
-        })
-        .from(vehiclePrograms)
-        .where(
-          and(
-            eq(vehiclePrograms.workbookImportId, activeImport.id),
-            eq(vehiclePrograms.brand, input.brand),
-            eq(vehiclePrograms.modelName, input.modelName),
-          ),
-        )
-        .limit(1);
-      if (legacy) vehicleRow = legacy;
     }
 
     if (!vehicleRow) {

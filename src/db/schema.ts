@@ -60,38 +60,6 @@ export const workbookImports = pgTable("workbook_imports", {
   meta: jsonb("meta").$type<Record<string, unknown>>().notNull().default({}),
 });
 
-export const vehiclePrograms = pgTable(
-  "vehicle_programs",
-  {
-    id: uuid("id").defaultRandom().primaryKey(),
-    workbookImportId: uuid("workbook_import_id")
-      .references(() => workbookImports.id, { onDelete: "cascade" })
-      .notNull(),
-    brand: text("brand").notNull(),
-    modelName: text("model_name").notNull(),
-    engineDisplacementCc: integer("engine_displacement_cc"),
-    vehicleClass: text("vehicle_class"),
-    vehiclePrice: numeric("vehicle_price", { precision: 14, scale: 0 }).notNull(),
-    term12Residual: numeric("term_12_residual", { precision: 7, scale: 4 }),
-    term24Residual: numeric("term_24_residual", { precision: 7, scale: 4 }),
-    term36Residual: numeric("term_36_residual", { precision: 7, scale: 4 }),
-    term48Residual: numeric("term_48_residual", { precision: 7, scale: 4 }),
-    term60Residual: numeric("term_60_residual", { precision: 7, scale: 4 }),
-    highResidualAllowed: boolean("high_residual_allowed"),
-    hybridAllowed: boolean("hybrid_allowed"),
-    residualPromotionCode: text("residual_promotion_code"),
-    snkResidualBand: text("snk_residual_band"),
-    rawRow: jsonb("raw_row").$type<Record<string, unknown>>().notNull().default({}),
-  },
-  (table) => ({
-    workbookModelUnique: uniqueIndex("vehicle_programs_workbook_model_unique").on(
-      table.workbookImportId,
-      table.brand,
-      table.modelName,
-    ),
-  }),
-);
-
 export const residualMatrixRows = pgTable("residual_matrix_rows", {
   id: uuid("id").defaultRandom().primaryKey(),
   workbookImportId: uuid("workbook_import_id")
@@ -119,23 +87,9 @@ export const brandRatePolicies = pgTable("brand_rate_policies", {
   rawPolicy: jsonb("raw_policy").$type<Record<string, unknown>>().notNull().default({}),
 });
 
-export const quoteSnapshots = pgTable("quote_snapshots", {
-  id: uuid("id").defaultRandom().primaryKey(),
-  workbookImportId: uuid("workbook_import_id")
-    .references(() => workbookImports.id, { onDelete: "restrict" })
-    .notNull(),
-  productType: quoteProductType("product_type").notNull(),
-  customerName: text("customer_name"),
-  brand: text("brand").notNull(),
-  modelName: text("model_name").notNull(),
-  quoteInput: jsonb("quote_input").$type<Record<string, unknown>>().notNull(),
-  quoteOutput: jsonb("quote_output").$type<Record<string, unknown>>().notNull(),
-  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
-});
-
 // ---------------------------------------------------------------------------
 // Normalized vehicle hierarchy — brand → model → trim, with per-lender
-// offerings referencing trims. Replaces denormalized `vehicle_programs`.
+// offerings referencing trims.
 //
 // Goals:
 // - Cross-lender matching at the DB level via `vehicle_trims.vehicle_key`

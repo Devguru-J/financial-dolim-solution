@@ -1,6 +1,13 @@
 import { and, asc, desc, eq, inArray } from "drizzle-orm";
 
-import { brandRatePolicies, residualMatrixRows, vehiclePrograms, workbookImports } from "@/db/schema";
+import {
+  brandRatePolicies,
+  lenderVehicleOfferings,
+  residualMatrixRows,
+  vehicleModels,
+  vehicleTrims,
+  workbookImports,
+} from "@/db/schema";
 import { summarizeMgResidualCandidates } from "@/domain/lenders/mg-capital/operating-lease-service";
 import { createDbClient } from "@/lib/db/client";
 
@@ -164,12 +171,10 @@ export async function getActiveWorkbookBrands(params: {
 
   try {
     const rows = await db
-      .select({
-        brand: vehiclePrograms.brand,
-      })
-      .from(vehiclePrograms)
-      .where(inArray(vehiclePrograms.workbookImportId, importIds))
-      .orderBy(asc(vehiclePrograms.brand), asc(vehiclePrograms.modelName));
+      .select({ brand: lenderVehicleOfferings.lenderBrand })
+      .from(lenderVehicleOfferings)
+      .where(inArray(lenderVehicleOfferings.workbookImportId, importIds))
+      .orderBy(asc(lenderVehicleOfferings.lenderBrand), asc(lenderVehicleOfferings.lenderModelName));
 
     const countByBrand = new Map<string, number>();
     rows.forEach((row) => {
@@ -241,25 +246,27 @@ export async function getActiveWorkbookModels(params: {
 
     const rows = await db
       .select({
-        brand: vehiclePrograms.brand,
-        modelName: vehiclePrograms.modelName,
-        vehiclePrice: vehiclePrograms.vehiclePrice,
-        vehicleClass: vehiclePrograms.vehicleClass,
-        engineDisplacementCc: vehiclePrograms.engineDisplacementCc,
-        highResidualAllowed: vehiclePrograms.highResidualAllowed,
-        hybridAllowed: vehiclePrograms.hybridAllowed,
-        residualPromotionCode: vehiclePrograms.residualPromotionCode,
-        snkResidualBand: vehiclePrograms.snkResidualBand,
-        term12Residual: vehiclePrograms.term12Residual,
-        term24Residual: vehiclePrograms.term24Residual,
-        term36Residual: vehiclePrograms.term36Residual,
-        term48Residual: vehiclePrograms.term48Residual,
-        term60Residual: vehiclePrograms.term60Residual,
-        rawRow: vehiclePrograms.rawRow,
+        brand: lenderVehicleOfferings.lenderBrand,
+        modelName: lenderVehicleOfferings.lenderModelName,
+        vehiclePrice: lenderVehicleOfferings.vehiclePrice,
+        vehicleClass: vehicleModels.vehicleClass,
+        engineDisplacementCc: vehicleTrims.engineDisplacementCc,
+        highResidualAllowed: vehicleTrims.isHighResidualEligible,
+        hybridAllowed: lenderVehicleOfferings.hybridAllowed,
+        residualPromotionCode: lenderVehicleOfferings.residualPromotionCode,
+        snkResidualBand: lenderVehicleOfferings.snkResidualBand,
+        term12Residual: lenderVehicleOfferings.term12Residual,
+        term24Residual: lenderVehicleOfferings.term24Residual,
+        term36Residual: lenderVehicleOfferings.term36Residual,
+        term48Residual: lenderVehicleOfferings.term48Residual,
+        term60Residual: lenderVehicleOfferings.term60Residual,
+        rawRow: lenderVehicleOfferings.rawRow,
       })
-      .from(vehiclePrograms)
-      .where(inArray(vehiclePrograms.workbookImportId, importIds))
-      .orderBy(asc(vehiclePrograms.modelName));
+      .from(lenderVehicleOfferings)
+      .innerJoin(vehicleTrims, eq(lenderVehicleOfferings.trimId, vehicleTrims.id))
+      .innerJoin(vehicleModels, eq(vehicleTrims.modelId, vehicleModels.id))
+      .where(inArray(lenderVehicleOfferings.workbookImportId, importIds))
+      .orderBy(asc(lenderVehicleOfferings.lenderModelName));
 
     // Show MG vehicles (vehiclePrice > 0) as the primary catalog.
     // BNK vehicles (vehiclePrice = 0) use different naming and would confuse the

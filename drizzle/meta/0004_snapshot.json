@@ -1,0 +1,862 @@
+{
+  "id": "f6af0474-594c-4352-a7a0-448fc595aaf6",
+  "prevId": "815b00d4-1a39-4b52-b1fa-21d446c60622",
+  "version": "7",
+  "dialect": "postgresql",
+  "tables": {
+    "public.brand_rate_policies": {
+      "name": "brand_rate_policies",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "workbook_import_id": {
+          "name": "workbook_import_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "brand": {
+          "name": "brand",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "product_type": {
+          "name": "product_type",
+          "type": "quote_product_type",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "ownership_type": {
+          "name": "ownership_type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "base_irr_rate": {
+          "name": "base_irr_rate",
+          "type": "numeric(7, 4)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "affiliate_fee_mode": {
+          "name": "affiliate_fee_mode",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "affiliate_fee_rate": {
+          "name": "affiliate_fee_rate",
+          "type": "numeric(7, 4)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "extra_cost_mode": {
+          "name": "extra_cost_mode",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "extra_cost_value": {
+          "name": "extra_cost_value",
+          "type": "numeric(14, 0)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "raw_policy": {
+          "name": "raw_policy",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'{}'::jsonb"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "brand_rate_policies_workbook_import_id_workbook_imports_id_fk": {
+          "name": "brand_rate_policies_workbook_import_id_workbook_imports_id_fk",
+          "tableFrom": "brand_rate_policies",
+          "tableTo": "workbook_imports",
+          "columnsFrom": [
+            "workbook_import_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.brands": {
+      "name": "brands",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "canonical_name": {
+          "name": "canonical_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "display_name": {
+          "name": "display_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "aliases": {
+          "name": "aliases",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'[]'::jsonb"
+        },
+        "country_code": {
+          "name": "country_code",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "brands_canonical_name_unique": {
+          "name": "brands_canonical_name_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "canonical_name"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.lender_products": {
+      "name": "lender_products",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "lender_code": {
+          "name": "lender_code",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "product_type": {
+          "name": "product_type",
+          "type": "quote_product_type",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "is_enabled": {
+          "name": "is_enabled",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": true
+        }
+      },
+      "indexes": {
+        "lender_products_unique": {
+          "name": "lender_products_unique",
+          "columns": [
+            {
+              "expression": "lender_code",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "product_type",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "lender_products_lender_code_lenders_code_fk": {
+          "name": "lender_products_lender_code_lenders_code_fk",
+          "tableFrom": "lender_products",
+          "tableTo": "lenders",
+          "columnsFrom": [
+            "lender_code"
+          ],
+          "columnsTo": [
+            "code"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.lender_vehicle_offerings": {
+      "name": "lender_vehicle_offerings",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "workbook_import_id": {
+          "name": "workbook_import_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "lender_code": {
+          "name": "lender_code",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "trim_id": {
+          "name": "trim_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "lender_brand": {
+          "name": "lender_brand",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "lender_model_name": {
+          "name": "lender_model_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "vehicle_price": {
+          "name": "vehicle_price",
+          "type": "numeric(14, 0)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "term_12_residual": {
+          "name": "term_12_residual",
+          "type": "numeric(7, 4)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "term_24_residual": {
+          "name": "term_24_residual",
+          "type": "numeric(7, 4)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "term_36_residual": {
+          "name": "term_36_residual",
+          "type": "numeric(7, 4)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "term_48_residual": {
+          "name": "term_48_residual",
+          "type": "numeric(7, 4)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "term_60_residual": {
+          "name": "term_60_residual",
+          "type": "numeric(7, 4)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "snk_residual_band": {
+          "name": "snk_residual_band",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "aps_residual_band": {
+          "name": "aps_residual_band",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "residual_promotion_code": {
+          "name": "residual_promotion_code",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "ws_grade": {
+          "name": "ws_grade",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "cb_grade": {
+          "name": "cb_grade",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "ty_grade": {
+          "name": "ty_grade",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "jy_grade": {
+          "name": "jy_grade",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "cr_grade": {
+          "name": "cr_grade",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "adb_grade": {
+          "name": "adb_grade",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "hybrid_allowed": {
+          "name": "hybrid_allowed",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "raw_row": {
+          "name": "raw_row",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'{}'::jsonb"
+        }
+      },
+      "indexes": {
+        "lender_vehicle_offerings_unique": {
+          "name": "lender_vehicle_offerings_unique",
+          "columns": [
+            {
+              "expression": "workbook_import_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "trim_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "lender_vehicle_offerings_workbook_import_id_workbook_imports_id_fk": {
+          "name": "lender_vehicle_offerings_workbook_import_id_workbook_imports_id_fk",
+          "tableFrom": "lender_vehicle_offerings",
+          "tableTo": "workbook_imports",
+          "columnsFrom": [
+            "workbook_import_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "lender_vehicle_offerings_lender_code_lenders_code_fk": {
+          "name": "lender_vehicle_offerings_lender_code_lenders_code_fk",
+          "tableFrom": "lender_vehicle_offerings",
+          "tableTo": "lenders",
+          "columnsFrom": [
+            "lender_code"
+          ],
+          "columnsTo": [
+            "code"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "lender_vehicle_offerings_trim_id_vehicle_trims_id_fk": {
+          "name": "lender_vehicle_offerings_trim_id_vehicle_trims_id_fk",
+          "tableFrom": "lender_vehicle_offerings",
+          "tableTo": "vehicle_trims",
+          "columnsFrom": [
+            "trim_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.lenders": {
+      "name": "lenders",
+      "schema": "",
+      "columns": {
+        "code": {
+          "name": "code",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "display_name": {
+          "name": "display_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "is_enabled": {
+          "name": "is_enabled",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.residual_matrix_rows": {
+      "name": "residual_matrix_rows",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "workbook_import_id": {
+          "name": "workbook_import_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "matrix_group": {
+          "name": "matrix_group",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "grade_code": {
+          "name": "grade_code",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "lease_term_months": {
+          "name": "lease_term_months",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "residual_rate": {
+          "name": "residual_rate",
+          "type": "numeric(7, 4)",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "residual_matrix_rows_workbook_import_id_workbook_imports_id_fk": {
+          "name": "residual_matrix_rows_workbook_import_id_workbook_imports_id_fk",
+          "tableFrom": "residual_matrix_rows",
+          "tableTo": "workbook_imports",
+          "columnsFrom": [
+            "workbook_import_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.vehicle_models": {
+      "name": "vehicle_models",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "brand_id": {
+          "name": "brand_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "canonical_name": {
+          "name": "canonical_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "vehicle_class": {
+          "name": "vehicle_class",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "vehicle_models_brand_canonical_unique": {
+          "name": "vehicle_models_brand_canonical_unique",
+          "columns": [
+            {
+              "expression": "brand_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "canonical_name",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "vehicle_models_brand_id_brands_id_fk": {
+          "name": "vehicle_models_brand_id_brands_id_fk",
+          "tableFrom": "vehicle_models",
+          "tableTo": "brands",
+          "columnsFrom": [
+            "brand_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.vehicle_trims": {
+      "name": "vehicle_trims",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "model_id": {
+          "name": "model_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "canonical_name": {
+          "name": "canonical_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "vehicle_key": {
+          "name": "vehicle_key",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "engine_displacement_cc": {
+          "name": "engine_displacement_cc",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "fuel_type": {
+          "name": "fuel_type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "is_high_residual_eligible": {
+          "name": "is_high_residual_eligible",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "vehicle_trims_model_canonical_unique": {
+          "name": "vehicle_trims_model_canonical_unique",
+          "columns": [
+            {
+              "expression": "model_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "canonical_name",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "vehicle_trims_model_id_vehicle_models_id_fk": {
+          "name": "vehicle_trims_model_id_vehicle_models_id_fk",
+          "tableFrom": "vehicle_trims",
+          "tableTo": "vehicle_models",
+          "columnsFrom": [
+            "model_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.workbook_imports": {
+      "name": "workbook_imports",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "lender_code": {
+          "name": "lender_code",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "lender_name": {
+          "name": "lender_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "version_label": {
+          "name": "version_label",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "source_file_name": {
+          "name": "source_file_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "file_checksum": {
+          "name": "file_checksum",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "imported_at": {
+          "name": "imported_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "is_active": {
+          "name": "is_active",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "status": {
+          "name": "status",
+          "type": "workbook_import_status",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'previewed'"
+        },
+        "meta": {
+          "name": "meta",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'{}'::jsonb"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "workbook_imports_lender_code_lenders_code_fk": {
+          "name": "workbook_imports_lender_code_lenders_code_fk",
+          "tableFrom": "workbook_imports",
+          "tableTo": "lenders",
+          "columnsFrom": [
+            "lender_code"
+          ],
+          "columnsTo": [
+            "code"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    }
+  },
+  "enums": {
+    "public.quote_product_type": {
+      "name": "quote_product_type",
+      "schema": "public",
+      "values": [
+        "operating_lease",
+        "financial_lease",
+        "installment_loan"
+      ]
+    },
+    "public.workbook_import_status": {
+      "name": "workbook_import_status",
+      "schema": "public",
+      "values": [
+        "previewed",
+        "validated",
+        "activated"
+      ]
+    }
+  },
+  "schemas": {},
+  "sequences": {},
+  "roles": {},
+  "policies": {},
+  "views": {},
+  "_meta": {
+    "columns": {},
+    "schemas": {},
+    "tables": {}
+  }
+}

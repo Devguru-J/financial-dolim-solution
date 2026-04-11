@@ -269,15 +269,15 @@ async function main() {
             brandCache.set(canonicalBrand, brandId);
           }
 
-          // Extract vehicle key (trim-level)
-          const vehicleKey = extractVehicleKey(p.brand, p.modelName);
-          if (!vehicleKey) {
-            stats.skippedNoKey++;
-            continue;
-          }
+          // Extract vehicle key (trim-level). Fallback for null-key cases:
+          // synthesize a key from the normalized brand + uppercased model name
+          // so every vehicle has a stable, unique identifier.
+          const extracted = extractVehicleKey(p.brand, p.modelName);
+          const vehicleKey = extracted ?? `${canonicalBrand}_${p.modelName.toUpperCase().replace(/[^A-Z0-9]+/g, "_").replace(/^_|_$/g, "")}`;
+          if (!extracted) stats.skippedNoKey++;
 
-          // Derive model line
-          const modelLine = deriveModelLine(vehicleKey);
+          // Derive model line (fallback to "Other" when key was synthetic)
+          const modelLine = extracted ? deriveModelLine(vehicleKey) : "Other";
 
           // Upsert vehicle_model
           const modelCacheKey = `${brandId}|${modelLine}`;
