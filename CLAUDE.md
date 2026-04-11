@@ -10,50 +10,99 @@
 
 **스택:** Bun + Hono + Drizzle ORM + Supabase PostgreSQL + Cloudflare Pages
 
-## DB 스키마 (2026-04-11 정규화)
+## DB 스키마 (9개 테이블 — 2026-04-11 정규화 + legacy 제거)
 
 ```
-brands                         (20~35 행) — 표준 브랜드 레지스트리
-├─ canonical_name              "AUDI", "BMW", "BENZ", "PORSCHE"...
-├─ display_name                "Audi", "BMW", "Mercedes-Benz"...
-├─ aliases                     ["AUDI", "아우디", "Audi"]
-└─ country_code                "DE", "KR", "JP"...
+📋 설정 (3개)
+  lenders                      (2 rows) — mg-capital, bnk-capital
+  lender_products              (6 rows) — product type enum
+  workbook_imports             — 워크북 import 버전 관리 (active flag)
 
-vehicle_models                 (~300 행) — 브랜드별 모델 라인
-├─ brand_id → brands
-├─ canonical_name              "5 Series", "A7", "911", "Cayenne"
-└─ vehicle_class               "승용", "SUV"...
+🚗 차량 계층 (4개, 정규화)
+  brands                       (34 rows)
+  ├─ canonical_name            "AUDI", "BMW", "BENZ", "PORSCHE"...
+  ├─ display_name              "Audi", "BMW", "Mercedes-Benz"...
+  ├─ aliases jsonb             ["AUDI", "아우디", "Audi"]
+  └─ country_code              "DE", "KR", "JP"...
 
-vehicle_trims                  (~2700 행) — 각 변형(variant)별 trim
-├─ model_id → vehicle_models
-├─ canonical_name              원본 lender model name 그대로
-├─ vehicle_key                 cross-lender 매칭 hint ("BMW_520I") — NOT unique
-├─ engine_displacement_cc
-└─ is_high_residual_eligible
+  vehicle_models               (~314 rows)
+  ├─ brand_id → brands
+  ├─ canonical_name            "5 Series", "A7", "911", "Cayenne" (또는 "Other" for null-key)
+  └─ vehicle_class             "승용", "SUV"...
 
-lender_vehicle_offerings       (~2700 행) — 각 lender별 trim 세부정보
-├─ workbook_import_id → workbook_imports
-├─ lender_code → lenders
-├─ trim_id → vehicle_trims
-├─ lender_brand + lender_model_name  (원본 문자열 보존)
-├─ vehicle_price
-├─ term_12/24/36/48/60_residual      (MG용)
-├─ snk_residual_band / aps_residual_band / residual_promotion_code
-├─ ws/cb/ty/jy/cr/adb_grade          (BNK용 CDB grades)
-└─ raw_row (jsonb 보강)
+  vehicle_trims                (~2913 rows — 각 variant별 1행)
+  ├─ model_id → vehicle_models
+  ├─ canonical_name            원본 lender model name 그대로 (MG "320d Sedan", BNK "The New 3 Series...")
+  ├─ vehicle_key               cross-lender 매칭 hint ("BMW_320D") — NOT unique (variant끼리 공유)
+  │                            null-key 차량은 synthetic key 사용: `{BRAND}_{NORMALIZED_MODELNAME}`
+  ├─ engine_displacement_cc
+  └─ is_high_residual_eligible
 
-# Legacy (여전히 유지 — fallback용)
-vehicle_programs               — 과거 import 호환용, null-key 차량 fallback 
-residual_matrix_rows           — 잔가 매트릭스 (workbook_import_id 참조)
-brand_rate_policies            — 브랜드/딜러별 금리 (workbook_import_id 참조)
+  lender_vehicle_offerings     (~2913 rows — 각 lender workbook × trim별 1행)
+  ├─ workbook_import_id → workbook_imports (cascade)
+  ├─ lender_code → lenders
+  ├─ trim_id → vehicle_trims (cascade)
+  ├─ lender_brand              원본 브랜드 문자열 보존 (예: "아우디" / "AUDI")
+  ├─ lender_model_name         원본 모델명 보존
+  ├─ vehicle_price
+  ├─ term_12/24/36/48/60_residual     (MG용)
+  ├─ snk_residual_band / aps_residual_band / residual_promotion_code
+  ├─ ws/cb/ty/jy/cr/adb_grade         (BNK CDB grades)
+  ├─ hybrid_allowed
+  └─ raw_row jsonb                    (파서가 보강한 원본 데이터)
+
+💰 요율 데이터 (2개 — workbook별)
+  residual_matrix_rows         (~4565 rows) — 잔가 매트릭스 (matrixGroup × gradeCode × term)
+  brand_rate_policies          (~1461 rows) — 브랜드/딜러별 금리 (baseIrrRate)
 ```
 
-**엔진 쿼리 흐름** (MG/BNK 동일 패턴):
-1. `lender_vehicle_offerings` × `vehicle_trims` × `vehicle_models` join → **lender_model_name exact match** (사용자가 특정 variant 선택)
-2. 실패 시: 같은 join에서 `vehicle_trims.vehicle_key = extractVehicleKey(input)` — **cross-lender fallback** (MG trim을 BNK에 조회)
-3. 최종 실패 시: legacy `vehicle_programs` table exact match (null-key 엣지 케이스)
+## 엔진 쿼리 흐름 (MG/BNK 동일 패턴)
 
-**파서 → import-service** flow는 이제 `populateNormalizedTablesForImport()`를 transaction 내부에 호출해서 새 테이블에도 이중 쓰기. 기존 `vehicle_programs`는 rollback 안전장치로 유지.
+```
+1️⃣ Exact match (사용자가 특정 variant 선택)
+   lender_vehicle_offerings
+   × vehicle_trims
+   × vehicle_models
+   WHERE workbook_import_id = active AND lender_model_name = input.modelName
+
+2️⃣ Cross-lender fallback (MG trim을 BNK에 조회 또는 그 반대)
+   같은 join
+   WHERE workbook_import_id = active AND vehicle_trims.vehicle_key = extractVehicleKey(input)
+```
+
+**legacy vehicle_programs fallback은 완전히 제거됨** (2026-04-11). null-key 차량도 synthetic vehicleKey로 offerings에 이전됨.
+
+## Drizzle 마이그레이션 히스토리
+
+| # | 파일 | 내용 |
+|---|------|------|
+| 0000 | cute_steel_serpent | 초기 7개 테이블 (lenders/lender_products/workbook_imports/vehicle_programs/residual_matrix_rows/brand_rate_policies/quote_snapshots) |
+| 0001 | bumpy_imperial_guard | `brands`, `vehicle_models`, `vehicle_trims`, `lender_vehicle_offerings` 추가 |
+| 0002 | strong_morg | `lender_vehicle_offerings.lender_brand` 칼럼 추가 |
+| 0003 | quick_nick_fury | `vehicle_trims.vehicle_key` unique 제약 제거 (variant끼리 동일 key 허용) |
+| 0004 | pale_viper | `vehicle_programs`, `quote_snapshots` DROP (legacy 정리) |
+
+## 파서 → Import 플로우
+
+`persistWorkbookImport` (`src/domain/imports/import-service.ts`):
+1. `lenders` upsert
+2. `lender_products` upsert
+3. 기존 활성 workbook deactivate
+4. `workbook_imports` insert (active=true)
+5. `residual_matrix_rows` insert
+6. `brand_rate_policies` insert
+7. **`populateNormalizedTablesForImport`** — brands/models/trims/offerings upsert (`src/domain/imports/normalize-to-offerings.ts`)
+   - vehicleKey가 null이면 synthetic key 생성: `{brand}_{modelname upper, non-alnum → _}`
+   - 모든 차량이 offerings에 저장됨
+
+## 데이터 마이그레이션 스크립트
+
+```bash
+# 기존 vehicle_programs → 새 스키마 일괄 변환 (초기 1회용, idempotent)
+DATABASE_URL=... bun run scripts/migrate-to-normalized-schema.ts
+```
+
+신규 import에는 불필요 (import-service가 자동 처리).
 
 ---
 
