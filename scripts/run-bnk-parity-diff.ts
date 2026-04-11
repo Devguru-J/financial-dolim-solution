@@ -49,7 +49,7 @@ type Tolerance = {
 const DEFAULT_TOLERANCE: Tolerance = {
   monthlyPayment: 1,
   displayedAnnualRate: 1e-4,
-  residualAmount: 0,
+  residualAmount: 1000, // Excel rounds residual to 1000원; engine may differ by rounding
 };
 
 function parseCli(argv: string[]): {
@@ -112,10 +112,18 @@ function providerRatesFor(termMonths: number) {
     }));
 }
 
+// Some parser outputs split merged CDB brands (e.g. FORD/LINCOLN) but the
+// Cond policies still resolve under the original merged string.
+const BRAND_ALIASES: Record<string, string[]> = {
+  FORD: ["FORD", "포드/링컨", "포드"],
+  LINCOLN: ["LINCOLN", "포드/링컨", "링컨"],
+};
+
 function findPolicy(brand: string, dealerName: string | null | undefined, ownership: "company" | "customer") {
   const target = dealerName ?? null;
+  const brandCandidates = BRAND_ALIASES[brand] ?? [brand];
   return parsed.brandRatePolicies.find((p) => {
-    if (p.brand !== brand) return false;
+    if (!brandCandidates.includes(p.brand)) return false;
     if (p.ownershipType !== ownership) return false;
     const dn = (p as unknown as { dealerName?: string }).dealerName ?? null;
     if (target == null) return dn == null || dn.includes("비제휴");

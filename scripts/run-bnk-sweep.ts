@@ -120,6 +120,11 @@ function buildVehicleIndex(workbookPath: string): Map<string, VehicleLookup> {
     defval: null,
   }) as unknown[][];
 
+  // Key by model name only — B17 VLOOKUP into CDB col J only uses the model
+  // string (+ year suffix). Brand is used for index hashing only, which creates
+  // problems when scenarios use parser-normalized brands like "FORD"/"LINCOLN"
+  // while CDB stores them under "포드/링컨". Indexing by model alone sidesteps
+  // the issue (model names are unique enough within this workbook).
   const map = new Map<string, VehicleLookup>();
   const bestYear = new Map<string, number>();
 
@@ -128,7 +133,7 @@ function buildVehicleIndex(workbookPath: string): Map<string, VehicleLookup> {
     const model = asText(row[6]);
     if (!brand || !model) continue;
     const year = asNumber(row[7]) ?? 0;
-    const key = `${brand}|${model}`;
+    const key = model;
     if ((bestYear.get(key) ?? -Infinity) > year) continue;
     bestYear.set(key, year);
     map.set(key, {
@@ -279,7 +284,7 @@ console.error(`[bnk-sweep] indexed ${vehicleIndex.size} vehicles`);
 
 const resolved: Array<{ scenario: Scenario; lookupName: string; vehicle: VehicleLookup } | { scenario: Scenario; error: string }> = [];
 for (const s of scenarios) {
-  const v = vehicleIndex.get(`${s.brand}|${s.model}`);
+  const v = vehicleIndex.get(s.model);
   if (!v) {
     resolved.push({ scenario: s, error: `vehicle not found: ${s.brand} / ${s.model}` });
   } else {

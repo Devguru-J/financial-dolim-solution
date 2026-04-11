@@ -140,6 +140,7 @@ scripts/
   extract-bnk-operating-lease-fixture.ts  # BNK 워크북 단일 시나리오 드라이버 (Es1/운용리스견적 셀 직접 쓰기)
   run-bnk-sweep.ts                # BNK 배치 하네스 (JSON 시나리오 array → 워크북 1회 open → 결과 JSON)
   run-bnk-parity-diff.ts          # sweep 결과 ↔ 엔진 결과 diff (monthlyPayment/rate/residual 허용오차 비교)
+  generate-bnk-scenarios.ts       # 파서로 BNK 차량 읽어 sweep용 시나리오 JSON 생성 (비제휴 딜러 자동매핑 + 다양성 샘플링)
 docs/
   platform-blueprint.md           # 전체 아키텍처 설계
   implementation-roadmap.md       # 구현 로드맵 (Phase 0-7)
