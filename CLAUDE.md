@@ -136,6 +136,8 @@ fixtures/
   bnk-capital/operating-lease/    # BNK 패리티 픽스처 (17개 JSON)
 scripts/
   dev.ts                          # 백엔드+프론트엔드 동시 실행 (bun run start)
+  extract-mg-operating-lease-fixture.ts   # MG 워크북 AppleScript 드라이버 (temp 복사본 driver → fixture JSON)
+  extract-bnk-operating-lease-fixture.ts  # BNK 워크북 AppleScript 드라이버 (Es1/운용리스견적 셀 직접 쓰기)
 docs/
   platform-blueprint.md           # 전체 아키텍처 설계
   implementation-roadmap.md       # 구현 로드맵 (Phase 0-7)
@@ -488,5 +490,5 @@ bun run db:push      # DB 스키마 마이그레이션
 - BNK 취득세 기본값: ≥1600cc 승용 → 7%, 그 외 → 4% (MG와 동일)
 - BNK stampDuty 기본값: 0원 (MG는 10,000원 — 다름)
 - 잔가사별 최대수수료 (gap > 6%): WS 1.32%, CB 1.35%, BR 0%, TY 1.32%, JY 1.45%, CR 1.35%, ADB 1.45% — WS 엔진 등록됨(2026-04-05), BR 미등록
-- **⚠️ BNK 워크북 = VBA 매크로 기반** — 모든 시트에 셀 수식이 저장되지 않음 (Es1 포함 전체 0 formulas). 자동 추출 스크립트 빌드 불가능 → 크로스브랜드 픽스처는 Excel 수동 실행 후 값 기록 방식으로만 가능
+- **✅ BNK 워크북은 formula-driven** (2026-04-11 재검증) — Es1=10,155 수식, CDB=16,631, 운용리스견적=139, 견적서_운용리스=75. VBA는 순전히 UI 헬퍼(체크박스 토글, 컬럼 hide/show, 초기화)일 뿐 계산 0줄. **잠금해제 .xlsm도 모든 수식 유지됨** — 이전 "잠금해제 시 0 formulas" 기록은 틀렸음. MG처럼 AppleScript로 셀 쓰기 → `calculate` → 출력 읽기 방식으로 자동 추출 가능. Es1 입력/출력 셀 매핑은 `memory/project-excel-parity-harness.md` 참조
 - Phase B 테스트 픽스처 패턴: `annualIrrRateOverride` 제거 + `providerRates` 배열 + `policyBaseIrr` 설정
