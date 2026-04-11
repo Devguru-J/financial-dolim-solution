@@ -227,9 +227,48 @@ docs/
   - 각 금융사 독립 잔가율 결정, 결과 패널에 금융사별 다른 잔가율 표시
 - ✅ **MG 경고 메시지 정리** — 개발용 warnings (public bond, insurance, deposit) 숨김, BK27 경고 residualMode 시 숨김
 
+### 2026-04-11 업데이트
+- ✅ **BNK B185+C186 잔가 조정 구현** — Es1 수식 실증 확인 후 Phase B 자동경로에 추가
+  - B185(법인+고잔가=-0.3% / 이용자+고잔가=+0.3%)는 **단독이 아니라 C186과 쌍**
+  - C186: `AND(B26=1, B56>B52, brand∈{BMW,벤츠,포르쉐,아우디})` → +0.3% (B185 상쇄)
+  - Net: 프리미엄 독일 법인+고잔가 = 0, 비프리미엄 법인+고잔가 = -0.3%, 이용자+고잔가 = +0.3%
+  - 기존 BMW 픽스처는 모두 프리미엄 법인 → net 0 → 영향 없음
+  - 유닛 테스트 6개 추가
+- ✅ **BNK C188 balloon 수수료 구현** — (upfront+deposit)/price ∈ (40%, 50%] → +0.5% rate surcharge, >50% → 경고
+  - Phase B 경로에 추가, 유닛 테스트 5개 (18%/41%/40%/50%/60% 경계값)
+  - 기존 픽스처 최대 비율 18.2% → 영향 없음
+- ✅ **BNK 프로바이더 선택 Excel 분석**
+  - Excel 로직: `B48 = VLOOKUP(B50=MAX(G101:G107), G101:H107, 2, 0)` — 가장 높은 boosted max rate를 가진 프로바이더 선택
+  - 엔진 현재: Phase B에서 lowest-fee 기준 선택 (residualMode='high'일 때는 highest-rate 기준)
+  - 영향: gap>0 시나리오는 보통 두 로직 같은 결과. gap<0(fee=0 tied)일 때만 차이 있을 수 있으나 결과 금액 동일
+- ℹ️ **BNK WS 그레이드 조사** — CDB 3300여행 전수 검색, 잠금/원본 두 버전 모두 WS 컬럼 빈값. 워크북에 "웨스트 통합" 테이블은 RVs 시트에 존재하나 CDB-차량 매핑 없음. WS 엔진 코드는 동작하지만 실제 데이터 매핑은 추후 워크북 버전 대기
+- ✅ **실제 파서 기반 end-to-end 통합 테스트** (`integration.test.ts`, 5개)
+  - `.xlsm` → 파서 → 엔진 전체 흐름 검증, 핸드메이드 픽스처와 분리
+  - BMW 520i 60m 110M BMW-동성모터스 법인+고잔가 → **1,292,200 / 5.5964%** (엑셀 완벽 일치)
+  - BMW 520i 60m 110M BMW-동성모터스 이용자+고잔가 → **1,371,400 / 6.6047%** (엑셀 완벽 일치)
+  - 파서가 jyGrade="2.5" 추출 + BNK_2.5@60m=0.525 residual + BMW-동성 company/customer 딜러 정책 검증
+  - 핵심 발견: 엔진이 실제 파싱 데이터(JY=2.5 포함)로 호출될 때 Excel과 100% 동일 — **프로덕션 사이트 플로우 정상**
+  - 기존 BMW 520i 픽스처는 jyGrade=null로 단순화됐지만, 엔진 검증용이지 실제 파싱 값이 아님
+- 146개 테스트 통과 (MG 46 + BNK 17 픽스처 + BNK 11 유닛 + BNK 5 통합 + vehicleKey 67)
+
+### 2026-04-11 업데이트 (cross-lender 매칭 대대적 개선)
+- ✅ **브랜드 별칭 (한글↔영문) 처리** — MG는 "AUDI"/"BENZ"/"PORSCHE", BNK는 "아우디"/"벤츠"/"포르쉐". `BRAND_ALIASES` 맵으로 양방향 정규화. 엔진 fallback 쿼리가 `resolveBrandAliases()` 사용해서 두 브랜드명 다 검색
+- ✅ **BNK 파서 "포드/링컨" 분리** — BNK 워크북이 Ford와 Lincoln을 "포드/링컨" 한 브랜드로 합쳐놓은 걸 모델명 기반으로 FORD/LINCOLN 분리 (Navigator/Aviator/Nautilus/Corsair → LINCOLN, Explorer/Bronco/Mustang 등 → FORD)
+- ✅ **BMW M-performance 패턴 추가** — M240i, M340i, M440i, M550i, M760Li, M850i (3자리 M+숫자) + iX M60/M70 + iX3
+- ✅ **BMW X-series BNK 토큰 패턴** — `sDrive18d` / `xDrive20i` 한 토큰도 인식 (MG는 "X1 18d" 분리 표기)
+- ✅ **BENZ EQ 시리즈 수정** — BNK의 "EQA 전기 EQA 250" 중복 토큰에서 숫자 놓치던 버그 수정, G63 (2자리) 지원, "AMG GT 4door" noise 제거
+- ✅ **15개 추가 브랜드 패턴** — PORSCHE(911/718/Cayenne/Macan/Panamera/Taycan), MINI(Cooper/Clubman/Countryman/Aceman/JCW), Jeep, VW, Maserati, Peugeot, Toyota, Cadillac, Ford, Honda, Lamborghini, Bentley, Ferrari, LANDROVER, LINCOLN
+- ✅ **MG 잔가 부재 에러 메시지 한국어화** — 전기차 등 MG 워크북에 잔가 데이터 미입력 차량 선택 시 `"MG 워크북에 이 차량의 잔가율 데이터가 입력되지 않았습니다"` (기존 `"Residual rate not found for term '60' and grade '-'."`)
+- ✅ **Cross-lender audit 테스트 11개** — 실제 워크북 파싱 결과로 82% MG→BNK 매칭 확인, 원본 문제 케이스(M340i, iX M60) 회귀 방지
+- ✅ **158 테스트 통과** (MG 46 + BNK 17 픽스처 + BNK 11 유닛 + BNK 5 통합 + vehicleKey 68 + cross-lender audit 11)
+
+### ⚠️ 프로덕션 DB 재 import 필요
+BNK 워크북 파서가 "포드/링컨" 분리 로직을 추가했으므로 **활성 DB에 BNK 워크북을 재 import**해야 브라우저 사이트에서 Ford/Lincoln 별도 표시됨. `/imports` 페이지에서 BNK .xlsm 재업로드 + 활성화.
+
 ### 미완료
-- 🟡 **B185 잔가 조정** — 법인 -0.3% / 이용자 +0.3% (적용잔가 > 기준잔가 시). Es1 B185 수식 확인됐으나 적용 조건이 복잡 (B56 vs B52). 검증 데이터 필요
-- 🟡 BNK WS 픽스처 — WS 그레이드 있는 차량 찾아 Phase B auto-select 검증 필요
+- 🟡 BNK C187(국산 특판 -0.2%/-0.5%) — `B4=TRUE AND 국산` 조건, B4는 워크북 global 특판전략차종 플래그. 파서가 CDB col 28 특판 여부 읽어야 구현 가능
+- ⏸️ BNK WS 픽스처 — 워크북 데이터에 WS grade 없음 (잠금/원본 두 버전 모두 빈값), 추후 버전에서 활성화 시
+- 🟢 MG 비-BMW 36m 변형 픽스처 (기존 BMW 36m만 커버)
 - ❌ 금융리스, 할부/오토론 미구현
 
 ### 검증된 픽스처 목록 (2026-03-29 기준, 42개)

@@ -7,7 +7,7 @@ import {
   workbookImports,
 } from "@/db/schema";
 import type { CanonicalQuoteInput, CanonicalQuoteResult } from "@/domain/quotes/types";
-import { resolveModelNameByVehicleKey } from "@/domain/vehicles/vehicle-key";
+import { resolveBrandAliases, resolveModelNameByVehicleKey } from "@/domain/vehicles/vehicle-key";
 import { createDbClient } from "@/lib/db/client";
 
 // ---------------------------------------------------------------------------
@@ -157,6 +157,48 @@ function getMileageAdjustment(annualMileageKm: number | undefined): number {
 }
 
 // ---------------------------------------------------------------------------
+// B185 + C186 residual rate adjustment (Es1 model)
+//
+// B185 = IF(AND(B26=1, B56>B52), -0.3%,
+//        IF(AND(B26=2, B56>B52), +0.3%, 0%))
+// C186 = IF(AND(B26=1, B56>B52, brand ∈ premium), +0.3%, 0%)  -- offsets B185
+//
+// Net effect (when applied residual > standard):
+//   premium German company   → 0      (B185 cancelled by C186)
+//   non-premium company      → -0.3%
+//   customer (any brand)     → +0.3%
+// ---------------------------------------------------------------------------
+
+const BNK_PREMIUM_BRANDS = new Set([
+  "BMW",
+  "BENZ",
+  "MERCEDES-BENZ",
+  "벤츠",
+  "PORSCHE",
+  "포르쉐",
+  "AUDI",
+  "아우디",
+]);
+
+function computeResidualRateAdjustment(params: {
+  ownershipType: string;
+  brand: string;
+  appliedRate: number;
+  standardRate: number;
+}): number {
+  const { ownershipType, brand, appliedRate, standardRate } = params;
+  if (appliedRate <= standardRate) return 0;
+  if (ownershipType === "customer" || ownershipType === "individual") {
+    return 0.003;
+  }
+  // company
+  if (BNK_PREMIUM_BRANDS.has(brand.toUpperCase())) {
+    return 0; // B185 cancelled by C186
+  }
+  return -0.003;
+}
+
+// ---------------------------------------------------------------------------
 // BNK provider configuration
 // ---------------------------------------------------------------------------
 
@@ -272,7 +314,9 @@ export async function calculateBnkOperatingLeaseQuote(params: {
       .then((rows: ResolvedVehicle[]) => rows[0] ?? null);
 
     // vehicleKey fallback: if exact modelName match failed, try cross-lender matching
+    // Query by brand aliases since MG uses English ("AUDI") and BNK uses Korean ("아우디")
     if (!vehicleRow) {
+      const brandAliases = resolveBrandAliases(input.brand);
       const allBrandVehicles = await db
         .select({
           brand: vehiclePrograms.brand,
@@ -287,7 +331,7 @@ export async function calculateBnkOperatingLeaseQuote(params: {
         .where(
           and(
             eq(vehiclePrograms.workbookImportId, activeImport.id),
-            eq(vehiclePrograms.brand, input.brand),
+            inArray(vehiclePrograms.brand, brandAliases),
           ),
         )
         .then((rows: ResolvedVehicle[]) => rows);
@@ -299,7 +343,7 @@ export async function calculateBnkOperatingLeaseQuote(params: {
     }
 
     if (!vehicleRow) {
-      throw new Error(`Vehicle not found in BNK catalog: ${input.brand} / ${input.modelName}`);
+      throw new Error(`BNK 캐피탈 카탈로그에 해당 차량이 없습니다 (${input.modelName}). BNK 워크북이 이 모델을 취급하지 않습니다.`);
     }
 
     // 3. Base IRR from brand rate policy (dealer-aware)
@@ -611,11 +655,34 @@ function computeQuote(params: ComputeQuoteParams): CanonicalQuoteResult {
     const cmFee = Math.max(0, input.cmFeeRate ?? 0);
     const agFee = Math.max(0, input.agFeeRate ?? 0);
 
-    // TODO: B185 residual rate adjustment (company -0.3%, customer +0.3% when applied > base)
-    // Conditions for B185 are complex (B56 vs B52). Needs verified fixture data.
+    // B185 + C186 residual rate adjustment (Es1 model)
+    // Uses selectedProvider's standard rate as the "B52" reference.
+    const residualAdjustment = selectedProviderResult
+      ? computeResidualRateAdjustment({
+          ownershipType: input.ownershipType,
+          brand: vehicle.brand,
+          appliedRate: residualRateRaw,
+          standardRate: selectedProviderResult.standardRate,
+        })
+      : 0;
 
-    // Composed rate = base + CM + AG (WITHOUT guarantee fee — fee is lump sum)
-    annualIrrRate = policyBaseIrr + cmFee + agFee;
+    // C188: balloon surcharge — (upfront + deposit) / vehiclePrice in (40%, 50%] → +0.5%
+    // >50% = out-of-range (Excel returns "입력범위초과", we warn and clamp to 0).
+    const balloonRatio =
+      discountedVehiclePrice > 0
+        ? (upfrontPayment + depositAmount) / discountedVehiclePrice
+        : 0;
+    let balloonSurcharge = 0;
+    if (balloonRatio > 0.5) {
+      warnings.push(
+        `BNK: 선납+보증금 비율(${(balloonRatio * 100).toFixed(1)}%)이 50%를 초과합니다 (입력범위초과).`,
+      );
+    } else if (balloonRatio > 0.4) {
+      balloonSurcharge = 0.005;
+    }
+
+    // Composed rate = base + CM + AG + B185 + C188 (WITHOUT guarantee fee — fee is lump sum)
+    annualIrrRate = policyBaseIrr + cmFee + agFee + residualAdjustment + balloonSurcharge;
     rateSource = "brand-policy";
   }
 

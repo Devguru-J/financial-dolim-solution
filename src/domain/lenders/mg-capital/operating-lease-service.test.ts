@@ -247,7 +247,7 @@ test("MG residual resolver fails like workbook when no residual band exists", ()
       },
       matrixRows: [],
     }),
-  ).toThrow("Residual rate not found for term '36' and grade '-'.");
+  ).toThrow("잔가율 데이터가 입력되지 않았습니다");
 });
 
 test("MG BMW X7 company 60-month 54.5% residual uses APS guarantee fee path for displayed annual rate", () => {

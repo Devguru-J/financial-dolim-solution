@@ -241,8 +241,13 @@ test("KIA → generic key from first token", () => {
   expect(extractVehicleKey("KIA", "EV6 GT-Line")).toBe("KIA_EV6");
 });
 
-test("unknown brand returns null", () => {
-  expect(extractVehicleKey("PORSCHE", "911 Carrera")).toBe(null);
+test("PORSCHE 911 Carrera → PORSCHE_911_CARRERA", () => {
+  expect(extractVehicleKey("PORSCHE", "911 Carrera")).toBe("PORSCHE_911_CARRERA");
+});
+
+test("truly unknown brand falls back to generic key", () => {
+  const k = extractVehicleKey("ZZZ_NONEXISTENT", "Model X");
+  expect(k).toBe("ZZZ_NONEXISTENT_MODEL");
 });
 
 // ---------------------------------------------------------------------------

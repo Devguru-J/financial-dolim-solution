@@ -141,3 +141,167 @@ for (const fileName of readdirSync(fixtureDir).filter((entry) => entry.endsWith(
     );
   });
 }
+
+// ---------------------------------------------------------------------------
+// Helper for floating-point comparison (toBeCloseTo isn't in Bun's type shim)
+// ---------------------------------------------------------------------------
+function expectClose(actual: number, expected: number, epsilon = 1e-10) {
+  expect(Math.abs(actual - expected)).toBeLessThanOrEqual(epsilon);
+}
+
+// ---------------------------------------------------------------------------
+// B185 + C186 residual rate adjustment unit tests
+// B185 = IF(company+gap>0, -0.3%, IF(customer+gap>0, +0.3%, 0%))
+// C186 = IF(company+gap>0 + premium brand, +0.3%, 0%) — offsets B185
+// Net: premium company gap>0 = 0, non-premium company gap>0 = -0.3%,
+//      customer gap>0 = +0.3%, gap≤0 = 0
+// ---------------------------------------------------------------------------
+
+function buildB185Context(overrides: {
+  brand: string;
+  ownership: "company" | "customer";
+  appliedRate: number;
+  standardRate: number;
+  policyBaseIrr: number;
+}) {
+  const { brand, ownership, appliedRate, standardRate, policyBaseIrr } = overrides;
+  return {
+    workbookImport: { id: "test", versionLabel: "test" },
+    input: {
+      lenderCode: "bnk-capital" as const,
+      productType: "operating_lease" as const,
+      brand,
+      modelName: "Test Model",
+      ownershipType: ownership,
+      leaseTermMonths: 60 as const,
+      upfrontPayment: 0,
+      depositAmount: 0,
+      quotedVehiclePrice: 100000000,
+      discountAmount: 0,
+      acquisitionTaxRateOverride: 0.07,
+      selectedResidualRateOverride: appliedRate,
+      cmFeeRate: 0,
+      agFeeRate: 0,
+    },
+    vehicle: {
+      brand,
+      modelName: "Test Model",
+      vehicleClass: "승용",
+      engineDisplacementCc: 1998,
+      highResidualAllowed: false,
+      hybridAllowed: false,
+      rawRow: { tyGrade: 3 } as Record<string, unknown>,
+    },
+    policyBaseIrr,
+    providerRates: [
+      { matrixGroup: "BNK_3", leaseTermMonths: 60, residualRate: String(standardRate) },
+    ],
+  };
+}
+
+test("B185: BMW company + applied > standard → premium offset, net 0%", () => {
+  const q = calculateBnkOperatingLeaseQuoteFromContext(
+    buildB185Context({ brand: "BMW", ownership: "company", appliedRate: 0.55, standardRate: 0.52, policyBaseIrr: 0.05 }),
+  );
+  expectClose(q.rates.monthlyRateDecimal, 0.05 / 12);
+});
+
+test("B185: Volvo company + applied > standard → -0.3% adjustment", () => {
+  const q = calculateBnkOperatingLeaseQuoteFromContext(
+    buildB185Context({ brand: "VOLVO", ownership: "company", appliedRate: 0.55, standardRate: 0.52, policyBaseIrr: 0.05 }),
+  );
+  expectClose(q.rates.monthlyRateDecimal, 0.047 / 12);
+});
+
+test("B185: BMW customer + applied > standard → +0.3% adjustment", () => {
+  const q = calculateBnkOperatingLeaseQuoteFromContext(
+    buildB185Context({ brand: "BMW", ownership: "customer", appliedRate: 0.55, standardRate: 0.52, policyBaseIrr: 0.0591 }),
+  );
+  expectClose(q.rates.monthlyRateDecimal, 0.0621 / 12);
+});
+
+test("B185: Hyundai customer + applied > standard → +0.3% adjustment (non-premium customer)", () => {
+  const q = calculateBnkOperatingLeaseQuoteFromContext(
+    buildB185Context({ brand: "HYUNDAI", ownership: "customer", appliedRate: 0.55, standardRate: 0.52, policyBaseIrr: 0.07 }),
+  );
+  expectClose(q.rates.monthlyRateDecimal, 0.073 / 12);
+});
+
+test("B185: BMW company + applied == standard → 0% (gap≤0)", () => {
+  const q = calculateBnkOperatingLeaseQuoteFromContext(
+    buildB185Context({ brand: "BMW", ownership: "company", appliedRate: 0.52, standardRate: 0.52, policyBaseIrr: 0.05 }),
+  );
+  expectClose(q.rates.monthlyRateDecimal, 0.05 / 12);
+});
+
+test("B185: Volvo company + applied < standard → 0% (gap<0)", () => {
+  const q = calculateBnkOperatingLeaseQuoteFromContext(
+    buildB185Context({ brand: "VOLVO", ownership: "company", appliedRate: 0.40, standardRate: 0.52, policyBaseIrr: 0.05 }),
+  );
+  expectClose(q.rates.monthlyRateDecimal, 0.05 / 12);
+});
+
+// ---------------------------------------------------------------------------
+// C188 balloon surcharge unit tests
+// (upfront + deposit) / vehiclePrice ∈ (40%, 50%] → +0.5%
+// >50% → warning, surcharge 0
+// ---------------------------------------------------------------------------
+
+function buildBalloonContext(upfront: number, deposit: number) {
+  return {
+    workbookImport: { id: "test", versionLabel: "test" },
+    input: {
+      lenderCode: "bnk-capital" as const,
+      productType: "operating_lease" as const,
+      brand: "BMW",
+      modelName: "Test",
+      ownershipType: "company" as const,
+      leaseTermMonths: 60 as const,
+      upfrontPayment: upfront,
+      depositAmount: deposit,
+      quotedVehiclePrice: 100000000,
+      discountAmount: 0,
+      acquisitionTaxRateOverride: 0.07,
+      selectedResidualRateOverride: 0.40,
+      cmFeeRate: 0,
+      agFeeRate: 0,
+    },
+    vehicle: {
+      brand: "BMW",
+      modelName: "Test",
+      vehicleClass: "승용",
+      engineDisplacementCc: 1998,
+      highResidualAllowed: false,
+      hybridAllowed: false,
+      rawRow: { tyGrade: 3 } as Record<string, unknown>,
+    },
+    policyBaseIrr: 0.05,
+    providerRates: [{ matrixGroup: "BNK_3", leaseTermMonths: 60, residualRate: "0.52" }],
+  };
+}
+
+test("C188: balloon ratio 18% → 0% surcharge", () => {
+  const q = calculateBnkOperatingLeaseQuoteFromContext(buildBalloonContext(10000000, 8000000));
+  expectClose(q.rates.monthlyRateDecimal, 0.05 / 12);
+});
+
+test("C188: balloon ratio 41% → +0.5% surcharge", () => {
+  const q = calculateBnkOperatingLeaseQuoteFromContext(buildBalloonContext(21000000, 20000000));
+  expectClose(q.rates.monthlyRateDecimal, 0.055 / 12);
+});
+
+test("C188: balloon ratio exactly 40% → 0% (not in range)", () => {
+  const q = calculateBnkOperatingLeaseQuoteFromContext(buildBalloonContext(20000000, 20000000));
+  expectClose(q.rates.monthlyRateDecimal, 0.05 / 12);
+});
+
+test("C188: balloon ratio exactly 50% → +0.5% surcharge (boundary)", () => {
+  const q = calculateBnkOperatingLeaseQuoteFromContext(buildBalloonContext(25000000, 25000000));
+  expectClose(q.rates.monthlyRateDecimal, 0.055 / 12);
+});
+
+test("C188: balloon ratio 60% → warning, no surcharge applied", () => {
+  const q = calculateBnkOperatingLeaseQuoteFromContext(buildBalloonContext(30000000, 30000000));
+  expectClose(q.rates.monthlyRateDecimal, 0.05 / 12);
+  expect(q.warnings.some((w) => w.includes("입력범위초과"))).toBe(true);
+});

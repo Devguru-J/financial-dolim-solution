@@ -52,6 +52,26 @@ function asBool(value: unknown): boolean {
 //   [34]=차종 프로모션, [35]=ADB, [36]=ADB P, [51]=삭제 대상
 // Note: vehicle prices (col 33) are null in this workbook — users must provide price manually
 // ---------------------------------------------------------------------------
+// BNK workbook lists Lincoln models under the merged brand "포드/링컨". We split
+// them based on model name: Lincoln uses distinct model lines (Navigator,
+// Aviator, Nautilus, Corsair, Continental, MK*), while Ford has its own.
+const LINCOLN_MODEL_KEYWORDS = [
+  /\bNAUTILUS\b/i,
+  /\bCORSAIR\b/i,
+  /\bNAVIGATOR\b/i,
+  /\bAVIATOR\b/i,
+  /\bCONTINENTAL\b/i,
+  /\bMK[A-Z]\b/i,
+];
+
+function normalizeBnkBrand(brand: string, modelName: string): string {
+  if (brand === "포드/링컨") {
+    const isLincoln = LINCOLN_MODEL_KEYWORDS.some((re) => re.test(modelName));
+    return isLincoln ? "LINCOLN" : "FORD";
+  }
+  return brand;
+}
+
 function parseVehiclePrograms(rows: unknown[][]): WorkbookVehicleProgram[] {
   // Deduplicate by (brand, modelName) keeping the highest model year entry.
   // BNK CDB lists the same model across multiple years; only the latest matters for quotes.
@@ -60,11 +80,13 @@ function parseVehiclePrograms(rows: unknown[][]): WorkbookVehicleProgram[] {
 
   for (let i = 3; i < rows.length; i++) {
     const row = rows[i];
-    const brand = asText(row[4]);
+    const rawBrand = asText(row[4]);
     const modelName = asText(row[6]);
     const deleted = asBool(row[51]);
 
-    if (!brand || !modelName || deleted) continue;
+    if (!rawBrand || !modelName || deleted) continue;
+
+    const brand = normalizeBnkBrand(rawBrand, modelName);
 
     const modelYear = asNumber(row[7]);
     const key = `${brand}|${modelName}`;

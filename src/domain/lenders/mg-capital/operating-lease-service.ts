@@ -1,4 +1,4 @@
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, inArray } from "drizzle-orm";
 
 import {
   brandRatePolicies,
@@ -7,7 +7,7 @@ import {
   workbookImports,
 } from "@/db/schema";
 import type { CanonicalQuoteInput, CanonicalQuoteResult } from "@/domain/quotes/types";
-import { resolveModelNameByVehicleKey } from "@/domain/vehicles/vehicle-key";
+import { resolveBrandAliases, resolveModelNameByVehicleKey } from "@/domain/vehicles/vehicle-key";
 import { createDbClient } from "@/lib/db/client";
 
 type ActiveWorkbookContext = {
@@ -750,8 +750,20 @@ export function resolveMgOperatingLeaseResidualRate(params: {
       .find((row) => row != null) ?? matrixRows[0];
 
   if (!preferredMatrixRow) {
+    const hasAnyResidual =
+      residualFromVehicleMap[12] != null ||
+      residualFromVehicleMap[24] != null ||
+      residualFromVehicleMap[36] != null ||
+      residualFromVehicleMap[48] != null ||
+      residualFromVehicleMap[60] != null ||
+      vehicle.snkResidualBand != null;
+    if (!hasAnyResidual) {
+      throw new Error(
+        `MG 워크북에 이 차량(${input.modelName})의 잔가율 데이터가 입력되지 않았습니다. 잔가율을 수동으로 입력해 주세요.`,
+      );
+    }
     throw new Error(
-      `Residual rate not found for term '${input.leaseTermMonths}' and grade '${vehicle.snkResidualBand ?? "-"}'.`,
+      `MG: ${input.modelName}의 ${input.leaseTermMonths}개월 잔가율을 찾을 수 없습니다 (grade='${vehicle.snkResidualBand ?? "-"}').`,
     );
   }
 
@@ -1074,7 +1086,9 @@ export async function calculateMgOperatingLeaseQuote(params: {
       .limit(1);
 
     // vehicleKey fallback: if exact modelName match failed, try cross-lender matching
+    // Query by brand aliases since MG uses English ("AUDI") and BNK uses Korean ("아우디")
     if (!vehicle) {
+      const brandAliases = resolveBrandAliases(input.brand);
       const allBrandVehicles = await db
         .select({
           brand: vehiclePrograms.brand,
@@ -1097,7 +1111,7 @@ export async function calculateMgOperatingLeaseQuote(params: {
         .where(
           and(
             eq(vehiclePrograms.workbookImportId, workbookImport.id),
-            eq(vehiclePrograms.brand, input.brand),
+            inArray(vehiclePrograms.brand, brandAliases),
           ),
         );
 
@@ -1108,7 +1122,7 @@ export async function calculateMgOperatingLeaseQuote(params: {
     }
 
     if (!vehicle) {
-      throw new Error(`Vehicle not found for '${input.brand} ${input.modelName}'.`);
+      throw new Error(`MG 캐피탈 카탈로그에 해당 차량이 없습니다 (${input.modelName}). MG 워크북이 이 모델을 취급하지 않습니다.`);
     }
 
     const [ratePolicy] = await db
