@@ -2,12 +2,15 @@ import { and, desc, eq, inArray } from "drizzle-orm";
 
 import {
   brandRatePolicies,
+  lenderVehicleOfferings,
   residualMatrixRows,
+  vehicleModels,
   vehiclePrograms,
+  vehicleTrims,
   workbookImports,
 } from "@/db/schema";
 import type { CanonicalQuoteInput, CanonicalQuoteResult } from "@/domain/quotes/types";
-import { resolveBrandAliases, resolveModelNameByVehicleKey } from "@/domain/vehicles/vehicle-key";
+import { extractVehicleKey, resolveBrandAliases, resolveModelNameByVehicleKey } from "@/domain/vehicles/vehicle-key";
 import { createDbClient } from "@/lib/db/client";
 
 // ---------------------------------------------------------------------------
@@ -291,33 +294,60 @@ export async function calculateBnkOperatingLeaseQuote(params: {
       throw new Error("BNK Capital workbook not imported. Please upload the BNK workbook first.");
     }
 
-    // 2. Resolve vehicle
-    let vehicleRow = await db
-      .select({
-        brand: vehiclePrograms.brand,
-        modelName: vehiclePrograms.modelName,
-        vehicleClass: vehiclePrograms.vehicleClass,
-        engineDisplacementCc: vehiclePrograms.engineDisplacementCc,
-        highResidualAllowed: vehiclePrograms.highResidualAllowed,
-        hybridAllowed: vehiclePrograms.hybridAllowed,
-        rawRow: vehiclePrograms.rawRow,
-      })
-      .from(vehiclePrograms)
+    // 2. Resolve vehicle via normalized schema.
+    // 1st: exact match on lender_model_name (user picked this specific trim)
+    // 2nd: cross-lender fallback via vehicle_trims.vehicle_key
+    // 3rd: legacy vehicle_programs table (null-key edge cases)
+    const offeringSelect = {
+      brand: lenderVehicleOfferings.lenderBrand,
+      modelName: lenderVehicleOfferings.lenderModelName,
+      vehicleClass: vehicleModels.vehicleClass,
+      engineDisplacementCc: vehicleTrims.engineDisplacementCc,
+      highResidualAllowed: vehicleTrims.isHighResidualEligible,
+      hybridAllowed: lenderVehicleOfferings.hybridAllowed,
+      rawRow: lenderVehicleOfferings.rawRow,
+    } as const;
+
+    let vehicleRow: ResolvedVehicle | null = null;
+
+    // 1. Exact match on lender_model_name
+    const [exactMatch] = await db
+      .select(offeringSelect)
+      .from(lenderVehicleOfferings)
+      .innerJoin(vehicleTrims, eq(lenderVehicleOfferings.trimId, vehicleTrims.id))
+      .innerJoin(vehicleModels, eq(vehicleTrims.modelId, vehicleModels.id))
       .where(
         and(
-          eq(vehiclePrograms.workbookImportId, activeImport.id),
-          eq(vehiclePrograms.brand, input.brand),
-          eq(vehiclePrograms.modelName, input.modelName),
+          eq(lenderVehicleOfferings.workbookImportId, activeImport.id),
+          eq(lenderVehicleOfferings.lenderModelName, input.modelName),
         ),
       )
-      .limit(1)
-      .then((rows: ResolvedVehicle[]) => rows[0] ?? null);
+      .limit(1);
+    if (exactMatch) vehicleRow = exactMatch;
 
-    // vehicleKey fallback: if exact modelName match failed, try cross-lender matching
-    // Query by brand aliases since MG uses English ("AUDI") and BNK uses Korean ("아우디")
+    // 2. Cross-lender fallback via vehicle_key (user picked trim from other lender)
     if (!vehicleRow) {
-      const brandAliases = resolveBrandAliases(input.brand);
-      const allBrandVehicles = await db
+      const requestedKey = extractVehicleKey(input.brand, input.modelName);
+      if (requestedKey) {
+        const [keyMatch] = await db
+          .select(offeringSelect)
+          .from(lenderVehicleOfferings)
+          .innerJoin(vehicleTrims, eq(lenderVehicleOfferings.trimId, vehicleTrims.id))
+          .innerJoin(vehicleModels, eq(vehicleTrims.modelId, vehicleModels.id))
+          .where(
+            and(
+              eq(lenderVehicleOfferings.workbookImportId, activeImport.id),
+              eq(vehicleTrims.vehicleKey, requestedKey),
+            ),
+          )
+          .limit(1);
+        if (keyMatch) vehicleRow = keyMatch;
+      }
+    }
+
+    // 3. Legacy fallback: vehicle_programs (null-key edge cases)
+    if (!vehicleRow) {
+      const [legacy] = await db
         .select({
           brand: vehiclePrograms.brand,
           modelName: vehiclePrograms.modelName,
@@ -331,15 +361,12 @@ export async function calculateBnkOperatingLeaseQuote(params: {
         .where(
           and(
             eq(vehiclePrograms.workbookImportId, activeImport.id),
-            inArray(vehiclePrograms.brand, brandAliases),
+            eq(vehiclePrograms.brand, input.brand),
+            eq(vehiclePrograms.modelName, input.modelName),
           ),
         )
-        .then((rows: ResolvedVehicle[]) => rows);
-
-      const resolved = resolveModelNameByVehicleKey(input.brand, input.modelName, allBrandVehicles);
-      if (resolved) {
-        vehicleRow = resolved;
-      }
+        .limit(1);
+      if (legacy) vehicleRow = legacy;
     }
 
     if (!vehicleRow) {
