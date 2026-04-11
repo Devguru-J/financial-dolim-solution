@@ -172,6 +172,14 @@ function parseResidualMatrix(rows: unknown[][]): WorkbookResidualMatrixRow[] {
   return matrixRows;
 }
 
+// MG workbook uses inconsistent brand naming across sheets:
+//   차량DB: "Jaguar-Landrover" (hyphen)
+//   견적관리자용: "Jaguar_Landrover" (underscore)
+// Normalize to the hyphen form (matches 차량DB / display).
+function normalizeMgBrandName(brand: string): string {
+  return brand.replace(/_/g, "-");
+}
+
 function parseBrandRatePolicies(sheet: XLSX.WorkSheet | undefined): WorkbookBrandRatePolicy[] {
   if (!sheet) {
     return [];
@@ -180,10 +188,11 @@ function parseBrandRatePolicies(sheet: XLSX.WorkSheet | undefined): WorkbookBran
   const policies: WorkbookBrandRatePolicy[] = [];
 
   for (let excelRow = 9; excelRow <= 33; excelRow += 1) {
-    const brand = asText(readCell(sheet, `E${excelRow}`));
-    if (!brand) {
+    const rawBrand = asText(readCell(sheet, `E${excelRow}`));
+    if (!rawBrand) {
       continue;
     }
+    const brand = normalizeMgBrandName(rawBrand);
 
     const rateMappings: Array<{
       productType: WorkbookBrandRatePolicy["productType"];
