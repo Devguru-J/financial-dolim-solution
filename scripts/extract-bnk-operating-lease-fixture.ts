@@ -20,8 +20,10 @@ type CliOptions = {
   agFeeRate: number;
   irrOverride: number;
   residualMode: "standard" | "high";
-  irrTypeIndex: number;
+  dealerName: string | null;
   importCategory: "수입" | "국산";
+  residualOverrideMode: "auto" | "amount" | "ratio";
+  residualOverrideValue: number;
 };
 
 type VehicleRow = {
@@ -65,8 +67,10 @@ function parseArgs(argv: string[]): CliOptions {
     agFeeRate: 0,
     irrOverride: 0,
     residualMode: "standard",
-    irrTypeIndex: 1,
+    dealerName: null,
     importCategory: "수입" as const,
+    residualOverrideMode: "auto",
+    residualOverrideValue: 0,
   };
 
   for (const arg of argv) {
@@ -117,11 +121,18 @@ function parseArgs(argv: string[]): CliOptions {
       case "residualMode":
         defaults.residualMode = rawValue === "high" ? "high" : "standard";
         break;
-      case "irrTypeIndex":
-        defaults.irrTypeIndex = Number(rawValue);
+      case "dealerName":
+        defaults.dealerName = rawValue || null;
         break;
       case "importCategory":
         defaults.importCategory = rawValue === "국산" ? "국산" : "수입";
+        break;
+      case "residualOverrideMode":
+        defaults.residualOverrideMode =
+          rawValue === "amount" || rawValue === "ratio" ? rawValue : "auto";
+        break;
+      case "residualOverrideValue":
+        defaults.residualOverrideValue = Number(rawValue);
         break;
       default:
         break;
@@ -224,6 +235,17 @@ function runExcelScenario(options: CliOptions & { lookupName: string }) {
   const highRvFlag = options.residualMode === "high" ? "true" : "false";
   const importCode = options.importCategory === "수입" ? 1 : 2;
   const escapedModel = options.lookupName.replaceAll('"', '\\"');
+  const residualOverrideActive = options.residualOverrideMode !== "auto";
+  const residualModeFlag = residualOverrideActive ? "true" : "false";
+  // B73 = INDEX(G70:G71, code). Inspection: G70="%", G71="금액".
+  // So code 1 = ratio (%), code 2 = amount (금액).
+  const residualModeCode = options.residualOverrideMode === "ratio" ? 1 : 2;
+  // 운용리스견적!N34 holds the override value — raw won if amount, percent*100 if ratio
+  const residualN34 = residualOverrideActive
+    ? options.residualOverrideMode === "ratio"
+      ? options.residualOverrideValue * 100 // 0.55 → 55
+      : options.residualOverrideValue
+    : 0;
 
   const scriptLines = [
     `set workbookPath to POSIX file "${tempWorkbookPath}"`,
@@ -236,6 +258,7 @@ function runExcelScenario(options: CliOptions & { lookupName: string }) {
     `set value of range "N5" to ${importCode}`,
     `set value of range "N13" to ${options.vehiclePrice}`,
     `set value of range "N15" to ${options.discountAmount}`,
+    `set value of range "N34" to ${residualN34}`,
     `set value of range "N37" to ${options.depositAmount}`,
     `set value of range "N39" to ${options.upfrontPayment}`,
     `set value of range "N41" to ${options.agFeeRate}`,
@@ -249,10 +272,13 @@ function runExcelScenario(options: CliOptions & { lookupName: string }) {
     `set value of range "B39" to ${termIdx}`,
     `set value of range "B41" to ${mileageIdx}`,
     `set value of range "B71" to ${highRvFlag}`,
-    `set value of range "B136" to false`,
+    `set value of range "B73" to ${residualModeCode}`,
+    `set value of range "B136" to ${residualModeFlag}`,
     `set value of range "B137" to ${depositModeFlag}`,
     `set value of range "B138" to ${upfrontModeFlag}`,
-    `set value of range "B154" to ${options.irrTypeIndex}`,
+    ...(options.dealerName
+      ? [`set value of range "B156" to "${options.dealerName.replaceAll('"', '\\"')}"`]
+      : []),
     "end tell",
     "calculate",
     "delay 2",
@@ -333,7 +359,12 @@ const fixture = {
     cmFeeRate: options.cmFeeRate,
     agFeeRate: options.agFeeRate,
     residualMode: options.residualMode,
+    dealerName: options.dealerName ?? undefined,
     annualIrrRateOverride: options.irrOverride > 0 ? options.irrOverride : undefined,
+    residualOverrideMode:
+      options.residualOverrideMode === "auto" ? undefined : options.residualOverrideMode,
+    residualOverrideValue:
+      options.residualOverrideMode === "auto" ? undefined : options.residualOverrideValue,
   },
   expected: {
     discountedVehiclePrice: expected.discountedVehiclePrice,

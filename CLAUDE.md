@@ -136,8 +136,10 @@ fixtures/
   bnk-capital/operating-lease/    # BNK 패리티 픽스처 (17개 JSON)
 scripts/
   dev.ts                          # 백엔드+프론트엔드 동시 실행 (bun run start)
-  extract-mg-operating-lease-fixture.ts   # MG 워크북 AppleScript 드라이버 (temp 복사본 driver → fixture JSON)
-  extract-bnk-operating-lease-fixture.ts  # BNK 워크북 AppleScript 드라이버 (Es1/운용리스견적 셀 직접 쓰기)
+  extract-mg-operating-lease-fixture.ts   # MG 워크북 단일 시나리오 드라이버 → fixture JSON
+  extract-bnk-operating-lease-fixture.ts  # BNK 워크북 단일 시나리오 드라이버 (Es1/운용리스견적 셀 직접 쓰기)
+  run-bnk-sweep.ts                # BNK 배치 하네스 (JSON 시나리오 array → 워크북 1회 open → 결과 JSON)
+  run-bnk-parity-diff.ts          # sweep 결과 ↔ 엔진 결과 diff (monthlyPayment/rate/residual 허용오차 비교)
 docs/
   platform-blueprint.md           # 전체 아키텍처 설계
   implementation-roadmap.md       # 구현 로드맵 (Phase 0-7)
