@@ -10,6 +10,7 @@ import {
   vehiclePrograms,
   workbookImports,
 } from "@/db/schema";
+import { populateNormalizedTablesForImport } from "@/domain/imports/normalize-to-offerings";
 import type { PersistWorkbookImportResult, WorkbookPreview } from "@/domain/imports/types";
 import { createDbClient } from "@/lib/db/client";
 
@@ -141,6 +142,14 @@ export async function persistWorkbookImport(params: {
           })),
         );
       }
+
+      // Populate normalized schema (brands/models/trims/offerings) so engine
+      // queries can use the new join path for this import immediately.
+      await populateNormalizedTablesForImport(tx, {
+        workbookImportId,
+        lenderCode: workbook.lenderCode,
+        workbook,
+      });
 
       return workbookImportId;
     });

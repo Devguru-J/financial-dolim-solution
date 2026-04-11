@@ -1,0 +1,1 @@
+ALTER TABLE "vehicle_trims" DROP CONSTRAINT "vehicle_trims_vehicle_key_unique";

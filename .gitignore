@@ -9,3 +9,4 @@ coverage
 *.log
 reference
 .superpowers/
+backup/

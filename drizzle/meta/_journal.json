@@ -8,6 +8,27 @@
       "when": 1774001173772,
       "tag": "0000_cute_steel_serpent",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1775889266511,
+      "tag": "0001_bumpy_imperial_guard",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1775889550145,
+      "tag": "0002_strong_morg",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1775889868260,
+      "tag": "0003_quick_nick_fury",
+      "breakpoints": true
     }
   ]
 }

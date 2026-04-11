@@ -1,13 +1,16 @@
-import { and, desc, eq, inArray } from "drizzle-orm";
+import { and, desc, eq, inArray, or } from "drizzle-orm";
 
 import {
   brandRatePolicies,
+  lenderVehicleOfferings,
   residualMatrixRows,
+  vehicleModels,
   vehiclePrograms,
+  vehicleTrims,
   workbookImports,
 } from "@/db/schema";
 import type { CanonicalQuoteInput, CanonicalQuoteResult } from "@/domain/quotes/types";
-import { resolveBrandAliases, resolveModelNameByVehicleKey } from "@/domain/vehicles/vehicle-key";
+import { extractVehicleKey, resolveBrandAliases, resolveModelNameByVehicleKey } from "@/domain/vehicles/vehicle-key";
 import { createDbClient } from "@/lib/db/client";
 
 type ActiveWorkbookContext = {
@@ -1057,39 +1060,72 @@ export async function calculateMgOperatingLeaseQuote(params: {
   const { db, dispose } = createDbClient(databaseUrl);
 
   try {
-    let [vehicle] = await db
-      .select({
-        brand: vehiclePrograms.brand,
-        modelName: vehiclePrograms.modelName,
-        vehiclePrice: vehiclePrograms.vehiclePrice,
-        vehicleClass: vehiclePrograms.vehicleClass,
-        engineDisplacementCc: vehiclePrograms.engineDisplacementCc,
-        term12Residual: vehiclePrograms.term12Residual,
-        term24Residual: vehiclePrograms.term24Residual,
-        term36Residual: vehiclePrograms.term36Residual,
-        term48Residual: vehiclePrograms.term48Residual,
-        term60Residual: vehiclePrograms.term60Residual,
-        highResidualAllowed: vehiclePrograms.highResidualAllowed,
-        hybridAllowed: vehiclePrograms.hybridAllowed,
-        residualPromotionCode: vehiclePrograms.residualPromotionCode,
-        snkResidualBand: vehiclePrograms.snkResidualBand,
-        rawRow: vehiclePrograms.rawRow,
-      })
-      .from(vehiclePrograms)
+    // ------------------------------------------------------------------
+    // Vehicle lookup via normalized schema (lender_vehicle_offerings).
+    // 1. Exact match on (workbook, lenderModelName) — user picked this trim
+    // 2. Cross-lender fallback via vehicle_trims.vehicle_key — for when
+    //    the user picks a trim from another lender's dropdown
+    // 3. Legacy fallback: vehicle_programs exact match (for trims not yet
+    //    in the normalized schema, e.g., null-key vehicles)
+    // ------------------------------------------------------------------
+    const offeringSelect = {
+      brand: lenderVehicleOfferings.lenderBrand,
+      modelName: lenderVehicleOfferings.lenderModelName,
+      vehiclePrice: lenderVehicleOfferings.vehiclePrice,
+      vehicleClass: vehicleModels.vehicleClass,
+      engineDisplacementCc: vehicleTrims.engineDisplacementCc,
+      term12Residual: lenderVehicleOfferings.term12Residual,
+      term24Residual: lenderVehicleOfferings.term24Residual,
+      term36Residual: lenderVehicleOfferings.term36Residual,
+      term48Residual: lenderVehicleOfferings.term48Residual,
+      term60Residual: lenderVehicleOfferings.term60Residual,
+      highResidualAllowed: vehicleTrims.isHighResidualEligible,
+      hybridAllowed: lenderVehicleOfferings.hybridAllowed,
+      residualPromotionCode: lenderVehicleOfferings.residualPromotionCode,
+      snkResidualBand: lenderVehicleOfferings.snkResidualBand,
+      rawRow: lenderVehicleOfferings.rawRow,
+    } as const;
+
+    let vehicle: ResolvedVehicle | null = null;
+
+    // 1. Exact match on lender_model_name (user selected this specific trim)
+    const [exactMatch] = await db
+      .select(offeringSelect)
+      .from(lenderVehicleOfferings)
+      .innerJoin(vehicleTrims, eq(lenderVehicleOfferings.trimId, vehicleTrims.id))
+      .innerJoin(vehicleModels, eq(vehicleTrims.modelId, vehicleModels.id))
       .where(
         and(
-          eq(vehiclePrograms.workbookImportId, workbookImport.id),
-          eq(vehiclePrograms.brand, input.brand),
-          eq(vehiclePrograms.modelName, input.modelName),
+          eq(lenderVehicleOfferings.workbookImportId, workbookImport.id),
+          eq(lenderVehicleOfferings.lenderModelName, input.modelName),
         ),
       )
       .limit(1);
+    if (exactMatch) vehicle = exactMatch;
 
-    // vehicleKey fallback: if exact modelName match failed, try cross-lender matching
-    // Query by brand aliases since MG uses English ("AUDI") and BNK uses Korean ("아우디")
+    // 2. Cross-lender fallback via vehicle_key (user picked a trim from another lender)
     if (!vehicle) {
-      const brandAliases = resolveBrandAliases(input.brand);
-      const allBrandVehicles = await db
+      const requestedKey = extractVehicleKey(input.brand, input.modelName);
+      if (requestedKey) {
+        const [keyMatch] = await db
+          .select(offeringSelect)
+          .from(lenderVehicleOfferings)
+          .innerJoin(vehicleTrims, eq(lenderVehicleOfferings.trimId, vehicleTrims.id))
+          .innerJoin(vehicleModels, eq(vehicleTrims.modelId, vehicleModels.id))
+          .where(
+            and(
+              eq(lenderVehicleOfferings.workbookImportId, workbookImport.id),
+              eq(vehicleTrims.vehicleKey, requestedKey),
+            ),
+          )
+          .limit(1);
+        if (keyMatch) vehicle = keyMatch;
+      }
+    }
+
+    // 3. Legacy fallback: vehicle_programs table (for null-key edge cases)
+    if (!vehicle) {
+      const [legacy] = await db
         .select({
           brand: vehiclePrograms.brand,
           modelName: vehiclePrograms.modelName,
@@ -1111,14 +1147,12 @@ export async function calculateMgOperatingLeaseQuote(params: {
         .where(
           and(
             eq(vehiclePrograms.workbookImportId, workbookImport.id),
-            inArray(vehiclePrograms.brand, brandAliases),
+            eq(vehiclePrograms.brand, input.brand),
+            eq(vehiclePrograms.modelName, input.modelName),
           ),
-        );
-
-      const resolved = resolveModelNameByVehicleKey(input.brand, input.modelName, allBrandVehicles);
-      if (resolved) {
-        vehicle = resolved;
-      }
+        )
+        .limit(1);
+      if (legacy) vehicle = legacy;
     }
 
     if (!vehicle) {

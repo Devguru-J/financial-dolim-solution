@@ -132,3 +132,119 @@ export const quoteSnapshots = pgTable("quote_snapshots", {
   quoteOutput: jsonb("quote_output").$type<Record<string, unknown>>().notNull(),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 });
+
+// ---------------------------------------------------------------------------
+// Normalized vehicle hierarchy — brand → model → trim, with per-lender
+// offerings referencing trims. Replaces denormalized `vehicle_programs`.
+//
+// Goals:
+// - Cross-lender matching at the DB level via `vehicle_trims.vehicle_key`
+// - Single source of truth for brand aliases (no more "AUDI" vs "아우디" string matching)
+// - Deduplication: trim info stored once, each lender's workbook references it
+// - Historic imports retain their offerings (offerings FK to workbook_import)
+// ---------------------------------------------------------------------------
+
+export const brands = pgTable("brands", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  // Canonical uppercase code used internally ("AUDI", "BMW", "BENZ", "PORSCHE"...)
+  canonicalName: text("canonical_name").notNull().unique(),
+  // Human-facing display name ("Audi", "BMW", "Mercedes-Benz"...)
+  displayName: text("display_name").notNull(),
+  // All known name spellings across lenders (English / Korean / legacy names)
+  aliases: jsonb("aliases").$type<string[]>().notNull().default([]),
+  // ISO country code of origin (DE, JP, US, KR, IT, GB, SE, FR, CN)
+  countryCode: text("country_code"),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+});
+
+export const vehicleModels = pgTable(
+  "vehicle_models",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    brandId: uuid("brand_id").references(() => brands.id, { onDelete: "cascade" }).notNull(),
+    // Canonical model line name ("5 Series", "A7", "911", "Cayenne", "Wrangler"...)
+    canonicalName: text("canonical_name").notNull(),
+    // Vehicle class from workbook ("승용", "SUV", etc) — best effort, can be null
+    vehicleClass: text("vehicle_class"),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => ({
+    brandModelUnique: uniqueIndex("vehicle_models_brand_canonical_unique").on(
+      table.brandId,
+      table.canonicalName,
+    ),
+  }),
+);
+
+export const vehicleTrims = pgTable(
+  "vehicle_trims",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    modelId: uuid("model_id").references(() => vehicleModels.id, { onDelete: "cascade" }).notNull(),
+    // Distinct variant name — preserves per-lender granularity
+    // (MG: "320d M Sport xDrive", BNK: "The New 3 Series 디젤 2.0 세단 320d M Sport")
+    canonicalName: text("canonical_name").notNull(),
+    // Cross-lender matching hint (NOT unique — multiple trims share the same key)
+    // ("BMW_320D" matches all 320d variants across MG and BNK)
+    vehicleKey: text("vehicle_key").notNull(),
+    engineDisplacementCc: integer("engine_displacement_cc"),
+    // "gasoline" | "diesel" | "electric" | "hybrid" | "phev" | "mhev"
+    fuelType: text("fuel_type"),
+    // Whether 고잔가 (high-residual) option is permitted for this trim
+    isHighResidualEligible: boolean("is_high_residual_eligible").default(false).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => ({
+    modelTrimUnique: uniqueIndex("vehicle_trims_model_canonical_unique").on(
+      table.modelId,
+      table.canonicalName,
+    ),
+  }),
+);
+
+export const lenderVehicleOfferings = pgTable(
+  "lender_vehicle_offerings",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    workbookImportId: uuid("workbook_import_id")
+      .references(() => workbookImports.id, { onDelete: "cascade" })
+      .notNull(),
+    lenderCode: text("lender_code")
+      .references(() => lenders.code, { onDelete: "cascade" })
+      .notNull(),
+    trimId: uuid("trim_id").references(() => vehicleTrims.id, { onDelete: "cascade" }).notNull(),
+    // Original lender-specific brand and model name preserved for debug / display
+    // (MG: "AUDI" / "520i", BNK: "아우디" / "The New 5 Series 가솔린 2.0 520i")
+    lenderBrand: text("lender_brand").notNull(),
+    lenderModelName: text("lender_model_name").notNull(),
+    vehiclePrice: numeric("vehicle_price", { precision: 14, scale: 0 }).notNull(),
+
+    // MG Capital-specific: term-based residuals from 차량DB sheet (nullable for BNK)
+    term12Residual: numeric("term_12_residual", { precision: 7, scale: 4 }),
+    term24Residual: numeric("term_24_residual", { precision: 7, scale: 4 }),
+    term36Residual: numeric("term_36_residual", { precision: 7, scale: 4 }),
+    term48Residual: numeric("term_48_residual", { precision: 7, scale: 4 }),
+    term60Residual: numeric("term_60_residual", { precision: 7, scale: 4 }),
+    snkResidualBand: text("snk_residual_band"),
+    apsResidualBand: text("aps_residual_band"),
+    residualPromotionCode: text("residual_promotion_code"),
+
+    // BNK Capital-specific: CDB provider grades for residual matrix lookup (nullable for MG)
+    wsGrade: text("ws_grade"),
+    cbGrade: text("cb_grade"),
+    tyGrade: text("ty_grade"),
+    jyGrade: text("jy_grade"),
+    crGrade: text("cr_grade"),
+    adbGrade: text("adb_grade"),
+
+    // Common flags + escape hatch for extra data
+    hybridAllowed: boolean("hybrid_allowed"),
+    rawRow: jsonb("raw_row").$type<Record<string, unknown>>().notNull().default({}),
+  },
+  (table) => ({
+    offeringUnique: uniqueIndex("lender_vehicle_offerings_unique").on(
+      table.workbookImportId,
+      table.trimId,
+    ),
+  }),
+);

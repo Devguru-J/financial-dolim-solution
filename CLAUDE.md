@@ -10,6 +10,51 @@
 
 **스택:** Bun + Hono + Drizzle ORM + Supabase PostgreSQL + Cloudflare Pages
 
+## DB 스키마 (2026-04-11 정규화)
+
+```
+brands                         (20~35 행) — 표준 브랜드 레지스트리
+├─ canonical_name              "AUDI", "BMW", "BENZ", "PORSCHE"...
+├─ display_name                "Audi", "BMW", "Mercedes-Benz"...
+├─ aliases                     ["AUDI", "아우디", "Audi"]
+└─ country_code                "DE", "KR", "JP"...
+
+vehicle_models                 (~300 행) — 브랜드별 모델 라인
+├─ brand_id → brands
+├─ canonical_name              "5 Series", "A7", "911", "Cayenne"
+└─ vehicle_class               "승용", "SUV"...
+
+vehicle_trims                  (~2700 행) — 각 변형(variant)별 trim
+├─ model_id → vehicle_models
+├─ canonical_name              원본 lender model name 그대로
+├─ vehicle_key                 cross-lender 매칭 hint ("BMW_520I") — NOT unique
+├─ engine_displacement_cc
+└─ is_high_residual_eligible
+
+lender_vehicle_offerings       (~2700 행) — 각 lender별 trim 세부정보
+├─ workbook_import_id → workbook_imports
+├─ lender_code → lenders
+├─ trim_id → vehicle_trims
+├─ lender_brand + lender_model_name  (원본 문자열 보존)
+├─ vehicle_price
+├─ term_12/24/36/48/60_residual      (MG용)
+├─ snk_residual_band / aps_residual_band / residual_promotion_code
+├─ ws/cb/ty/jy/cr/adb_grade          (BNK용 CDB grades)
+└─ raw_row (jsonb 보강)
+
+# Legacy (여전히 유지 — fallback용)
+vehicle_programs               — 과거 import 호환용, null-key 차량 fallback 
+residual_matrix_rows           — 잔가 매트릭스 (workbook_import_id 참조)
+brand_rate_policies            — 브랜드/딜러별 금리 (workbook_import_id 참조)
+```
+
+**엔진 쿼리 흐름** (MG/BNK 동일 패턴):
+1. `lender_vehicle_offerings` × `vehicle_trims` × `vehicle_models` join → **lender_model_name exact match** (사용자가 특정 variant 선택)
+2. 실패 시: 같은 join에서 `vehicle_trims.vehicle_key = extractVehicleKey(input)` — **cross-lender fallback** (MG trim을 BNK에 조회)
+3. 최종 실패 시: legacy `vehicle_programs` table exact match (null-key 엣지 케이스)
+
+**파서 → import-service** flow는 이제 `populateNormalizedTablesForImport()`를 transaction 내부에 호출해서 새 테이블에도 이중 쓰기. 기존 `vehicle_programs`는 rollback 안전장치로 유지.
+
 ---
 
 ## 핵심 파일 구조
