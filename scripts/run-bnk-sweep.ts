@@ -221,7 +221,7 @@ function buildScenarioBlock(
     `set value of range "B138" of ws_es1 to ${upfrontModeFlag}`,
     dealerWrite,
     "calculate",
-    "delay 0.5",
+    "delay 1",
     `set end of resultList to "${s.id}|" & ((value of range "B167" of ws_es1) as text) & "|" & ((value of range "B168" of ws_es1) as text) & "|" & ((value of range "B87" of ws_es1) as text) & "|" & ((value of range "B101" of ws_es1) as text) & "|" & ((value of range "B70" of ws_es1) as text) & "|" & ((value of range "B134" of ws_es1) as text) & "|" & ((value of range "B166" of ws_es1) as text) & "|" & ((value of range "B40" of ws_es1) as text) & "|" & ((value of range "B185" of ws_es1) as text) & "|" & ((value of range "C186" of ws_es1) as text) & "|" & ((value of range "B47" of ws_es1) as text) & "|" & ((value of range "B50" of ws_es1) as text) & "|" & ((value of range "B52" of ws_es1) as text) & "|" & ((value of range "B48" of ws_es1) as text)`,
   ].join("\n");
 }
