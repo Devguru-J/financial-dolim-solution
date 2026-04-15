@@ -1,6 +1,6 @@
 import { execFileSync } from "node:child_process";
 import { basename } from "node:path";
-import { cpSync, mkdtempSync, rmSync, readFileSync, writeFileSync } from "node:fs";
+import { mkdtempSync, rmSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 
 import * as XLSX from "xlsx";
@@ -230,10 +230,13 @@ function runBatch(
   workbookPath: string,
   scenarios: Array<{ scenario: Scenario; lookupName: string; cdbBrand: string }>,
 ): Map<string, string[]> {
+  // Reuse the already-open reference workbook instead of copying to temp.
+  // macOS/Excel security changes (April 2026) started refusing `open workbook`
+  // on fresh .xlsm copies with VBA (parameter error -50). The sweep runs
+  // scenarios in-memory and closes `saving no` at the end so the disk file is
+  // untouched. User must have the reference workbook already open.
+  const workbookName = basename(workbookPath);
   const tempDir = mkdtempSync(`${tmpdir()}/bnk-sweep-`);
-  const tempWorkbookPath = `${tempDir}/bnk-sweep-${process.pid}-${Date.now()}.xlsm`;
-  cpSync(workbookPath, tempWorkbookPath);
-  const workbookName = basename(tempWorkbookPath);
 
   const scenarioBlocks = scenarios
     .map(({ scenario, lookupName, cdbBrand }, i) =>
@@ -242,19 +245,15 @@ function runBatch(
     .join("\n\n");
 
   const script = `
-set workbookPath to POSIX file "${tempWorkbookPath}"
 set resultList to {}
 tell application "Microsoft Excel"
   activate
-  open workbook workbook file name workbookPath
-  delay 2
   set wb to workbook "${workbookName}"
   set ws_bnk to worksheet "운용리스견적" of wb
   set ws_es1 to worksheet "Es1" of wb
 
 ${scenarioBlocks}
 
-  close wb saving no
 end tell
 
 set AppleScript's text item delimiters to linefeed
@@ -265,6 +264,7 @@ return joined
 
   const scriptPath = `${tempDir}/sweep.applescript`;
   writeFileSync(scriptPath, script);
+  writeFileSync("/tmp/bnk-sweep-last.applescript", script);
 
   try {
     const raw = execFileSync("osascript", [scriptPath], {

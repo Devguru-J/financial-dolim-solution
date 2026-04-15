@@ -2,38 +2,56 @@ import { readFileSync, writeFileSync } from "node:fs";
 
 import { parseBnkWorkbook } from "@/domain/lenders/bnk-capital/workbook-parser";
 
+type Term = 12 | 24 | 36 | 48 | 60;
+type ResidualMode = "standard" | "high";
+type Ownership = "company" | "customer";
+
 type GeneratorOptions = {
   workbook: string;
   output: string;
-  limit: number;
-  term: 12 | 24 | 36 | 48 | 60;
-  residualMode: "standard" | "high";
+  vehiclesPerBrand: number; // 0 = no cap
+  limit: number; // overall cap after axis expansion (0 = no cap)
+  terms: Term[];
+  residualModes: ResidualMode[];
+  ownerships: Ownership[];
   vehiclePrice: number;
-  sample: "first" | "diverse";
 };
 
 type Scenario = {
   id: string;
   brand: string;
   model: string;
-  term: number;
+  term: Term;
   annualMileageKm: number;
   vehiclePrice: number;
   dealerName: string | null;
-  residualMode: "standard" | "high";
+  residualMode: ResidualMode;
+  ownership: Ownership;
   importCategory?: "수입" | "국산";
 };
+
+function parseList<T extends string | number>(
+  raw: string,
+  coerce: (s: string) => T,
+): T[] {
+  return raw
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean)
+    .map(coerce);
+}
 
 function parseCli(argv: string[]): GeneratorOptions {
   const opts: GeneratorOptions = {
     workbook:
       "/Users/tuesdaymorning/Devguru/financial-dolim-solution/reference/●26-3-V2_BNK캐피탈+리스할부+견적기_수입국산_외부용_잠금해제.xlsm",
     output: "",
+    vehiclesPerBrand: 2,
     limit: 0,
-    term: 60,
-    residualMode: "high",
+    terms: [12, 24, 36, 48, 60],
+    residualModes: ["standard", "high"],
+    ownerships: ["company"],
     vehiclePrice: 50000000,
-    sample: "diverse",
   };
   for (const a of argv) {
     if (!a.startsWith("--")) continue;
@@ -41,13 +59,19 @@ function parseCli(argv: string[]): GeneratorOptions {
     if (!k || v == null) continue;
     if (k === "workbook") opts.workbook = v;
     else if (k === "output") opts.output = v;
+    else if (k === "vehiclesPerBrand") opts.vehiclesPerBrand = Number(v);
     else if (k === "limit") opts.limit = Number(v);
-    else if (k === "term") opts.term = Number(v) as GeneratorOptions["term"];
-    else if (k === "residualMode")
-      opts.residualMode = v === "high" ? "high" : "standard";
+    else if (k === "terms")
+      opts.terms = parseList(v, (s) => Number(s) as Term);
+    else if (k === "residualModes")
+      opts.residualModes = parseList(v, (s) =>
+        s === "high" ? ("high" as const) : ("standard" as const),
+      );
+    else if (k === "ownerships")
+      opts.ownerships = parseList(v, (s) =>
+        s === "customer" ? ("customer" as const) : ("company" as const),
+      );
     else if (k === "vehiclePrice") opts.vehiclePrice = Number(v);
-    else if (k === "sample")
-      opts.sample = v === "first" ? "first" : "diverse";
   }
   if (!opts.output) throw new Error("--output=path.json required");
   return opts;
@@ -58,7 +82,7 @@ function slugify(s: string): string {
     .toLowerCase()
     .replaceAll(/[^a-z0-9가-힣]+/g, "-")
     .replaceAll(/^-|-$/g, "")
-    .slice(0, 80);
+    .slice(0, 60);
 }
 
 function buildDealerMap(
@@ -69,10 +93,6 @@ function buildDealerMap(
     dealerName?: string;
   }>,
 ): Map<string, string | null> {
-  // For each brand, find the 비제휴 dealer entry (ownership=company). If none
-  // exists, fall back to the brand-level policy (no dealerName). The chosen
-  // string is exactly what needs to land in Es1!B156 so VLOOKUP against
-  // Cond!D4:G64 hits the right row.
   const byBrand = new Map<string, string | null>();
   for (const p of policies) {
     if (p.ownershipType !== "company") continue;
@@ -98,7 +118,6 @@ const parsed = parseBnkWorkbook(ab as ArrayBuffer, {
 });
 console.error(`[bnk-gen] ${parsed.vehiclePrograms.length} vehicles parsed`);
 
-// Filter vehicles that have at least one residual grade — others won't work in Excel
 const usable = parsed.vehiclePrograms.filter((v) => {
   const raw = v.rawRow as Record<string, unknown>;
   return (
@@ -110,78 +129,73 @@ const usable = parsed.vehiclePrograms.filter((v) => {
     raw.wsGrade != null
   );
 });
-console.error(`[bnk-gen] ${usable.length} vehicles have at least one residual grade`);
-
-let picked = usable;
-if (opts.sample === "diverse") {
-  // Group by brand and round-robin pick so that we hit many brands early.
-  const byBrand = new Map<string, typeof usable>();
-  for (const v of usable) {
-    const arr = byBrand.get(v.brand) ?? [];
-    arr.push(v);
-    byBrand.set(v.brand, arr);
-  }
-  const brands = [...byBrand.keys()].sort();
-  const queues = brands.map((b) => [...(byBrand.get(b) ?? [])]);
-  const out: typeof usable = [];
-  while (out.length < usable.length && queues.some((q) => q.length > 0)) {
-    for (const q of queues) {
-      const v = q.shift();
-      if (v) out.push(v);
-      if (opts.limit > 0 && out.length >= opts.limit) break;
-    }
-    if (opts.limit > 0 && out.length >= opts.limit) break;
-  }
-  picked = out;
-}
-
-if (opts.limit > 0) {
-  picked = picked.slice(0, opts.limit);
-}
+console.error(`[bnk-gen] ${usable.length} vehicles with a residual grade`);
 
 const dealerMap = buildDealerMap(
   parsed.brandRatePolicies as unknown as Parameters<typeof buildDealerMap>[0],
 );
-console.error(
-  `[bnk-gen] dealer map: ${[...dealerMap.entries()].map(([b, d]) => `${b}=${d ?? "(none)"}`).join(", ")}`,
-);
 
-// BNK cross-brand alias: parser splits "포드/링컨" into FORD/LINCOLN, but the
-// original Cond policies may only resolve under "포드/링컨". Same with some
-// other merged entries.
 function resolveDealer(brand: string): string | null {
   const direct = dealerMap.get(brand);
   if (direct !== undefined) return direct;
-  if (brand === "FORD" || brand === "LINCOLN") return dealerMap.get("포드/링컨") ?? null;
+  if (brand === "FORD" || brand === "LINCOLN")
+    return dealerMap.get("포드/링컨") ?? null;
   return null;
 }
 
-// Drop vehicles whose brand has no 비제휴 policy — Excel VLOOKUP would fail on
-// B166 and cascade every downstream cell to missing value.
-const withDealer = picked
-  .map((v) => ({ v, dealer: resolveDealer(v.brand) }))
-  .filter((x) => x.dealer != null);
-const droppedBrands = new Set(
-  picked.map((v) => v.brand).filter((b) => resolveDealer(b) == null),
-);
-if (droppedBrands.size > 0) {
-  console.error(
-    `[bnk-gen] dropped ${picked.length - withDealer.length} vehicles from brands without 비제휴 dealer policy: ${[...droppedBrands].join(", ")}`,
-  );
+// Group by brand and pick N vehicles per brand (prefer latest modelYear).
+const byBrand = new Map<string, typeof usable>();
+for (const v of usable) {
+  if (resolveDealer(v.brand) == null) continue; // skip brands without dealer
+  const arr = byBrand.get(v.brand) ?? [];
+  arr.push(v);
+  byBrand.set(v.brand, arr);
 }
 
-const scenarios: Scenario[] = withDealer.map(({ v, dealer }, idx) => ({
-  id: `${String(idx).padStart(5, "0")}-${slugify(v.brand)}-${slugify(v.modelName)}-${opts.term}m`,
-  brand: v.brand,
-  model: v.modelName,
-  term: opts.term,
-  annualMileageKm: 20000,
-  vehiclePrice: opts.vehiclePrice,
-  dealerName: dealer,
-  residualMode: opts.residualMode,
-}));
+const pickedVehicles: Array<{ v: (typeof usable)[number]; dealer: string }> = [];
+for (const [brand, arr] of [...byBrand.entries()].sort(([a], [b]) => a.localeCompare(b))) {
+  const dealer = resolveDealer(brand)!;
+  const sorted = [...arr].sort((a, b) => {
+    const ya = ((a.rawRow as Record<string, unknown>).modelYear as number) ?? 0;
+    const yb = ((b.rawRow as Record<string, unknown>).modelYear as number) ?? 0;
+    return yb - ya;
+  });
+  const take = opts.vehiclesPerBrand > 0 ? sorted.slice(0, opts.vehiclesPerBrand) : sorted;
+  for (const v of take) pickedVehicles.push({ v, dealer });
+}
 
-writeFileSync(opts.output, JSON.stringify(scenarios, null, 2));
 console.error(
-  `[bnk-gen] wrote ${scenarios.length} scenarios (term=${opts.term}, residual=${opts.residualMode}, sample=${opts.sample}) → ${opts.output}`,
+  `[bnk-gen] picked ${pickedVehicles.length} vehicles across ${byBrand.size} brands (${opts.vehiclesPerBrand}/brand)`,
+);
+
+// Multiply across axes
+const scenarios: Scenario[] = [];
+let idx = 0;
+for (const { v, dealer } of pickedVehicles) {
+  for (const term of opts.terms) {
+    for (const residualMode of opts.residualModes) {
+      for (const ownership of opts.ownerships) {
+        scenarios.push({
+          id: `${String(idx).padStart(5, "0")}-${slugify(v.brand)}-${slugify(v.modelName)}-${term}m-${residualMode}-${ownership}`,
+          brand: v.brand,
+          model: v.modelName,
+          term,
+          annualMileageKm: 20000,
+          vehiclePrice: opts.vehiclePrice,
+          dealerName: dealer,
+          residualMode,
+          ownership,
+        });
+        idx += 1;
+      }
+    }
+  }
+}
+
+let output = scenarios;
+if (opts.limit > 0 && output.length > opts.limit) output = output.slice(0, opts.limit);
+
+writeFileSync(opts.output, JSON.stringify(output, null, 2));
+console.error(
+  `[bnk-gen] wrote ${output.length} scenarios (terms=${opts.terms.join(",")}, residual=${opts.residualModes.join(",")}, ownership=${opts.ownerships.join(",")}) → ${opts.output}`,
 );
