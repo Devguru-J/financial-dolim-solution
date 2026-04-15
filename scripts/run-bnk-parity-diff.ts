@@ -189,7 +189,7 @@ for (const s of scenarios) {
       depositAmount: s.depositAmount ?? 0,
       quotedVehiclePrice: s.vehiclePrice,
       discountAmount: s.discountAmount ?? 0,
-      acquisitionTaxRateOverride: 0.07,
+      // Let engine pick default per vehicle class (e.g. 화물 → 5%, 승용 ≥1600cc → 7%)
       residualMode: s.residualMode ?? "standard",
       cmFeeRate: s.cmFeeRate ?? 0,
       agFeeRate: s.agFeeRate ?? 0,

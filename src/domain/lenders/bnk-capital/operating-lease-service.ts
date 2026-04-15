@@ -97,11 +97,16 @@ function roundUp(value: number, digits: number): number {
 // Users can always override via acquisitionTaxRateOverride.
 // ---------------------------------------------------------------------------
 
-function defaultAcquisitionTaxRate(engineDisplacementCc: number | null): number {
-  if (engineDisplacementCc != null && engineDisplacementCc >= 1600) {
-    return 0.07;
-  }
-  return 0.04;
+function defaultAcquisitionTaxRate(
+  engineDisplacementCc: number | null,
+  vehicleClass: string | null | undefined,
+): number {
+  // BNK workbook model: 승용 (incl. EVs with cc=0) = 7%, 화물 = 5%.
+  // Engine-displacement-based differentiation is not used here because EVs
+  // report cc=0 but are still classified as 승용 (7%). The MG < 1600cc 4%
+  // path doesn't apply to BNK.
+  if (vehicleClass === "화물") return 0.05;
+  return 0.07;
 }
 
 // ---------------------------------------------------------------------------
@@ -201,6 +206,77 @@ function computeResidualRateAdjustment(params: {
 }
 
 // ---------------------------------------------------------------------------
+// Brand-conditional rate adjustments (Es1 cells B172-C177)
+//
+// In addition to B185+C186, Excel's B166 sums many brand/dealer-specific
+// adjustments. Most resolve to 0; the non-zero ones we observe in production
+// scenarios:
+//
+//   B173 (슈퍼카 surcharge)  : +0.6% if brand∈{페라리,롤스로이스,맥라렌,
+//                              람보르기니,애스턴마틴} and company and gap>0,
+//                              UNLESS dealer is one of {롤스로이스-동성,
+//                              페라리_FMK,람보르기니-이탈리아} (those dealers
+//                              get a separate offset path).
+//   B174 (애스턴마틴)         : -0.3% if brand=애스턴마틴 and company.
+//   B176 (랜드로버 special)   : -1.1% if brand=랜드로버 AND dealer=
+//                              "재규어/랜드로버-도이치".
+//   C175 (테슬라)             : -1.1% if brand=테슬라.
+//   C177 (폴스타/마세라티/벤틀리): -1.1% if brand∈{폴스타,마세라티,벤틀리}.
+//
+// Returns the net additive rate adjustment in decimal form.
+// ---------------------------------------------------------------------------
+
+const BNK_SUPERCAR_BRANDS = new Set(["페라리", "롤스로이스", "맥라렌", "람보르기니", "애스턴마틴"]);
+const BNK_SUPERCAR_OFFSET_DEALERS = new Set([
+  "롤스로이스-동성",
+  "페라리_FMK",
+  "람보르기니-이탈리아",
+]);
+
+function computeBrandRateAdjustments(params: {
+  brand: string;
+  ownershipType: string;
+  dealerName: string | null | undefined;
+  gapPositive: boolean;
+}): number {
+  const { brand, ownershipType, dealerName, gapPositive } = params;
+  const isCompany = ownershipType === "company";
+  let adj = 0;
+
+  // B173 — 슈퍼카 +0.6% (company, gap>0, not on offset dealer)
+  if (
+    isCompany &&
+    gapPositive &&
+    BNK_SUPERCAR_BRANDS.has(brand) &&
+    !(dealerName && BNK_SUPERCAR_OFFSET_DEALERS.has(dealerName))
+  ) {
+    adj += 0.006;
+  }
+
+  // B174 — 애스턴마틴 company -0.3%
+  if (isCompany && brand === "애스턴마틴") {
+    adj -= 0.003;
+  }
+
+  // B176 — 랜드로버 + 재규어/랜드로버-도이치 dealer -1.1%
+  if (brand === "랜드로버" && dealerName === "재규어/랜드로버-도이치") {
+    adj -= 0.011;
+  }
+
+  // C175 — 테슬라 -1.1%
+  if (brand === "테슬라") {
+    adj -= 0.011;
+  }
+
+  // C177 — 폴스타/마세라티/벤틀리 -1.1%
+  if (brand === "폴스타" || brand === "마세라티" || brand === "벤틀리") {
+    adj -= 0.011;
+  }
+
+  return adj;
+}
+
+// ---------------------------------------------------------------------------
 // BNK provider configuration
 // ---------------------------------------------------------------------------
 
@@ -209,12 +285,39 @@ function computeResidualRateAdjustment(params: {
 // (cbGrade, tyGrade, jyGrade, crGrade, adbGrade) map to column headers in that
 // table.  matrixGroup in DB = "BNK_{gradeValue}".
 // maxFee = provider-specific ceiling for gap > 6% (Es1 J168:J174).
-const BNK_PROVIDERS = [
+// CR provider is gated by dealer (Es1!C338 = MATCH(B156, D338:D346)). Only
+// activates when current dealer is in this set; otherwise CR contributes 0
+// to provider selection. Without this gate the engine over-picks CR for
+// vehicles like 람보르기니 where Excel falls back to TY.
+const BNK_CR_GATING_DEALERS = new Set([
+  "도이치모터스",
+  "포르쉐_도이치",
+  "재규어/랜드로버-도이치",
+  "람보르기니-이탈리아",
+  "디티네트웍스",
+]);
+
+type BnkProviderConfig = {
+  key: string;
+  maxFee: number;
+  dealerGate?: Set<string>;
+};
+
+function isProviderEligibleForDealer(
+  provider: BnkProviderConfig,
+  dealerName: string | null | undefined,
+): boolean {
+  if (!provider.dealerGate) return true;
+  if (!dealerName) return false;
+  return provider.dealerGate.has(dealerName);
+}
+
+const BNK_PROVIDERS: BnkProviderConfig[] = [
   { key: "wsGrade", maxFee: 0.0132 },
   { key: "cbGrade", maxFee: 0.0135 },
   { key: "tyGrade", maxFee: 0.0132 },
   { key: "jyGrade", maxFee: 0.0145 },
-  { key: "crGrade", maxFee: 0.0135 },
+  { key: "crGrade", maxFee: 0.0135, dealerGate: BNK_CR_GATING_DEALERS },
   { key: "adbGrade", maxFee: 0.0145 },
 ] as const;
 
@@ -480,7 +583,7 @@ function computeQuote(params: ComputeQuoteParams): CanonicalQuoteResult {
   const taxRate =
     input.acquisitionTaxRateOverride != null && input.acquisitionTaxRateOverride >= 0
       ? input.acquisitionTaxRateOverride
-      : defaultAcquisitionTaxRate(vehicle.engineDisplacementCc);
+      : defaultAcquisitionTaxRate(vehicle.engineDisplacementCc, vehicle.vehicleClass);
   const automaticAcquisitionTax =
     taxRate > 0 ? roundDown((discountedVehiclePrice / 1.1) * taxRate, -1) : 0;
 
@@ -497,6 +600,24 @@ function computeQuote(params: ComputeQuoteParams): CanonicalQuoteResult {
     acquisitionTax = Math.max(0, input.acquisitionTaxAmountOverride ?? 0);
   } else {
     acquisitionTax = automaticAcquisitionTax;
+  }
+
+  // BNK auto EV/HEV 취득세 감면 (Es1 B96/B114/B115/B116)
+  // For eligible EV/HEV vehicles, Excel subtracts a fixed amount from the
+  // acquisition tax. The result is allowed to go negative (B101 in Excel can
+  // produce -490,900원 for BYD Atto 3 @ 50M). Engine applies only when the
+  // user accepts automatic mode.
+  if (taxMode === "automatic") {
+    const rawRow = (vehicle.rawRow ?? {}) as Record<string, unknown>;
+    const ecoType = rawRow.ecoType as string | null | undefined;
+    const ecoTaxEligible = rawRow.ecoTaxEligible === true;
+    if (ecoTaxEligible) {
+      if (ecoType === "전기") {
+        acquisitionTax = roundDown(acquisitionTax - 1_400_000, -1);
+      } else if (ecoType === "HEV" || ecoType === "PHEV") {
+        acquisitionTax = roundDown(acquisitionTax - 400_000, -1);
+      }
+    }
   }
 
   const stampDuty = Math.max(0, input.stampDuty ?? 0);
@@ -551,9 +672,11 @@ function computeQuote(params: ComputeQuoteParams): CanonicalQuoteResult {
     // Track which provider gives the best rate — Es1 uses this provider for fee calculation.
     const rawRow = vehicle.rawRow;
     const mileageAdj = getMileageAdjustment(input.annualMileageKm);
+    const dealerName = (input as Record<string, unknown>).bnkDealerName as string | undefined;
     let bestRate = 0;
     let bestProviderKey: string | null = null;
     for (const provider of BNK_PROVIDERS) {
+      if (!isProviderEligibleForDealer(provider, dealerName)) continue;
       const mg = resolveBnkMatrixGroup(rawRow?.[provider.key]);
       if (!mg) continue;
       const rateRow = providerRates.find((r) => r.matrixGroup === mg);
@@ -615,8 +738,12 @@ function computeQuote(params: ComputeQuoteParams): CanonicalQuoteResult {
     const rawRow = vehicle.rawRow;
     const providerResults: BnkProviderResult[] = [];
     const mileageAdj = getMileageAdjustment(input.annualMileageKm);
+    const dealerNameForPhaseB = (input as Record<string, unknown>).bnkDealerName as
+      | string
+      | undefined;
 
     for (const provider of BNK_PROVIDERS) {
+      if (!isProviderEligibleForDealer(provider, dealerNameForPhaseB)) continue;
       const mg = resolveBnkMatrixGroup(rawRow?.[provider.key]);
       if (!mg) continue;
 
@@ -667,6 +794,16 @@ function computeQuote(params: ComputeQuoteParams): CanonicalQuoteResult {
         })
       : 0;
 
+    // Brand-conditional adjustments (Es1 B173/B174/B176/C175/C177)
+    const brandAdjustment = computeBrandRateAdjustments({
+      brand: vehicle.brand,
+      ownershipType: input.ownershipType,
+      dealerName: (input as Record<string, unknown>).bnkDealerName as string | undefined,
+      gapPositive: selectedProviderResult
+        ? residualRateRaw > selectedProviderResult.standardRate
+        : false,
+    });
+
     // C188: balloon surcharge — (upfront + deposit) / vehiclePrice in (40%, 50%] → +0.5%
     // >50% = out-of-range (Excel returns "입력범위초과", we warn and clamp to 0).
     const balloonRatio =
@@ -682,8 +819,9 @@ function computeQuote(params: ComputeQuoteParams): CanonicalQuoteResult {
       balloonSurcharge = 0.005;
     }
 
-    // Composed rate = base + CM + AG + B185 + C188 (WITHOUT guarantee fee — fee is lump sum)
-    annualIrrRate = policyBaseIrr + cmFee + agFee + residualAdjustment + balloonSurcharge;
+    // Composed rate = base + CM + AG + B185 + brand adj + C188 (without guarantee fee — lump sum)
+    annualIrrRate =
+      policyBaseIrr + cmFee + agFee + residualAdjustment + brandAdjustment + balloonSurcharge;
     rateSource = "brand-policy";
   }
 

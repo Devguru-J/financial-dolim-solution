@@ -101,7 +101,15 @@ function parseVehiclePrograms(rows: unknown[][]): WorkbookVehicleProgram[] {
 
     const vehicleClass = asText(row[12]);
     const cc = asNumber(row[13]);
-    const eco = asNumber(row[14]) === 1 || asBool(row[14]);
+    // CDB col 14 holds an eco-type string ("전기", "HEV", "PHEV") or null/0.
+    // Parse it explicitly so the engine can apply BNK's EV/HEV auto tax
+    // reduction (Es1 B95+B96+B114+B115 path).
+    const ecoRaw = asText(row[14]);
+    const ecoType: "전기" | "HEV" | "PHEV" | null =
+      ecoRaw === "전기" || ecoRaw === "HEV" || ecoRaw === "PHEV" ? ecoRaw : null;
+    const eco = ecoType != null || asNumber(row[14]) === 1;
+    const ecoTaxEligible = asText(row[29]) === "대상";
+    const evPurchaseSubsidyEligible = asText(row[30]) === "대상";
 
     const wsGrade = asNumber(row[10]);
     const wsPGrade = asNumber(row[11]);
@@ -154,6 +162,9 @@ function parseVehiclePrograms(rows: unknown[][]): WorkbookVehicleProgram[] {
           modelYear,
           vehicleClass,
           eco,
+          ecoType,
+          ecoTaxEligible,
+          evPurchaseSubsidyEligible,
         },
       },
     });
@@ -187,7 +198,7 @@ const BNK_UNIFIED_TABLE = {
   headerRow: 4,       // array idx with blankrows:false — grade labels (S1..S10, 1, 1.5, ..., 29)
   termCol: 31,        // 0-indexed col AF (lease term months)
   gradeColStart: 32,  // 0-indexed col AG (first grade column)
-  gradeColEnd: 98,    // 0-indexed col CU (scan up to here)
+  gradeColEnd: 100,   // 0-indexed col CW (max integer grade = 30 at col 100)
   dataRowStart: 5,    // array idx — first data row (month 1)
   dataRowEnd: 64,     // array idx — last data row (month 60)
 } as const;
@@ -330,7 +341,8 @@ function parseCondBrandPolicies(rows: unknown[][]): WorkbookBrandRatePolicy[] {
       productType: "operating_lease",
       ownershipType: "company",
       baseIrrRate: irr.company,
-      dealerName: dealer.displayName,
+      // Engine uses dealerName as the Es1!B156 VLOOKUP key; must match Cond col D.
+      dealerName: dealer.dealerName,
     });
     if (irr.customer !== irr.company) {
       results.push({
@@ -338,7 +350,8 @@ function parseCondBrandPolicies(rows: unknown[][]): WorkbookBrandRatePolicy[] {
         productType: "operating_lease",
         ownershipType: "customer",
         baseIrrRate: irr.customer,
-        dealerName: dealer.displayName,
+        // Engine uses dealerName as the Es1!B156 VLOOKUP key; must match Cond col D.
+      dealerName: dealer.dealerName,
       });
     }
   }

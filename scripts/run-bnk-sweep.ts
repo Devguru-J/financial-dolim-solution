@@ -47,6 +47,13 @@ type ScenarioResult = {
     residualAmount: number;
     acquisitionCost: number;
     termMonths: number;
+    // Diagnostic cells (Es1):
+    b185?: number; // residual rate adj (-0.3 / 0 / +0.3)
+    c186?: number; // premium offset
+    guaranteeFeeRate?: number; // B47
+    boostedMaxRate?: number; // B50
+    standardRateB52?: number; // B52
+    selectedProviderB48?: string; // B48 provider name
   };
 };
 
@@ -104,6 +111,7 @@ function asNumber(v: unknown): number | null {
 
 type VehicleLookup = {
   lookupName: string;
+  cdbBrand: string; // CDB col E raw brand — Es1!B10 must receive this string
   modelYear: number | null;
   vehicleClass: string | null;
   engineDisplacementCc: number | null;
@@ -138,6 +146,7 @@ function buildVehicleIndex(workbookPath: string): Map<string, VehicleLookup> {
     bestYear.set(key, year);
     map.set(key, {
       lookupName: year > 0 ? `${model} ${year}년형` : model,
+      cdbBrand: brand,
       modelYear: asNumber(row[7]),
       vehicleClass: asText(row[12]),
       engineDisplacementCc: asNumber(row[13]),
@@ -154,6 +163,7 @@ function escapeApplescriptString(s: string): string {
 function buildScenarioBlock(
   s: Scenario,
   lookupName: string,
+  cdbBrand: string,
   sceneIdx: number,
 ): string {
   const ownership = s.ownership ?? "company";
@@ -170,6 +180,7 @@ function buildScenarioBlock(
   const highRvFlag = s.residualMode === "high" ? "true" : "false";
   const importCode = s.importCategory === "국산" ? 2 : 1;
   const escapedModel = escapeApplescriptString(lookupName);
+  const escapedBrand = escapeApplescriptString(cdbBrand);
 
   const residualOverrideActive = s.residualOverrideMode && s.residualOverrideMode !== "auto";
   const residualModeFlag = residualOverrideActive ? "true" : "false";
@@ -197,6 +208,7 @@ function buildScenarioBlock(
     `set value of range "N41" of ws_bnk to ${s.agFeeRate ?? 0}`,
     `set value of range "N42" of ws_bnk to ${s.cmFeeRate ?? 0}`,
     `set value of range "U45" of ws_bnk to ${s.irrAdjustment ?? 0}`,
+    `set value of range "B10" of ws_es1 to "${escapedBrand}"`,
     `set value of range "B17" of ws_es1 to "${escapedModel}"`,
     `set value of range "B20" of ws_es1 to "${escapedModel}"`,
     `set value of range "B26" of ws_es1 to ${ownershipCode}`,
@@ -209,14 +221,14 @@ function buildScenarioBlock(
     `set value of range "B138" of ws_es1 to ${upfrontModeFlag}`,
     dealerWrite,
     "calculate",
-    "delay 1",
-    `set end of resultList to "${s.id}|" & ((value of range "B167" of ws_es1) as text) & "|" & ((value of range "B168" of ws_es1) as text) & "|" & ((value of range "B87" of ws_es1) as text) & "|" & ((value of range "B101" of ws_es1) as text) & "|" & ((value of range "B70" of ws_es1) as text) & "|" & ((value of range "B134" of ws_es1) as text) & "|" & ((value of range "B166" of ws_es1) as text) & "|" & ((value of range "B40" of ws_es1) as text)`,
+    "delay 0.5",
+    `set end of resultList to "${s.id}|" & ((value of range "B167" of ws_es1) as text) & "|" & ((value of range "B168" of ws_es1) as text) & "|" & ((value of range "B87" of ws_es1) as text) & "|" & ((value of range "B101" of ws_es1) as text) & "|" & ((value of range "B70" of ws_es1) as text) & "|" & ((value of range "B134" of ws_es1) as text) & "|" & ((value of range "B166" of ws_es1) as text) & "|" & ((value of range "B40" of ws_es1) as text) & "|" & ((value of range "B185" of ws_es1) as text) & "|" & ((value of range "C186" of ws_es1) as text) & "|" & ((value of range "B47" of ws_es1) as text) & "|" & ((value of range "B50" of ws_es1) as text) & "|" & ((value of range "B52" of ws_es1) as text) & "|" & ((value of range "B48" of ws_es1) as text)`,
   ].join("\n");
 }
 
 function runBatch(
   workbookPath: string,
-  scenarios: Array<{ scenario: Scenario; lookupName: string }>,
+  scenarios: Array<{ scenario: Scenario; lookupName: string; cdbBrand: string }>,
 ): Map<string, string[]> {
   const tempDir = mkdtempSync(`${tmpdir()}/bnk-sweep-`);
   const tempWorkbookPath = `${tempDir}/bnk-sweep-${process.pid}-${Date.now()}.xlsm`;
@@ -224,7 +236,9 @@ function runBatch(
   const workbookName = basename(tempWorkbookPath);
 
   const scenarioBlocks = scenarios
-    .map(({ scenario, lookupName }, i) => buildScenarioBlock(scenario, lookupName, i))
+    .map(({ scenario, lookupName, cdbBrand }, i) =>
+      buildScenarioBlock(scenario, lookupName, cdbBrand, i),
+    )
     .join("\n\n");
 
   const script = `
@@ -293,7 +307,9 @@ for (const s of scenarios) {
 }
 
 const toRun = resolved.flatMap((r) =>
-  "lookupName" in r ? [{ scenario: r.scenario, lookupName: r.lookupName }] : [],
+  "lookupName" in r
+    ? [{ scenario: r.scenario, lookupName: r.lookupName, cdbBrand: r.vehicle.cdbBrand }]
+    : [],
 );
 
 console.error(`[bnk-sweep] running ${toRun.length} / ${scenarios.length} scenarios in one Excel session`);
@@ -310,7 +326,7 @@ const results: ScenarioResult[] = resolved.map((r) => {
   if (!values) {
     return { id: r.scenario.id, ok: false, error: "no result row from Excel" };
   }
-  const [rate, pmt, disc, tax, residual, cost, baseIrr, term] = values;
+  const [rate, pmt, disc, tax, residual, cost, baseIrr, term, b185, c186, b47, b50, b52, b48] = values;
   const parsed = {
     displayedAnnualRateDecimal: Number(rate),
     monthlyPayment: Number(pmt),
@@ -320,8 +336,24 @@ const results: ScenarioResult[] = resolved.map((r) => {
     acquisitionCost: Number(cost),
     effectiveAnnualRateDecimal: Number(baseIrr),
     termMonths: Number(term),
+    b185: Number(b185),
+    c186: Number(c186),
+    guaranteeFeeRate: Number(b47),
+    boostedMaxRate: Number(b50),
+    standardRateB52: Number(b52),
+    selectedProviderB48: b48,
   };
-  const hasNaN = Object.values(parsed).some((n) => !Number.isFinite(n));
+  const required: number[] = [
+    parsed.displayedAnnualRateDecimal,
+    parsed.monthlyPayment,
+    parsed.discountedVehiclePrice,
+    parsed.acquisitionTax,
+    parsed.residualAmount,
+    parsed.acquisitionCost,
+    parsed.effectiveAnnualRateDecimal,
+    parsed.termMonths,
+  ];
+  const hasNaN = required.some((n) => !Number.isFinite(n));
   return {
     id: r.scenario.id,
     ok: !hasNaN,
