@@ -9,6 +9,7 @@ import { getLenderAdapter } from "@/domain/imports/lender-registry";
 import { calculateMgOperatingLeaseQuote } from "@/domain/lenders/mg-capital/operating-lease-service";
 import { calculateBnkOperatingLeaseQuote } from "@/domain/lenders/bnk-capital/operating-lease-service";
 import { calculateWooriOperatingLeaseQuote } from "@/domain/lenders/woori-card/operating-lease-service";
+import { createDbClient } from "@/lib/db/client";
 
 type Bindings = Env;
 
@@ -90,16 +91,14 @@ app.get("/api/health", async (c) => {
   try {
     const dbUrl = c.env.DATABASE_URL;
     if (!dbUrl) return c.json({ ok: false, error: "DATABASE_URL not set" });
-    // Raw postgres connection test
-    const postgres = (await import("postgres")).default;
-    const sql = postgres(dbUrl, { max: 1, connect_timeout: 10 });
+    const { db, dispose } = createDbClient(dbUrl);
     try {
-      const rows = await sql`SELECT 1 as test`;
-      return c.json({ ok: true, db: "connected", test: rows[0]?.test });
+      const result = await db.execute("SELECT 1 as test");
+      return c.json({ ok: true, db: "connected" });
     } catch (dbErr) {
-      return c.json({ ok: false, error: "db_query_failed", detail: String(dbErr), urlPrefix: dbUrl.substring(0, 30) });
+      return c.json({ ok: false, error: "query_failed", detail: String(dbErr), urlLen: dbUrl.length });
     } finally {
-      await sql.end();
+      await dispose();
     }
   } catch (e) {
     return c.json({ ok: false, error: "init_failed", detail: String(e) });
