@@ -74,10 +74,12 @@ function parseCli(argv: string[]): {
   workbook: string;
   scenariosPath: string;
   outputPath: string;
+  chunkSize: number;
 } {
   let workbook = DEFAULT_WORKBOOK;
   let scenariosPath = "";
   let outputPath = "";
+  let chunkSize = 30;
 
   for (const arg of argv) {
     if (!arg.startsWith("--")) continue;
@@ -86,12 +88,13 @@ function parseCli(argv: string[]): {
     if (k === "workbook") workbook = v;
     else if (k === "scenarios") scenariosPath = v;
     else if (k === "output") outputPath = v;
+    else if (k === "chunkSize") chunkSize = Number(v);
   }
 
   if (!scenariosPath) throw new Error("--scenarios=path/to/scenarios.json is required");
   if (!outputPath) throw new Error("--output=path/to/results.json is required");
 
-  return { workbook, scenariosPath, outputPath };
+  return { workbook, scenariosPath, outputPath, chunkSize };
 }
 
 function asText(v: unknown): string | null {
@@ -286,7 +289,7 @@ return joined
   }
 }
 
-const { workbook, scenariosPath, outputPath } = parseCli(process.argv.slice(2));
+const { workbook, scenariosPath, outputPath, chunkSize } = parseCli(process.argv.slice(2));
 const scenarios: Scenario[] = JSON.parse(readFileSync(scenariosPath, "utf8"));
 if (!Array.isArray(scenarios) || scenarios.length === 0) {
   throw new Error("scenarios file must be a non-empty JSON array");
@@ -312,9 +315,61 @@ const toRun = resolved.flatMap((r) =>
     : [],
 );
 
-console.error(`[bnk-sweep] running ${toRun.length} / ${scenarios.length} scenarios in one Excel session`);
+const totalChunks = Math.max(1, Math.ceil(toRun.length / chunkSize));
+console.error(
+  `[bnk-sweep] running ${toRun.length} / ${scenarios.length} scenarios in ${totalChunks} chunks of ${chunkSize}`,
+);
 const t0 = Date.now();
-const rawMap = runBatch(workbook, toRun);
+const rawMap = new Map<string, string[]>();
+const checkpointPath = `${outputPath}.partial.json`;
+
+function saveCheckpoint() {
+  const partial = Object.fromEntries(rawMap);
+  writeFileSync(checkpointPath, JSON.stringify(partial, null, 2));
+}
+
+// Resume from existing checkpoint if present
+try {
+  const existing = JSON.parse(readFileSync(checkpointPath, "utf8")) as Record<string, string[]>;
+  for (const [k, v] of Object.entries(existing)) rawMap.set(k, v);
+  if (rawMap.size > 0) {
+    console.error(`[bnk-sweep] resumed ${rawMap.size} cached results from ${checkpointPath}`);
+  }
+} catch {
+  // no checkpoint
+}
+
+for (let i = 0; i < toRun.length; i += chunkSize) {
+  const chunk = toRun
+    .slice(i, i + chunkSize)
+    .filter((x) => !rawMap.has(x.scenario.id));
+  if (chunk.length === 0) continue;
+  const chunkIdx = Math.floor(i / chunkSize) + 1;
+  const chunkStart = Date.now();
+  console.error(`[bnk-sweep] chunk ${chunkIdx}/${totalChunks}: ${chunk.length} scenarios...`);
+  let chunkMap: Map<string, string[]>;
+  try {
+    chunkMap = runBatch(workbook, chunk);
+  } catch (e) {
+    console.error(`[bnk-sweep] chunk ${chunkIdx}/${totalChunks} FAILED:`, e instanceof Error ? e.message : e);
+    saveCheckpoint();
+    console.error(`[bnk-sweep] checkpoint saved to ${checkpointPath}; re-run to resume.`);
+    process.exit(1);
+  }
+  for (const [k, v] of chunkMap) rawMap.set(k, v);
+  saveCheckpoint();
+  const chunkElapsed = ((Date.now() - chunkStart) / 1000).toFixed(1);
+  console.error(
+    `[bnk-sweep] chunk ${chunkIdx}/${totalChunks} done in ${chunkElapsed}s (${chunkMap.size}/${chunk.length} succeeded) — checkpoint saved`,
+  );
+  // Brief pause to let Excel settle between chunks
+  if (i + chunkSize < toRun.length) {
+    const pauseStart = Date.now();
+    while (Date.now() - pauseStart < 2000) {
+      // busy wait 2s
+    }
+  }
+}
 const elapsed = ((Date.now() - t0) / 1000).toFixed(1);
 console.error(`[bnk-sweep] Excel batch finished in ${elapsed}s`);
 

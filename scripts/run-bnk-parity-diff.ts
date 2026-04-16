@@ -47,9 +47,9 @@ type Tolerance = {
 };
 
 const DEFAULT_TOLERANCE: Tolerance = {
-  monthlyPayment: 1,
+  monthlyPayment: 100, // Excel ROUNDUP(-2); engine may differ by 1 step at rounding boundary
   displayedAnnualRate: 1e-4,
-  residualAmount: 1000, // Excel rounds residual to 1000원; engine may differ by rounding
+  residualAmount: 1000, // roundDown(-3) boundary: engine/Excel can differ by 1000원
 };
 
 function parseCli(argv: string[]): {
