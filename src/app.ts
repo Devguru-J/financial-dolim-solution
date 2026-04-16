@@ -86,6 +86,22 @@ app.get("/apple-touch-icon.png", (c) => c.body(null, 204));
 app.get("/apple-touch-icon-precomposed.png", (c) => c.body(null, 204));
 
 
+app.get("/api/health", async (c) => {
+  try {
+    const dbUrl = c.env.DATABASE_URL;
+    if (!dbUrl) return c.json({ ok: false, error: "DATABASE_URL not set", envKeys: Object.keys(c.env) });
+    const { db, dispose } = createDbClient(dbUrl);
+    try {
+      const result = await db.execute("SELECT 1 as test");
+      return c.json({ ok: true, db: "connected", envKeys: Object.keys(c.env) });
+    } finally {
+      await dispose();
+    }
+  } catch (e) {
+    return c.json({ ok: false, error: String(e), message: e instanceof Error ? e.message : "unknown" });
+  }
+});
+
 app.get("/api/lenders", (c) => {
   return c.json({
     ok: true,
