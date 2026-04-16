@@ -11,6 +11,7 @@
     "dev:client": "cd client && bun run dev",
     "test": "bun test",
     "build": "cd client && bun install && bun run build",
+    "postinstall": "cd client && bun install && bun run build",
     "typecheck": "tsc --noEmit",
     "check": "bun run typecheck",
     "extract:mg:operating-lease-fixture": "bun scripts/extract-mg-operating-lease-fixture.ts",
