@@ -107,6 +107,8 @@ function buildAppleScript(scenarios: Scenario[], delay: number): string[] {
     // BQ17: ownership (false=금융사명의, true=이용자명의)
     const ownerVal = s.ownership === "customer" ? "true" : "false";
     lines.push(`  set value of range "BQ17" of ws to ${ownerVal}`);
+    // BR17: EV flag (true=전기차, false=내연기관) — affects EV subsidy lookup
+    lines.push(`  set value of range "BR17" of ws to false`);
 
     // AV34: RV level
     const rvLevel = s.residualMode === "high" ? "고잔가" : "일반잔가";
