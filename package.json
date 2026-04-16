@@ -10,6 +10,7 @@
     "dev:pages": "wrangler pages dev . --ip 127.0.0.1 --port 8788 --compatibility-date=2026-03-17",
     "dev:client": "cd client && bun run dev",
     "test": "bun test",
+    "build": "cd client && bun install && bun run build",
     "typecheck": "tsc --noEmit",
     "check": "bun run typecheck",
     "extract:mg:operating-lease-fixture": "bun scripts/extract-mg-operating-lease-fixture.ts",

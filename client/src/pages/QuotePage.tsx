@@ -288,7 +288,7 @@ export function QuotePage() {
               )
             }
             if (result) {
-              return <QuoteResultCard key={lenderCode} result={result} lenderName={lenderName} />
+              return <QuoteResultCard key={lenderCode} result={result} lenderName={lenderName} lenderCode={lenderCode} />
             }
             return null
           })

@@ -6,9 +6,10 @@ import type { QuoteResult } from '@/types/quote'
 interface QuoteResultCardProps {
   result: QuoteResult
   lenderName: string
+  lenderCode?: string
 }
 
-export function QuoteResultCard({ result, lenderName }: QuoteResultCardProps) {
+export function QuoteResultCard({ result, lenderName, lenderCode }: QuoteResultCardProps) {
   const displayMonthlyPayment = roundUpToNearestHundred(result.monthlyPayment)
   const leaseTermMonths = result.majorInputs.leaseTermMonths
   const totalCost = result.monthlyPayment * leaseTermMonths + result.residual.amount
@@ -23,7 +24,7 @@ export function QuoteResultCard({ result, lenderName }: QuoteResultCardProps) {
 
   // Woori Card: 잔가보장수수료가 원금 가산 방식이라 기본IRR(4.5%)과 유효금리(5.03%)가 다름.
   // Excel BA49 = BW98 = RATE 역산 유효금리를 메인으로 표시.
-  const isWoori = result.lenderCode === 'woori-card'
+  const isWoori = lenderCode === 'woori-card'
   const mainRate = isWoori ? result.rates.effectiveAnnualRateDecimal : result.rates.annualRateDecimal
   const subRate = isWoori ? result.rates.annualRateDecimal : result.rates.effectiveAnnualRateDecimal
   const irrPercent = `${(mainRate * 100).toFixed(3)}%`
