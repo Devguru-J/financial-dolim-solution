@@ -21,8 +21,13 @@ export function QuoteResultCard({ result, lenderName }: QuoteResultCardProps) {
   const residualTag = isHighResidual ? '고잔가' : '일반잔가'
   const matrixGroup = result.residual.matrixGroup ?? ''
 
-  const irrPercent = `${(result.rates.annualRateDecimal * 100).toFixed(3)}%`
-  const effectivePercent = `${(result.rates.effectiveAnnualRateDecimal * 100).toFixed(3)}%`
+  // Woori Card: 잔가보장수수료가 원금 가산 방식이라 기본IRR(4.5%)과 유효금리(5.03%)가 다름.
+  // Excel BA49 = BW98 = RATE 역산 유효금리를 메인으로 표시.
+  const isWoori = result.lenderCode === 'woori-card'
+  const mainRate = isWoori ? result.rates.effectiveAnnualRateDecimal : result.rates.annualRateDecimal
+  const subRate = isWoori ? result.rates.annualRateDecimal : result.rates.effectiveAnnualRateDecimal
+  const irrPercent = `${(mainRate * 100).toFixed(3)}%`
+  const effectivePercent = `${(subRate * 100).toFixed(3)}%`
 
   return (
     <Card className="overflow-hidden shadow-[0_12px_30px_rgba(29,51,184,0.15)]">
@@ -65,7 +70,7 @@ export function QuoteResultCard({ result, lenderName }: QuoteResultCardProps) {
             <SecRow
               label="IRR"
               value={irrPercent}
-              sub={irrPercent !== effectivePercent ? `유효 ${effectivePercent}` : undefined}
+              sub={irrPercent !== effectivePercent ? (isWoori ? `기본 ${effectivePercent}` : `유효 ${effectivePercent}`) : undefined}
             />
             <SecRow
               label="잔가율"
