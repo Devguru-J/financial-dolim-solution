@@ -99,7 +99,30 @@ const BRAND_ALIASES: Record<string, string> = {
 
   "ROLLS-ROYCE": "ROLLSROYCE",
   ROLLSROYCE: "ROLLSROYCE",
+  ROLLS_ROYCE: "ROLLSROYCE",
+  "ROLLS ROYCE": "ROLLSROYCE",
   롤스로이스: "ROLLSROYCE",
+
+  ASTONMARTIN: "ASTONMARTIN",
+  ASTON_MARTIN: "ASTONMARTIN",
+  "ASTON MARTIN": "ASTONMARTIN",
+  "ASTON-MARTIN": "ASTONMARTIN",
+  애스턴마틴: "ASTONMARTIN",
+
+  MCLAREN: "MCLAREN",
+  맥라렌: "MCLAREN",
+
+  BYD: "BYD",
+
+  INEO: "INEOS",
+  INEOS: "INEOS",
+  이네오스: "INEOS",
+
+  LOTUS: "LOTUS",
+  로터스: "LOTUS",
+
+  POLESTAR: "POLESTAR",
+  폴스타: "POLESTAR",
 };
 
 export function normalizeBrand(brand: string): string {

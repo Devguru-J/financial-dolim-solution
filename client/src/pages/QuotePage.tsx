@@ -261,7 +261,8 @@ export function QuotePage() {
       {/* Right: Results */}
       <div className="flex flex-col gap-3 sticky top-5 h-fit">
         {multiQuote.hasAnyResult || multiQuote.isAnyLoading ? (
-          multiQuote.entries.map(({ lenderCode, lenderName, result, loading, error }) => {
+          multiQuote.entries.map(({ lenderCode, lenderName, result, loading, error, notAvailable }) => {
+            if (notAvailable) return null
             if (loading) {
               return (
                 <div key={lenderCode} className="rounded-2xl border border-border bg-white shadow-[0_12px_30px_rgba(29,51,184,0.08)] overflow-hidden">
