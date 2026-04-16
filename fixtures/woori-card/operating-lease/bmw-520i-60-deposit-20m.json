@@ -1,0 +1,331 @@
+{
+  "name": "bmw-520i-60-deposit-20m",
+  "workbookVersion": "woori-test",
+  "vehicle": {
+    "brand": "BMW",
+    "modelName": "520i Luxury",
+    "vehicleClass": "승용",
+    "engineDisplacementCc": 1998,
+    "highResidualAllowed": true,
+    "hybridAllowed": false,
+    "rawRow": {
+      "samilGrade": "C",
+      "yucaGrade": "B",
+      "autohandsGrade": "A",
+      "samilSuperHighGrade": null,
+      "yucaSuperHighGrade": null,
+      "samilAdjust": 0.05,
+      "yucaAdjust": 0,
+      "residualUpgrade": 0,
+      "fuel": "가솔린",
+      "fuelType": "ICE"
+    }
+  },
+  "providerRates": [
+    {
+      "matrixGroup": "WOORI_SAMIL_A",
+      "leaseTermMonths": 60,
+      "residualRate": "0.37"
+    },
+    {
+      "matrixGroup": "WOORI_SAMIL_B",
+      "leaseTermMonths": 60,
+      "residualRate": "0.36"
+    },
+    {
+      "matrixGroup": "WOORI_SAMIL_C",
+      "leaseTermMonths": 60,
+      "residualRate": "0.35"
+    },
+    {
+      "matrixGroup": "WOORI_SAMIL_HIGH_A",
+      "leaseTermMonths": 60,
+      "residualRate": "0.43"
+    },
+    {
+      "matrixGroup": "WOORI_SAMIL_HIGH_B",
+      "leaseTermMonths": 60,
+      "residualRate": "0.42"
+    },
+    {
+      "matrixGroup": "WOORI_SAMIL_HIGH_C",
+      "leaseTermMonths": 60,
+      "residualRate": "0.41"
+    },
+    {
+      "matrixGroup": "WOORI_YUCA_A",
+      "leaseTermMonths": 60,
+      "residualRate": "0.41"
+    },
+    {
+      "matrixGroup": "WOORI_YUCA_B",
+      "leaseTermMonths": 60,
+      "residualRate": "0.4"
+    },
+    {
+      "matrixGroup": "WOORI_YUCA_C",
+      "leaseTermMonths": 60,
+      "residualRate": "0.37"
+    },
+    {
+      "matrixGroup": "WOORI_YUCA_HIGH_A",
+      "leaseTermMonths": 60,
+      "residualRate": "0.45"
+    },
+    {
+      "matrixGroup": "WOORI_YUCA_HIGH_B",
+      "leaseTermMonths": 60,
+      "residualRate": "0.44"
+    },
+    {
+      "matrixGroup": "WOORI_YUCA_HIGH_C",
+      "leaseTermMonths": 60,
+      "residualRate": "0.41"
+    },
+    {
+      "matrixGroup": "WOORI_AUTOHANDS_A",
+      "leaseTermMonths": 60,
+      "residualRate": "0.47"
+    },
+    {
+      "matrixGroup": "WOORI_AUTOHANDS_B",
+      "leaseTermMonths": 60,
+      "residualRate": "0.45"
+    },
+    {
+      "matrixGroup": "WOORI_AUTOHANDS_C",
+      "leaseTermMonths": 60,
+      "residualRate": "0.44"
+    },
+    {
+      "matrixGroup": "WOORI_AUTOHANDS_D",
+      "leaseTermMonths": 60,
+      "residualRate": "0.43"
+    },
+    {
+      "matrixGroup": "WOORI_AUTOHANDS_E",
+      "leaseTermMonths": 60,
+      "residualRate": "0.42"
+    },
+    {
+      "matrixGroup": "WOORI_AUTOHANDS_F",
+      "leaseTermMonths": 60,
+      "residualRate": "0.41"
+    },
+    {
+      "matrixGroup": "WOORI_AUTOHANDS_G",
+      "leaseTermMonths": 60,
+      "residualRate": "0.4"
+    },
+    {
+      "matrixGroup": "WOORI_AUTOHANDS_H",
+      "leaseTermMonths": 60,
+      "residualRate": "0.39"
+    },
+    {
+      "matrixGroup": "WOORI_AUTOHANDS_I",
+      "leaseTermMonths": 60,
+      "residualRate": "0.38"
+    },
+    {
+      "matrixGroup": "WOORI_AUTOHANDS_J",
+      "leaseTermMonths": 60,
+      "residualRate": "0.37"
+    },
+    {
+      "matrixGroup": "WOORI_AUTOHANDS_K",
+      "leaseTermMonths": 60,
+      "residualRate": "0.36"
+    },
+    {
+      "matrixGroup": "WOORI_AUTOHANDS_L",
+      "leaseTermMonths": 60,
+      "residualRate": "0.34"
+    },
+    {
+      "matrixGroup": "WOORI_AUTOHANDS_M",
+      "leaseTermMonths": 60,
+      "residualRate": "0.33"
+    },
+    {
+      "matrixGroup": "WOORI_AUTOHANDS_N",
+      "leaseTermMonths": 60,
+      "residualRate": "0.32"
+    },
+    {
+      "matrixGroup": "WOORI_AUTOHANDS_O",
+      "leaseTermMonths": 60,
+      "residualRate": "0.31"
+    },
+    {
+      "matrixGroup": "WOORI_AUTOHANDS_P",
+      "leaseTermMonths": 60,
+      "residualRate": "0.29"
+    },
+    {
+      "matrixGroup": "WOORI_AUTOHANDS_Q",
+      "leaseTermMonths": 60,
+      "residualRate": "0.27"
+    },
+    {
+      "matrixGroup": "WOORI_AUTOHANDS_R",
+      "leaseTermMonths": 60,
+      "residualRate": "0.25"
+    },
+    {
+      "matrixGroup": "WOORI_AUTOHANDS_S",
+      "leaseTermMonths": 60,
+      "residualRate": "0.22"
+    },
+    {
+      "matrixGroup": "WOORI_AUTOHANDS_T",
+      "leaseTermMonths": 60,
+      "residualRate": "0.18"
+    },
+    {
+      "matrixGroup": "WOORI_AUTOHANDS_U",
+      "leaseTermMonths": 60,
+      "residualRate": "0.17"
+    },
+    {
+      "matrixGroup": "WOORI_AUTOHANDS_HIGH_A",
+      "leaseTermMonths": 60,
+      "residualRate": "0.51"
+    },
+    {
+      "matrixGroup": "WOORI_AUTOHANDS_HIGH_B",
+      "leaseTermMonths": 60,
+      "residualRate": "0.49"
+    },
+    {
+      "matrixGroup": "WOORI_AUTOHANDS_HIGH_C",
+      "leaseTermMonths": 60,
+      "residualRate": "0.48"
+    },
+    {
+      "matrixGroup": "WOORI_AUTOHANDS_HIGH_D",
+      "leaseTermMonths": 60,
+      "residualRate": "0.47"
+    },
+    {
+      "matrixGroup": "WOORI_AUTOHANDS_HIGH_E",
+      "leaseTermMonths": 60,
+      "residualRate": "0.46"
+    },
+    {
+      "matrixGroup": "WOORI_AUTOHANDS_HIGH_F",
+      "leaseTermMonths": 60,
+      "residualRate": "0.45"
+    },
+    {
+      "matrixGroup": "WOORI_AUTOHANDS_HIGH_G",
+      "leaseTermMonths": 60,
+      "residualRate": "0.44"
+    },
+    {
+      "matrixGroup": "WOORI_AUTOHANDS_HIGH_H",
+      "leaseTermMonths": 60,
+      "residualRate": "0.43"
+    },
+    {
+      "matrixGroup": "WOORI_AUTOHANDS_HIGH_I",
+      "leaseTermMonths": 60,
+      "residualRate": "0.42"
+    },
+    {
+      "matrixGroup": "WOORI_AUTOHANDS_HIGH_J",
+      "leaseTermMonths": 60,
+      "residualRate": "0.41"
+    },
+    {
+      "matrixGroup": "WOORI_AUTOHANDS_HIGH_K",
+      "leaseTermMonths": 60,
+      "residualRate": "0.4"
+    },
+    {
+      "matrixGroup": "WOORI_AUTOHANDS_HIGH_L",
+      "leaseTermMonths": 60,
+      "residualRate": "0.38"
+    },
+    {
+      "matrixGroup": "WOORI_AUTOHANDS_HIGH_M",
+      "leaseTermMonths": 60,
+      "residualRate": "0.37"
+    },
+    {
+      "matrixGroup": "WOORI_AUTOHANDS_HIGH_N",
+      "leaseTermMonths": 60,
+      "residualRate": "0.36"
+    },
+    {
+      "matrixGroup": "WOORI_AUTOHANDS_HIGH_O",
+      "leaseTermMonths": 60,
+      "residualRate": "0.35"
+    },
+    {
+      "matrixGroup": "WOORI_AUTOHANDS_HIGH_P",
+      "leaseTermMonths": 60,
+      "residualRate": "0.33"
+    },
+    {
+      "matrixGroup": "WOORI_AUTOHANDS_HIGH_Q",
+      "leaseTermMonths": 60,
+      "residualRate": "0.31"
+    },
+    {
+      "matrixGroup": "WOORI_AUTOHANDS_HIGH_R",
+      "leaseTermMonths": 60,
+      "residualRate": "0.29"
+    },
+    {
+      "matrixGroup": "WOORI_AUTOHANDS_HIGH_S",
+      "leaseTermMonths": 60,
+      "residualRate": "0.26"
+    },
+    {
+      "matrixGroup": "WOORI_AUTOHANDS_HIGH_T",
+      "leaseTermMonths": 60,
+      "residualRate": "0.22"
+    },
+    {
+      "matrixGroup": "WOORI_AUTOHANDS_HIGH_U",
+      "leaseTermMonths": 60,
+      "residualRate": "0.21"
+    }
+  ],
+  "policyBaseIrr": 0.045,
+  "input": {
+    "lenderCode": "woori-card",
+    "productType": "operating_lease",
+    "brand": "BMW",
+    "modelName": "520i Luxury",
+    "ownershipType": "company",
+    "leaseTermMonths": 60,
+    "annualMileageKm": 20000,
+    "upfrontPayment": 0,
+    "depositAmount": 20000000,
+    "quotedVehiclePrice": 69260000,
+    "discountAmount": 0,
+    "residualMode": "high",
+    "stampDuty": 10000
+  },
+  "expected": {
+    "discountedVehiclePrice": 69260000,
+    "acquisitionTax": 4407450,
+    "stampDuty": 10000,
+    "financedPrincipal": 73667450,
+    "residualAmount": 35322000,
+    "displayedAnnualRateDecimal": 0.045,
+    "effectiveAnnualRateDecimal": 0.034464994153863296,
+    "monthlyPayment": 798100,
+    "selectedProvider": "오토핸즈",
+    "residualRate": 0.51
+  },
+  "tolerance": {
+    "monthlyPayment": 1,
+    "residualAmount": 0,
+    "acquisitionTax": 0,
+    "displayedAnnualRateDecimal": 0,
+    "effectiveAnnualRateDecimal": 0.0001
+  }
+}

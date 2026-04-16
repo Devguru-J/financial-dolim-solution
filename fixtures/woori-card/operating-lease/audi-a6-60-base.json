@@ -1,0 +1,89 @@
+{
+  "name": "audi-a6-60-base",
+  "workbookVersion": "woori-test",
+  "vehicle": {
+    "brand": "Audi",
+    "modelName": "A6 45/50 TDI Quattro",
+    "vehicleClass": "승용",
+    "engineDisplacementCc": 2967,
+    "highResidualAllowed": true,
+    "hybridAllowed": false,
+    "rawRow": {
+      "samilGrade": "F",
+      "yucaGrade": "F",
+      "autohandsGrade": null,
+      "samilSuperHighGrade": null,
+      "yucaSuperHighGrade": null,
+      "samilAdjust": 0,
+      "yucaAdjust": 0,
+      "residualUpgrade": 0,
+      "fuel": "디젤",
+      "fuelType": "ICE"
+    }
+  },
+  "providerRates": [
+    {
+      "matrixGroup": "WOORI_SAMIL_F",
+      "leaseTermMonths": 60,
+      "residualRate": "0.32"
+    },
+    {
+      "matrixGroup": "WOORI_SAMIL_HIGH_F",
+      "leaseTermMonths": 60,
+      "residualRate": "0.38"
+    },
+    {
+      "matrixGroup": "WOORI_YUCA_F",
+      "leaseTermMonths": 60,
+      "residualRate": "0.33"
+    },
+    {
+      "matrixGroup": "WOORI_YUCA_HIGH_F",
+      "leaseTermMonths": 60,
+      "residualRate": "0.37"
+    },
+    {
+      "matrixGroup": "WOORI_AUTOHANDS_F",
+      "leaseTermMonths": 60,
+      "residualRate": "0.41"
+    },
+    {
+      "matrixGroup": "WOORI_AUTOHANDS_HIGH_F",
+      "leaseTermMonths": 60,
+      "residualRate": "0.45"
+    }
+  ],
+  "policyBaseIrr": 0.045,
+  "input": {
+    "lenderCode": "woori-card",
+    "productType": "operating_lease",
+    "brand": "Audi",
+    "modelName": "A6 45/50 TDI Quattro",
+    "ownershipType": "company",
+    "leaseTermMonths": 60,
+    "annualMileageKm": 20000,
+    "upfrontPayment": 0,
+    "quotedVehiclePrice": 74700000,
+    "residualMode": "high",
+    "stampDuty": 10000
+  },
+  "expected": {
+    "discountedVehiclePrice": 74700000,
+    "acquisitionTax": 4753630,
+    "stampDuty": 10000,
+    "financedPrincipal": 79453630,
+    "residualAmount": 28386000,
+    "displayedAnnualRateDecimal": 0.045,
+    "effectiveAnnualRateDecimal": 0.04715239091680991,
+    "monthlyPayment": 1068600,
+    "selectedProvider": "삼일",
+    "residualRate": 0.38
+  },
+  "tolerance": {
+    "monthlyPayment": 1,
+    "residualAmount": 0,
+    "acquisitionTax": 0,
+    "displayedAnnualRateDecimal": 0,
+    "effectiveAnnualRateDecimal": 0.0001
+  }
+}
