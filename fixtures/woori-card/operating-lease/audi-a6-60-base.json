@@ -72,12 +72,12 @@
     "acquisitionTax": 4753630,
     "stampDuty": 10000,
     "financedPrincipal": 79453630,
-    "residualAmount": 28386000,
+    "residualAmount": 30627000,
     "displayedAnnualRateDecimal": 0.045,
-    "effectiveAnnualRateDecimal": 0.04715239091680991,
-    "monthlyPayment": 1068600,
+    "effectiveAnnualRateDecimal": 0.04710907864276323,
+    "monthlyPayment": 1035200,
     "selectedProvider": "삼일",
-    "residualRate": 0.38
+    "residualRate": 0.41000000000000003
   },
   "tolerance": {
     "monthlyPayment": 1,

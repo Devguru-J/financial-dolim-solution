@@ -253,6 +253,25 @@ function isSamilHighEligible(brand: string): boolean {
  * Provider selection logic (Excel BW122-BW130):
  * Compute PMT for each provider → pick lowest monthly payment → that's the winner.
  */
+/**
+ * Get mileage adjustment for a provider (Excel BU146:BY151).
+ * Base is 30000km (0 adjustment). Lower km = positive adjustment (higher RV).
+ */
+function getMileageAdjustment(annualMileageKm: number, provider: "samil" | "yuca" | "autohands"): number {
+  // Find the closest matching km in the table
+  const table = MILEAGE_ADJUSTMENTS;
+  const sortedKms = Object.keys(table).map(Number).sort((a, b) => a - b);
+
+  // Exact match first
+  if (table[annualMileageKm]) {
+    const adj = table[annualMileageKm][provider];
+    return adj === -1 ? 0 : adj; // -1 means provider not available (handled elsewhere)
+  }
+
+  // Default: no adjustment for unknown mileage
+  return 0;
+}
+
 function selectBestProvider(params: {
   vehiclePrice: number;
   acquisitionCost: number;
@@ -303,9 +322,10 @@ function selectBestProvider(params: {
     }
 
     if (rate != null && rate > 0) {
-      // Note: 차량정보 P열 samilAdjust는 참고용이며, 실제 계산에서는
-      // BA37 사용자 입력(잔가조정)만 적용됨. 현재 사이트에서는 잔가조정 입력 없으므로 0.
-      const residualAmount = Math.trunc((vehiclePrice * rate) / 1000) * 1000;
+      // Apply mileage adjustment (Excel BW140: 잔가 가감율)
+      const mileageAdj = getMileageAdjustment(annualMileageKm, "samil");
+      const adjustedRate = rate + mileageAdj;
+      const residualAmount = Math.trunc((vehiclePrice * adjustedRate) / 1000) * 1000;
       const guaranteeFee = (isHigh || isSuperHigh) ? RV_GUARANTEE_FEES.samil.highFee : 0;
       const cashOut = acquisitionCost + guaranteeFee + cmAgFees + stampDuty;
       const cashIn = upfront + deposit;
@@ -315,7 +335,7 @@ function selectBestProvider(params: {
 
       candidates.push({
         name: "삼일",
-        residualRate: rate,
+        residualRate: adjustedRate,
         guaranteeFee,
         cashOut,
         monthlyPayment: pmt,
@@ -336,7 +356,9 @@ function selectBestProvider(params: {
     }
 
     if (rate != null && rate > 0) {
-      const residualAmount = Math.trunc((vehiclePrice * rate) / 1000) * 1000;
+      const mileageAdj = getMileageAdjustment(annualMileageKm, "yuca");
+      const adjustedRate = rate + mileageAdj;
+      const residualAmount = Math.trunc((vehiclePrice * adjustedRate) / 1000) * 1000;
       const guaranteeFee = (isHigh || isSuperHigh) ?
         roundDown(vehiclePrice * RV_GUARANTEE_FEES.yuca.highRate, 0) : 0;
       const cashOut = acquisitionCost + guaranteeFee + cmAgFees + stampDuty;
@@ -347,7 +369,7 @@ function selectBestProvider(params: {
 
       candidates.push({
         name: "유카",
-        residualRate: rate,
+        residualRate: adjustedRate,
         guaranteeFee,
         cashOut,
         monthlyPayment: pmt,
@@ -373,7 +395,9 @@ function selectBestProvider(params: {
       }
 
       if (rate != null && rate > 0) {
-        const residualAmount = Math.trunc((vehiclePrice * rate) / 1000) * 1000;
+        const mileageAdj = getMileageAdjustment(annualMileageKm, "autohands");
+        const adjustedRate = rate + mileageAdj;
+        const residualAmount = Math.trunc((vehiclePrice * adjustedRate) / 1000) * 1000;
         const guaranteeFee = (isHigh || isSuperHigh) ?
           roundDown(vehiclePrice * RV_GUARANTEE_FEES.autohands.highRate, 0) : 0;
         const cashOut = acquisitionCost + guaranteeFee + cmAgFees + stampDuty;
@@ -384,7 +408,7 @@ function selectBestProvider(params: {
 
         candidates.push({
           name: "오토핸즈",
-          residualRate: rate,
+          residualRate: adjustedRate,
           guaranteeFee,
           cashOut,
           monthlyPayment: pmt,

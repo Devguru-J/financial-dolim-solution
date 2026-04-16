@@ -314,12 +314,12 @@
     "acquisitionTax": 4089270,
     "stampDuty": 10000,
     "financedPrincipal": 68349270,
-    "residualAmount": 32772000,
+    "residualAmount": 38556000,
     "displayedAnnualRateDecimal": 0.045,
-    "effectiveAnnualRateDecimal": 0.05049592974679533,
-    "monthlyPayment": 810100,
+    "effectiveAnnualRateDecimal": 0.05024337917403676,
+    "monthlyPayment": 724000,
     "selectedProvider": "오토핸즈",
-    "residualRate": 0.51
+    "residualRate": 0.6
   },
   "tolerance": {
     "monthlyPayment": 1,

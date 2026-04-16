@@ -35,7 +35,7 @@ type WooriOperatingLeaseFixture = {
     stampDuty?: number;
     cmFeeRate?: number;
     agFeeRate?: number;
-    annualMileageKm?: number;
+    annualMileageKm?: 10000 | 15000 | 20000 | 25000 | 30000 | 35000 | 40000;
   };
   expected: {
     discountedVehiclePrice: number;
@@ -159,15 +159,13 @@ test("Woori: deposit reduces PMT but not financedPrincipal", () => {
   const base = loadFixture(`${fixtureDir}/bmw-520i-60-base.json`);
   const withDeposit = loadFixture(`${fixtureDir}/bmw-520i-60-deposit-20m.json`);
   expect(base.expected.financedPrincipal).toBe(withDeposit.expected.financedPrincipal);
-  expect(withDeposit.expected.monthlyPayment).toBeLessThan(base.expected.monthlyPayment);
+  expect(withDeposit.expected.monthlyPayment < base.expected.monthlyPayment).toBe(true);
 });
 
 test("Woori: customer IRR higher than company IRR", () => {
   const company = loadFixture(`${fixtureDir}/bmw-520i-60-base.json`);
   const customer = loadFixture(`${fixtureDir}/bmw-520i-60-customer.json`);
-  expect(customer.expected.displayedAnnualRateDecimal).toBeGreaterThan(
-    company.expected.displayedAnnualRateDecimal
-  );
+  expect(customer.expected.displayedAnnualRateDecimal > company.expected.displayedAnnualRateDecimal).toBe(true);
 });
 
 test("Woori: discount reduces discountedVehiclePrice", () => {
@@ -196,8 +194,8 @@ test("Woori: shorter term → higher monthly payment", () => {
   const t36 = loadFixture(`${fixtureDir}/bmw-520i-36-base.json`);
   const t24 = loadFixture(`${fixtureDir}/bmw-520i-24-base.json`);
   const t12 = loadFixture(`${fixtureDir}/bmw-520i-12-base.json`);
-  expect(t12.expected.monthlyPayment).toBeGreaterThan(t24.expected.monthlyPayment);
-  expect(t24.expected.monthlyPayment).toBeGreaterThan(t36.expected.monthlyPayment);
-  expect(t36.expected.monthlyPayment).toBeGreaterThan(t48.expected.monthlyPayment);
-  expect(t48.expected.monthlyPayment).toBeGreaterThan(t60.expected.monthlyPayment);
+  expect(t12.expected.monthlyPayment > t24.expected.monthlyPayment).toBe(true);
+  expect(t24.expected.monthlyPayment > t36.expected.monthlyPayment).toBe(true);
+  expect(t36.expected.monthlyPayment > t48.expected.monthlyPayment).toBe(true);
+  expect(t48.expected.monthlyPayment > t60.expected.monthlyPayment).toBe(true);
 });
