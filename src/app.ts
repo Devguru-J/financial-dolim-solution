@@ -8,6 +8,7 @@ import { getActiveWorkbookBrands, getActiveWorkbookModels, getBnkDealersForBrand
 import { getLenderAdapter } from "@/domain/imports/lender-registry";
 import { calculateMgOperatingLeaseQuote } from "@/domain/lenders/mg-capital/operating-lease-service";
 import { calculateBnkOperatingLeaseQuote } from "@/domain/lenders/bnk-capital/operating-lease-service";
+import { calculateWooriOperatingLeaseQuote } from "@/domain/lenders/woori-card/operating-lease-service";
 
 type Bindings = Env;
 
@@ -35,7 +36,7 @@ const calculateQuoteSchema = z.object({
   manualEngineDisplacementCc: z.number().positive().optional(),
   ownershipType: z.enum(["company", "customer"]),
   leaseTermMonths: z.union([z.literal(12), z.literal(24), z.literal(36), z.literal(48), z.literal(60)]),
-  annualMileageKm: z.union([z.literal(10000), z.literal(15000), z.literal(20000), z.literal(30000), z.literal(35000), z.literal(40000)]).optional(),
+  annualMileageKm: z.union([z.literal(10000), z.literal(15000), z.literal(20000), z.literal(25000), z.literal(30000), z.literal(35000), z.literal(40000)]).optional(),
   upfrontPayment: z.number().min(0).default(0),
   depositAmount: z.number().min(0).optional(),
   quotedVehiclePrice: z.number().positive().optional(),
@@ -97,6 +98,11 @@ app.get("/api/lenders", (c) => {
       {
         lenderCode: "bnk-capital",
         lenderName: "BNK캐피탈",
+        status: "active-development",
+      },
+      {
+        lenderCode: "woori-card",
+        lenderName: "우리카드",
         status: "active-development",
       },
     ],
@@ -238,6 +244,8 @@ app.post("/api/quotes/calculate", zValidator("json", calculateQuoteSchema), asyn
     let quote;
     if (input.lenderCode === "bnk-capital") {
       quote = await calculateBnkOperatingLeaseQuote({ databaseUrl: c.env.DATABASE_URL, input });
+    } else if (input.lenderCode === "woori-card") {
+      quote = await calculateWooriOperatingLeaseQuote({ databaseUrl: c.env.DATABASE_URL, input });
     } else {
       quote = await calculateMgOperatingLeaseQuote({ databaseUrl: c.env.DATABASE_URL, input });
     }

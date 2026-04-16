@@ -1,10 +1,12 @@
 import type { LenderWorkbookAdapter } from "@/domain/imports/lender-adapter";
 import { mgCapitalAdapter } from "@/domain/lenders/mg-capital/adapter";
 import { bnkCapitalAdapter } from "@/domain/lenders/bnk-capital/adapter";
+import { wooriCardAdapter } from "@/domain/lenders/woori-card/adapter";
 
 const lenders = new Map<string, LenderWorkbookAdapter>([
   [mgCapitalAdapter.lenderCode, mgCapitalAdapter],
   [bnkCapitalAdapter.lenderCode, bnkCapitalAdapter],
+  [wooriCardAdapter.lenderCode, wooriCardAdapter],
 ]);
 
 export function getLenderAdapter(lenderCode: string): LenderWorkbookAdapter {

@@ -19,7 +19,7 @@ export type CanonicalQuoteInput = {
   manualEngineDisplacementCc?: number;
   ownershipType: QuoteOwnershipType;
   leaseTermMonths: 12 | 24 | 36 | 48 | 60;
-  annualMileageKm?: 10000 | 15000 | 20000 | 30000 | 35000 | 40000;
+  annualMileageKm?: 10000 | 15000 | 20000 | 25000 | 30000 | 35000 | 40000;
   upfrontPayment: number;
   depositAmount?: number;
   quotedVehiclePrice?: number;
