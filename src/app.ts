@@ -89,12 +89,20 @@ app.get("/apple-touch-icon-precomposed.png", (c) => c.body(null, 204));
 app.get("/api/health", async (c) => {
   try {
     const dbUrl = c.env.DATABASE_URL;
-    if (!dbUrl) return c.json({ ok: false, error: "DATABASE_URL not set", envKeys: Object.keys(c.env) });
-    // Use existing listWorkbookImports to test DB
-    const result = await listWorkbookImports({ databaseUrl: dbUrl, lenderCode: "mg-capital" });
-    return c.json({ ok: true, db: "connected", imports: result.imports?.length ?? 0 });
+    if (!dbUrl) return c.json({ ok: false, error: "DATABASE_URL not set" });
+    // Raw postgres connection test
+    const postgres = (await import("postgres")).default;
+    const sql = postgres(dbUrl, { max: 1, connect_timeout: 10 });
+    try {
+      const rows = await sql`SELECT 1 as test`;
+      return c.json({ ok: true, db: "connected", test: rows[0]?.test });
+    } catch (dbErr) {
+      return c.json({ ok: false, error: "db_query_failed", detail: String(dbErr), urlPrefix: dbUrl.substring(0, 30) });
+    } finally {
+      await sql.end();
+    }
   } catch (e) {
-    return c.json({ ok: false, error: String(e), message: e instanceof Error ? e.message : "unknown" });
+    return c.json({ ok: false, error: "init_failed", detail: String(e) });
   }
 });
 
