@@ -82,6 +82,7 @@ function buildAppleScript(scenarios: Scenario[], delay: number): string[] {
     'tell application "Microsoft Excel"',
     `  set wb to workbook "${WORKBOOK_NAME}"`,
     `  set ws to worksheet "${SHEET_NAME}" of wb`,
+    `  set allResults to ""`,
     "",
   ];
 
@@ -135,7 +136,15 @@ function buildAppleScript(scenarios: Scenario[], delay: number): string[] {
     // BA39: CM rate = 0
     lines.push(`  set value of range "BA39" of ws to 0`);
 
-    // Trigger recalculation
+    // Pass 1: Calculate to get max residual rate (BW36)
+    lines.push(`  calculate`);
+    lines.push(`  delay ${delay}`);
+
+    // Read the auto-selected max rate and set it as the user's chosen rate
+    lines.push(`  set maxRate to (value of range "BW36" of ws)`);
+    lines.push(`  set value of range "BA33" of ws to maxRate`);
+
+    // Pass 2: Recalculate with the max rate applied
     lines.push(`  calculate`);
     lines.push(`  delay ${delay}`);
 
@@ -152,11 +161,12 @@ function buildAppleScript(scenarios: Scenario[], delay: number): string[] {
     lines.push(`  set winner to (value of range "BW130" of ws)`);
     lines.push(`  set vprice to (value of range "BS11" of ws)`);
     lines.push(
-      `  log "${s.id}${sep}" & pmt & "${sep}" & erate & "${sep}" & birr & "${sep}" & ramt & "${sep}" & rrate & "${sep}" & atax & "${sep}" & acost & "${sep}" & gfee & "${sep}" & winner & "${sep}" & vprice`
+      `  set allResults to allResults & "${s.id}${sep}" & pmt & "${sep}" & erate & "${sep}" & birr & "${sep}" & ramt & "${sep}" & rrate & "${sep}" & atax & "${sep}" & acost & "${sep}" & gfee & "${sep}" & winner & "${sep}" & vprice & linefeed`
     );
     lines.push("");
   }
 
+  lines.push("  return allResults");
   lines.push("end tell");
   return lines;
 }
@@ -171,8 +181,8 @@ function runAppleScript(lines: string[]): string {
     });
     return result;
   } catch (e: any) {
-    // osascript writes log output to stderr
-    return e.stderr ?? "";
+    // On error, check both stdout and stderr
+    return (e.stdout ?? "") + "\n" + (e.stderr ?? "");
   }
 }
 

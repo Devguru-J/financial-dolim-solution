@@ -322,9 +322,10 @@ function selectBestProvider(params: {
     }
 
     if (rate != null && rate > 0) {
-      // Apply mileage adjustment (Excel BW140: 잔가 가감율)
+      // Apply mileage adjustment (Excel BW140) + vehicle-level 잔가가감 (차량정보 P열)
       const mileageAdj = getMileageAdjustment(annualMileageKm, "samil");
-      const adjustedRate = rate + mileageAdj;
+      const vehicleAdj = Number(rr.samilAdjust ?? 0);
+      const adjustedRate = rate + mileageAdj + vehicleAdj;
       const residualAmount = Math.trunc((vehiclePrice * adjustedRate) / 1000) * 1000;
       const guaranteeFee = (isHigh || isSuperHigh) ? RV_GUARANTEE_FEES.samil.highFee : 0;
       const cashOut = acquisitionCost + guaranteeFee + cmAgFees + stampDuty;
@@ -357,7 +358,8 @@ function selectBestProvider(params: {
 
     if (rate != null && rate > 0) {
       const mileageAdj = getMileageAdjustment(annualMileageKm, "yuca");
-      const adjustedRate = rate + mileageAdj;
+      const vehicleAdj = Number(rr.yucaAdjust ?? 0);
+      const adjustedRate = rate + mileageAdj + vehicleAdj;
       const residualAmount = Math.trunc((vehiclePrice * adjustedRate) / 1000) * 1000;
       const guaranteeFee = (isHigh || isSuperHigh) ?
         roundDown(vehiclePrice * RV_GUARANTEE_FEES.yuca.highRate, 0) : 0;
