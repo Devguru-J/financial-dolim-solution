@@ -13,6 +13,11 @@ import { createDbClient } from "@/lib/db/client";
 
 type Bindings = Env;
 
+/** Hyperdrive 바인딩이 있으면 그 connectionString을, 없으면 DATABASE_URL fallback */
+function resolveDbUrl(env: Env): string | undefined {
+  return env.HYPERDRIVE?.connectionString ?? env.DATABASE_URL;
+}
+
 const previewQuerySchema = z.object({
   lenderCode: z.string().min(1).default("mg-capital"),
 });
@@ -89,7 +94,7 @@ app.get("/apple-touch-icon-precomposed.png", (c) => c.body(null, 204));
 
 app.get("/api/health", async (c) => {
   try {
-    const dbUrl = c.env.DATABASE_URL;
+    const dbUrl = resolveDbUrl(c.env);
     if (!dbUrl) return c.json({ ok: false, error: "DATABASE_URL not set" });
     const { db, dispose } = createDbClient(dbUrl);
     try {
@@ -104,6 +109,7 @@ app.get("/api/health", async (c) => {
         code: dbErr?.code,
         urlLen: dbUrl.length,
         urlPort: dbUrl.match(/:(\d+)\//)?.[1],
+        hyperdrive: !!c.env.HYPERDRIVE,
       });
     } finally {
       await dispose();
@@ -139,7 +145,7 @@ app.get("/api/lenders", (c) => {
 app.get("/api/imports", zValidator("query", previewQuerySchema), async (c) => {
   const lenderCode = c.req.valid("query").lenderCode;
   const result = await listWorkbookImports({
-    databaseUrl: c.env.DATABASE_URL,
+    databaseUrl: resolveDbUrl(c.env),
     lenderCode,
   });
 
@@ -152,7 +158,7 @@ app.get("/api/imports", zValidator("query", previewQuerySchema), async (c) => {
 app.get("/api/workbook-contract", zValidator("query", previewQuerySchema), async (c) => {
   const lenderCode = c.req.valid("query").lenderCode;
   const result = await getActiveWorkbookSheetContracts({
-    databaseUrl: c.env.DATABASE_URL,
+    databaseUrl: resolveDbUrl(c.env),
     lenderCode,
   });
 
@@ -165,7 +171,7 @@ app.get("/api/workbook-contract", zValidator("query", previewQuerySchema), async
 app.get("/api/catalog/brands", zValidator("query", catalogQuerySchema), async (c) => {
   const lenderCode = c.req.valid("query").lenderCode;
   const result = await getActiveWorkbookBrands({
-    databaseUrl: c.env.DATABASE_URL,
+    databaseUrl: resolveDbUrl(c.env),
     lenderCode,
   });
 
@@ -178,7 +184,7 @@ app.get("/api/catalog/brands", zValidator("query", catalogQuerySchema), async (c
 app.get("/api/catalog/models", zValidator("query", catalogModelsQuerySchema), async (c) => {
   const { lenderCode, brand } = c.req.valid("query");
   const result = await getActiveWorkbookModels({
-    databaseUrl: c.env.DATABASE_URL,
+    databaseUrl: resolveDbUrl(c.env),
     lenderCode,
     brand,
   });
@@ -195,7 +201,7 @@ const catalogDealersQuerySchema = z.object({
 
 app.get("/api/catalog/bnk-dealers", zValidator("query", catalogDealersQuerySchema), async (c) => {
   const { brand } = c.req.valid("query");
-  const result = await getBnkDealersForBrand({ databaseUrl: c.env.DATABASE_URL, brand });
+  const result = await getBnkDealersForBrand({ databaseUrl: resolveDbUrl(c.env), brand });
   return c.json({ ok: true, ...result });
 });
 
@@ -251,7 +257,7 @@ app.post("/api/imports", zValidator("query", previewQuerySchema), async (c) => {
   });
 
   const importResult = await persistWorkbookImport({
-    databaseUrl: c.env.DATABASE_URL,
+    databaseUrl: resolveDbUrl(c.env),
     workbook,
     fileBuffer: arrayBuffer,
     activate: String(activateValue ?? "true").toLowerCase() !== "false",
@@ -270,11 +276,11 @@ app.post("/api/quotes/calculate", zValidator("json", calculateQuoteSchema), asyn
   try {
     let quote;
     if (input.lenderCode === "bnk-capital") {
-      quote = await calculateBnkOperatingLeaseQuote({ databaseUrl: c.env.DATABASE_URL, input });
+      quote = await calculateBnkOperatingLeaseQuote({ databaseUrl: resolveDbUrl(c.env), input });
     } else if (input.lenderCode === "woori-card") {
-      quote = await calculateWooriOperatingLeaseQuote({ databaseUrl: c.env.DATABASE_URL, input });
+      quote = await calculateWooriOperatingLeaseQuote({ databaseUrl: resolveDbUrl(c.env), input });
     } else {
-      quote = await calculateMgOperatingLeaseQuote({ databaseUrl: c.env.DATABASE_URL, input });
+      quote = await calculateMgOperatingLeaseQuote({ databaseUrl: resolveDbUrl(c.env), input });
     }
 
     return c.json({
