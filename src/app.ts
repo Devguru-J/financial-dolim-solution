@@ -95,8 +95,16 @@ app.get("/api/health", async (c) => {
     try {
       const result = await db.execute("SELECT 1 as test");
       return c.json({ ok: true, db: "connected" });
-    } catch (dbErr) {
-      return c.json({ ok: false, error: "query_failed", detail: String(dbErr), urlLen: dbUrl.length });
+    } catch (dbErr: any) {
+      return c.json({
+        ok: false,
+        error: "query_failed",
+        detail: String(dbErr),
+        cause: dbErr?.cause ? String(dbErr.cause) : undefined,
+        code: dbErr?.code,
+        urlLen: dbUrl.length,
+        urlPort: dbUrl.match(/:(\d+)\//)?.[1],
+      });
     } finally {
       await dispose();
     }
