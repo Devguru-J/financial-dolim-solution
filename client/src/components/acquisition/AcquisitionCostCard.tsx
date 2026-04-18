@@ -1,4 +1,5 @@
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Receipt } from 'lucide-react'
+import { Card } from '@/components/ui/card'
 import { formatKrw } from '@/lib/residual'
 import type { AcquisitionTaxMode } from '@/types/quote'
 
@@ -52,19 +53,23 @@ export function AcquisitionCostCard({
   onPublicBondChange,
 }: AcquisitionCostCardProps) {
   return (
-    <Card className="shadow-[var(--shadow-elev-2)]">
-      <CardHeader className="py-3 px-4 border-b border-border flex flex-row items-center gap-2.5 space-y-0">
-        <div className="w-1 h-3.5 rounded-sm bg-primary" />
-        <CardTitle className="text-sm font-semibold text-foreground">취득원가 산출</CardTitle>
-      </CardHeader>
-      <CardContent className="p-0">
-        <div className="grid grid-cols-[120px_1fr_120px_1fr]">
-          {/* Row 1: 취득세 감면 / 탁송료 */}
-          <FieldLabel>취득세 감면</FieldLabel>
-          <FieldCell borderRight>
-            <div className="flex items-center gap-1.5 w-full">
+    <Card className="shadow-[var(--shadow-elev-2)] border border-border overflow-hidden py-0 gap-0">
+      {/* Header */}
+      <div className="px-7 py-4 border-b border-border flex items-center gap-2.5">
+        <span className="w-5 h-5 rounded-md flex items-center justify-center bg-accent/10 text-accent">
+          <Receipt size={12} strokeWidth={2.2} />
+        </span>
+        <span className="text-[0.95rem] font-semibold text-foreground tracking-tight">취득원가 산출</span>
+      </div>
+
+      {/* Body */}
+      <div className="px-7 py-6">
+        <div className="grid grid-cols-2 gap-5">
+          {/* 취득세 감면 */}
+          <FormField label="취득세 감면">
+            <div className="flex items-center gap-2">
               <select
-                className="h-8 px-2 text-xs bg-muted border border-border rounded flex-1 min-w-0"
+                className="form-input flex-1 min-w-0"
                 value={acquisitionTaxMode}
                 onChange={(e) => onAcquisitionTaxModeChange(e.target.value as AcquisitionTaxMode)}
               >
@@ -75,7 +80,7 @@ export function AcquisitionCostCard({
               </select>
               {acquisitionTaxMode === 'reduction' && (
                 <input
-                  className="w-24 h-8 px-2 text-xs bg-muted border border-border rounded font-mono tabular-nums"
+                  className="form-input form-input-mono w-28"
                   value={acquisitionTaxReduction}
                   onChange={(e) => onAcquisitionTaxReductionChange(e.target.value)}
                   placeholder="감면액"
@@ -83,167 +88,156 @@ export function AcquisitionCostCard({
               )}
               {acquisitionTaxMode === 'amount' && (
                 <input
-                  className="w-24 h-8 px-2 text-xs bg-muted border border-border rounded font-mono tabular-nums"
+                  className="form-input form-input-mono w-28"
                   value={acquisitionTaxAmountOverride}
                   onChange={(e) => onAcquisitionTaxAmountOverrideChange(e.target.value)}
                   placeholder="세액"
                 />
               )}
             </div>
-          </FieldCell>
-          <FieldLabel>탁송료</FieldLabel>
-          <FieldCell>
-            <CheckboxInput
+          </FormField>
+
+          {/* 탁송료 */}
+          <FormField label="탁송료">
+            <CheckInput
               checked={deliveryFeeIncluded}
-              label="포함"
-              value={deliveryFee}
               onToggle={onDeliveryFeeToggle}
+              value={deliveryFee}
               onValueChange={onDeliveryFeeChange}
             />
-          </FieldCell>
+          </FormField>
 
-          {/* Row 2: 취득세 포함 / 부대비용 */}
-          <FieldLabel>취득세 포함</FieldLabel>
-          <FieldCell borderRight>
-            <CheckboxDisplay
+          {/* 취득세 포함 */}
+          <FormField label="취득세 포함" hint="세액 자동 산출">
+            <CheckDisplay
               checked={acquisitionTaxIncluded}
               onToggle={onAcquisitionTaxIncludedToggle}
-              displayValue={
-                acquisitionTaxIncluded ? formatKrw(acquisitionTaxAmount) : '₩ 0'
-              }
+              value={acquisitionTaxIncluded ? formatKrw(acquisitionTaxAmount) : '₩ 0'}
               highlight
             />
-          </FieldCell>
-          <FieldLabel>부대비용</FieldLabel>
-          <FieldCell>
-            <CheckboxInput
+          </FormField>
+
+          {/* 부대비용 */}
+          <FormField label="부대비용">
+            <CheckInput
               checked={miscFeeIncluded}
-              label="포함"
-              value={miscFee}
               onToggle={onMiscFeeToggle}
+              value={miscFee}
               onValueChange={onMiscFeeChange}
             />
-          </FieldCell>
+          </FormField>
 
-          {/* Row 3: 공채 할인 / 취득원가 */}
-          <FieldLabel last>공채 할인</FieldLabel>
-          <FieldCell borderRight last>
-            <CheckboxInput
+          {/* 공채 할인 (span 2 so 취득원가 gets its own wide row below) */}
+          <FormField label="공채 할인" span={2}>
+            <CheckInput
               checked={publicBondIncluded}
-              label="포함"
-              value={publicBondCost}
               onToggle={onPublicBondToggle}
+              value={publicBondCost}
               onValueChange={onPublicBondChange}
             />
-          </FieldCell>
-          <FieldLabel last>취득원가</FieldLabel>
-          <FieldCell last>
-            <div className="w-full h-8 px-2 text-xs bg-primary/8 border border-primary/25 rounded flex items-center font-normal font-mono tabular-nums text-primary">
-              {formatKrw(totalAcquisitionCost)}
-            </div>
-          </FieldCell>
+          </FormField>
         </div>
-      </CardContent>
+
+        {/* Total acquisition cost — prominent summary row */}
+        <div className="mt-6 pt-5 border-t border-border flex items-baseline justify-between">
+          <span className="text-[0.68rem] font-semibold uppercase tracking-[0.06em] text-muted-foreground/80">
+            취득원가
+          </span>
+          <span className="font-mono tabular-nums text-[1.35rem] font-semibold tracking-tight text-primary">
+            {formatKrw(totalAcquisitionCost)}
+          </span>
+        </div>
+      </div>
     </Card>
   )
 }
 
-function FieldLabel({
-  children,
-  last = false,
-}: {
-  children: React.ReactNode
-  last?: boolean
-}) {
-  return (
-    <div
-      className={`px-3 text-xs font-semibold text-foreground bg-muted flex items-center border-r border-border min-h-10 ${!last ? 'border-b border-border' : ''}`}
-    >
-      {children}
-    </div>
-  )
-}
-
-function FieldCell({
-  children,
-  borderRight = false,
-  last = false,
-}: {
-  children: React.ReactNode
-  borderRight?: boolean
-  last?: boolean
-}) {
-  return (
-    <div
-      className={`px-2 py-1.5 flex items-center gap-1.5 ${borderRight ? 'border-r border-border' : ''} ${!last ? 'border-b border-border' : ''}`}
-    >
-      {children}
-    </div>
-  )
-}
-
-function CheckboxInput({
-  checked,
+function FormField({
   label,
-  value,
+  hint,
+  span,
+  children,
+}: {
+  label: string
+  hint?: string
+  span?: number
+  children: React.ReactNode
+}) {
+  return (
+    <div className={`flex flex-col gap-1.5 ${span === 2 ? 'col-span-2' : ''}`}>
+      <label className="text-[0.72rem] font-medium text-muted-foreground tracking-[0.01em] flex items-center gap-2">
+        <span>{label}</span>
+        {hint && <span className="text-[0.65rem] text-muted-foreground/60 font-normal">{hint}</span>}
+      </label>
+      {children}
+    </div>
+  )
+}
+
+function CheckInput({
+  checked,
   onToggle,
+  value,
   onValueChange,
 }: {
   checked: boolean
-  label: string
-  value: string
   onToggle: (v: boolean) => void
+  value: string
   onValueChange: (v: string) => void
 }) {
   return (
-    <>
+    <div className="flex items-center gap-2">
+      <label className="flex items-center gap-1.5 px-3 h-10 rounded-lg border border-input bg-white cursor-pointer hover:border-input/80 transition-colors shrink-0">
+        <input
+          type="checkbox"
+          checked={checked}
+          onChange={(e) => onToggle(e.target.checked)}
+          className="size-3.5 cursor-pointer"
+        />
+        <span className="text-[0.78rem] text-muted-foreground font-medium">포함</span>
+      </label>
       <input
-        type="checkbox"
-        className=""
-        checked={checked}
-        onChange={(e) => onToggle(e.target.checked)}
-      />
-      <span className="text-xs text-muted-foreground">{label}</span>
-      <input
-        className="flex-1 h-8 px-2 text-xs bg-muted border border-border rounded font-mono tabular-nums"
+        className="form-input form-input-mono flex-1"
         value={value}
         onChange={(e) => onValueChange(e.target.value)}
         disabled={!checked}
         placeholder="0"
       />
-    </>
+    </div>
   )
 }
 
-function CheckboxDisplay({
+function CheckDisplay({
   checked,
   onToggle,
-  displayValue,
+  value,
   highlight = false,
 }: {
   checked: boolean
   onToggle: (v: boolean) => void
-  displayValue: string
+  value: string
   highlight?: boolean
 }) {
   return (
-    <>
-      <input
-        type="checkbox"
-        className=""
-        checked={checked}
-        onChange={(e) => onToggle(e.target.checked)}
-      />
-      <span className="text-xs text-muted-foreground">포함</span>
+    <div className="flex items-center gap-2">
+      <label className="flex items-center gap-1.5 px-3 h-10 rounded-lg border border-input bg-white cursor-pointer hover:border-input/80 transition-colors shrink-0">
+        <input
+          type="checkbox"
+          checked={checked}
+          onChange={(e) => onToggle(e.target.checked)}
+          className="size-3.5 cursor-pointer"
+        />
+        <span className="text-[0.78rem] text-muted-foreground font-medium">포함</span>
+      </label>
       <div
-        className={`flex-1 h-8 px-2 text-xs rounded flex items-center font-mono tabular-nums ${
+        className={`flex-1 h-10 px-[14px] rounded-lg flex items-center font-mono tabular-nums text-[0.88rem] font-medium ${
           highlight
-            ? 'bg-primary/8 border border-primary/25 text-primary'
-            : 'bg-muted border border-border'
+            ? 'bg-primary/[0.05] border border-primary/25 text-primary'
+            : 'bg-[#fafaf9] border border-border text-foreground'
         }`}
       >
-        {displayValue}
+        {value}
       </div>
-    </>
+    </div>
   )
 }
