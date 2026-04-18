@@ -221,72 +221,70 @@ function LenderStatusCard({ lender, animationDelay }: { lender: LenderSnapshot; 
 
   return (
     <div
-      className="rounded-2xl border border-border bg-white shadow-[var(--shadow-elev-2)] animate-fade-up"
-      style={{ animationDelay: `${animationDelay}ms` }}
+      className="rounded-2xl border border-border shadow-[var(--shadow-elev-2)] animate-fade-up overflow-hidden grid min-h-[82px]"
+      style={{ gridTemplateColumns: '64px 1fr 128px', animationDelay: `${animationDelay}ms` }}
     >
-      <div className="relative" style={{ minHeight: 80 }}>
-        {/* Left accent chip — absolute, own rounded-l to match card corners */}
-        <div className={`absolute inset-y-0 left-0 w-16 flex items-center justify-center bg-gradient-to-b ${lender.accentClass} rounded-l-2xl`}>
-          <div className="text-white text-sm font-black tracking-tight">{lender.shortName}</div>
-        </div>
+      {/* Left accent chip */}
+      <div className={`flex items-center justify-center bg-gradient-to-b ${lender.accentClass}`}>
+        <div className="text-white text-sm font-black tracking-tight">{lender.shortName}</div>
+      </div>
 
-        {/* Right vehicle-count column — absolute, own rounded-r to match card corners */}
-        <div className="absolute inset-y-0 right-0 w-32 flex flex-col items-center justify-center bg-muted/50 border-l border-border rounded-r-2xl">
-          {loading ? (
-            <div className="skeleton h-6 w-12 rounded" />
-          ) : hasActive ? (
-            <>
-              <div className="text-2xl font-black font-mono tabular-nums text-foreground leading-none tracking-tighter">
-                {vehicleCount ?? '—'}
-              </div>
-              <div className="text-[10px] text-muted-foreground mt-1.5 uppercase tracking-widest font-semibold">
-                취급 차량
-              </div>
-            </>
-          ) : (
-            <div className="text-[10px] text-muted-foreground uppercase tracking-widest font-semibold">
-              —
+      {/* Middle content */}
+      <div className="px-5 py-4 bg-white flex flex-col justify-center min-w-0 border-x border-border">
+        {loading ? (
+          <>
+            <div className="skeleton h-4 w-28 rounded mb-2" />
+            <div className="skeleton h-3 w-40 rounded" />
+          </>
+        ) : hasActive ? (
+          <>
+            <div className="flex items-center gap-2 mb-1">
+              <span className="text-sm font-semibold text-foreground tracking-tight">{lender.name}</span>
+              <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-emerald-100 text-emerald-700 border border-emerald-200/80">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                활성
+              </span>
             </div>
-          )}
-        </div>
+            <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
+              <Building2 size={10} />
+              <span className="font-mono">{activeImport?.versionLabel}</span>
+              <span className="text-muted-foreground/40">·</span>
+              <CalendarClock size={10} />
+              <span>{importedLabel}</span>
+              {totalImports > 1 && (
+                <>
+                  <span className="text-muted-foreground/40">·</span>
+                  <span>누적 {totalImports}건</span>
+                </>
+              )}
+            </div>
+          </>
+        ) : (
+          <>
+            <div className="text-sm font-semibold text-foreground tracking-tight mb-1">{lender.name}</div>
+            <div className="text-[11px] text-muted-foreground">활성 워크북 없음 · 임포트 필요</div>
+          </>
+        )}
+      </div>
 
-        {/* Middle content — padding reserves space for absolute left/right columns */}
-        <div className="min-h-[80px] pl-20 pr-36 py-4 flex flex-col justify-center border-l border-border">
-          {loading ? (
-            <>
-              <div className="skeleton h-4 w-28 rounded mb-2" />
-              <div className="skeleton h-3 w-40 rounded" />
-            </>
-          ) : hasActive ? (
-            <>
-              <div className="flex items-center gap-2 mb-1">
-                <span className="text-sm font-semibold text-foreground tracking-tight">{lender.name}</span>
-                <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-emerald-100 text-emerald-700 border border-emerald-200/80">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                  활성
-                </span>
-              </div>
-              <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
-                <Building2 size={10} />
-                <span className="font-mono">{activeImport?.versionLabel}</span>
-                <span className="text-muted-foreground/40">·</span>
-                <CalendarClock size={10} />
-                <span>{importedLabel}</span>
-                {totalImports > 1 && (
-                  <>
-                    <span className="text-muted-foreground/40">·</span>
-                    <span>누적 {totalImports}건</span>
-                  </>
-                )}
-              </div>
-            </>
-          ) : (
-            <>
-              <div className="text-sm font-semibold text-foreground tracking-tight mb-1">{lender.name}</div>
-              <div className="text-[11px] text-muted-foreground">활성 워크북 없음 · 임포트 필요</div>
-            </>
-          )}
-        </div>
+      {/* Right vehicle-count column */}
+      <div className="flex flex-col items-center justify-center bg-muted/50">
+        {loading ? (
+          <div className="skeleton h-6 w-12 rounded" />
+        ) : hasActive ? (
+          <>
+            <div className="text-2xl font-black font-mono tabular-nums text-foreground leading-none tracking-tighter">
+              {vehicleCount ?? '—'}
+            </div>
+            <div className="text-[10px] text-muted-foreground mt-1.5 uppercase tracking-widest font-semibold">
+              취급 차량
+            </div>
+          </>
+        ) : (
+          <div className="text-[10px] text-muted-foreground uppercase tracking-widest font-semibold">
+            —
+          </div>
+        )}
       </div>
     </div>
   )
