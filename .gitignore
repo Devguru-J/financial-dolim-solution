@@ -22,3 +22,4 @@ woori-sweep.log
 
 # Vehicle-key audit output
 vehicle-key-audit.json
+vehicle-key-bidirectional-audit.json

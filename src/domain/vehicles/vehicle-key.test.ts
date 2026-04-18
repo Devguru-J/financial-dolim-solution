@@ -546,9 +546,11 @@ test("BENTLEY ALL NEW FLYING SPUR", () => {
   expect(extractVehicleKey("Bentley", "ALL NEW FLYING SPUR")).toBe("BENTLEY_FLYINGSPUR");
 });
 
-// LEXUS LC Convertible (WOORI short form with Korean body noise)
+// LEXUS LC Convertible (WOORI short form with Korean body noise) — aligned to MG's
+// verbose "LC Convertible 500 Sport+" key since LC 500 is the only LC convertible variant.
 test("LEXUS LC Convertible WOORI short form", () => {
-  expect(extractVehicleKey("Lexus", "LC 컨버터블")).toBe("LEXUS_LC_CONV");
+  expect(extractVehicleKey("Lexus", "LC 컨버터블")).toBe("LEXUS_LC500_CONV");
+  expect(extractVehicleKey("LEXUS", "LC Convertible 500 Sport+")).toBe("LEXUS_LC500_CONV");
 });
 
 // HYUNDAI Korean model extraction
@@ -567,4 +569,86 @@ test("KIA Korean model names", () => {
   );
   expect(extractVehicleKey("기아", "더 뉴 모닝 가솔린 1.0 시그니처")).toBe("KIA_MORNING");
   expect(extractVehicleKey("기아", "더 뉴 봉고3 특장차")).toBe("KIA_BONGO");
+});
+
+// --- Bidirectional audit regression fixes (2026-04-18) ---
+
+// PORSCHE 911 — BNK uses Korean body-style tokens (타르가 = Targa, 카레라 = Carrera).
+// Before the fix, stripNoise removed 카레라 and the key collapsed to bare PORSCHE_911.
+test("PORSCHE 911 — BNK Korean 타르가 / 카레라 body tokens", () => {
+  // 타르가 (Targa) — plain & variant
+  expect(
+    extractVehicleKey("포르쉐", "911 8세대 타르가 가솔린 3.0 Targa 4"),
+  ).toBe("PORSCHE_911_TARGA");
+  expect(
+    extractVehicleKey("포르쉐", "911 8세대 타르가 가솔린 3.0 Targa 4S"),
+  ).toBe("PORSCHE_911_TARGA");
+  expect(
+    extractVehicleKey("포르쉐", "911 8세대 타르가 가솔린 3.0 GTS Edition 50 Years Porsche Design"),
+  ).toBe("PORSCHE_911_TARGA");
+  expect(
+    extractVehicleKey("포르쉐", "911 8세대 타르가 가솔린 3.0 GTS Targa 4"),
+  ).toBe("PORSCHE_911_TARGA4GTS");
+  // 카레라 (Carrera) — BNK row with no Latin CARRERA token before a variant marker
+  expect(
+    extractVehicleKey("포르쉐", "The New 911 카레라 가솔린 3.6 카브리올레 GTS Spirit 70"),
+  ).toBe("PORSCHE_911_CARRERAGTS");
+  expect(
+    extractVehicleKey("포르쉐", "911 8세대 카레라 가솔린 3.0 쿠페 Carrera"),
+  ).toBe("PORSCHE_911_CARRERA");
+});
+
+// MINI — WOORI prefixes all MINI vehicles with "COOPER " as a brand noise word. When the
+// electric base model appears (Aceman E / Countryman E), the earlier logic wrongly stamped
+// a COOPER variant; it now returns the bare line.
+test("MINI — WOORI COOPER brand-prefix + bare electric base (Aceman E / Countryman E)", () => {
+  expect(extractVehicleKey("MINI", "COOPER Aceman E")).toBe("MINI_ACEMAN");
+  expect(extractVehicleKey("MINI", "COOPER COUNTRYMAN E")).toBe("MINI_COUNTRYMAN");
+  // BNK equivalents must produce the same bare key
+  expect(extractVehicleKey("미니", "Aceman 전기 E Classic")).toBe("MINI_ACEMAN");
+  expect(extractVehicleKey("미니", "The New ALL Electric Countryman 전기 E Classic")).toBe(
+    "MINI_COUNTRYMAN",
+  );
+  // Regression: Aceman SE must still carry the _COOPER_SE variant (SE beats bare E)
+  expect(extractVehicleKey("MINI", "COOPER Aceman SE")).toBe("MINI_ACEMAN_COOPER_SE");
+  // Regression: Aceman JCW must still carry _JCW
+  expect(extractVehicleKey("MINI", "COOPER JCW Aceman E")).toBe("MINI_ACEMAN_JCW");
+});
+
+// AUDI — BNK sedan e-tron lineage (S6 e-tron, A6 e-tron) — extend body prefix regex
+// so the sedan e-tron keys don't collapse to bare AUDI_ETRON.
+test("AUDI — BNK sedan e-tron (S6/A6/A8) body prefix", () => {
+  expect(extractVehicleKey("아우디", "S6 e-tron 전기 e-tron")).toBe("AUDI_S6_ETRON");
+  expect(extractVehicleKey("아우디", "The New A6 e-tron 전기 Performance Advanced")).toBe(
+    "AUDI_A6_ETRON",
+  );
+  // Regression: SUV e-tron keys unchanged
+  expect(extractVehicleKey("아우디", "The new Q6 e-tron Performance Performance")).toBe(
+    "AUDI_Q6_ETRON",
+  );
+  expect(extractVehicleKey("AUDI", "Q4 e-tron 40")).toBe("AUDI_Q4_ETRON");
+});
+
+// LEXUS LC Convertible (WOORI short form vs MG verbose)
+test("LEXUS — LC Convertible normalizes to LC500 across MG/WOORI", () => {
+  expect(extractVehicleKey("Lexus", "LC 컨버터블")).toBe("LEXUS_LC500_CONV");
+  expect(extractVehicleKey("LEXUS", "LC Convertible 500 Sport+")).toBe("LEXUS_LC500_CONV");
+});
+
+// BMW M-performance 3-digit: MG keeps the petrol "i" suffix ("M235i Gran Coupe"), BNK drops
+// it ("M235 xDrive"). Normalize both to the same key so the same physical car matches across
+// lenders. Only the "Li" suffix (long-wheelbase + injection) is preserved (760Li).
+test("BMW M-performance 3-digit — MG 'M235i' ↔ BNK 'M235' same key", () => {
+  expect(extractVehicleKey("BMW", "M235i Gran Coupe xDrive")).toBe("BMW_M235");
+  expect(extractVehicleKey("BMW", "The New 2 Series 그란쿠페 가솔린 2.0 M235 xDrive")).toBe(
+    "BMW_M235",
+  );
+  expect(extractVehicleKey("BMW", "M340i Sedan")).toBe("BMW_M340");
+  expect(extractVehicleKey("BMW", "M240i Coupe xDrive")).toBe("BMW_M240");
+  expect(extractVehicleKey("BMW", "M440i")).toBe("BMW_M440");
+  expect(extractVehicleKey("BMW", "M550i xDrive")).toBe("BMW_M550");
+  expect(extractVehicleKey("BMW", "M135 xDrive")).toBe("BMW_M135");
+  expect(extractVehicleKey("BMW", "M850i xDrive Gran Coupe")).toBe("BMW_M850");
+  // Li suffix must still survive (760Li long-wheelbase)
+  expect(extractVehicleKey("BMW", "M 760Li xDrive")).toBe("BMW_M760LI");
 });

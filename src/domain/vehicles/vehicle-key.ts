@@ -220,12 +220,18 @@ function extractBmwKey(model: string): string | null {
     return `BMW_X${xNum}`;
   }
 
-  // M-performance 3-digit variants: M135i, M235i, M240i, M340i, M440i, M550i, M760Li, M850i
-  // Note: optional Li (long + injection), optional trailing I
-  const mPerf3 = m.match(/\bM\s*(\d{3})(L?I?)\b/);
+  // M-performance 3-digit variants: M135i, M235i, M240i, M340i, M440i, M550i, M760Li, M850i.
+  // The trailing "i" is just BMW's petrol marker — BNK drops it in shorthand like "M235 xDrive"
+  // while MG keeps it as "M235i Gran Coupe". Keep only the "Li" (long-wheelbase + injection)
+  // suffix so the 760Li stays distinguishable from a hypothetical 760 (there is none).
+  const mPerf3 = m.match(/\bM\s*(\d{3})(LI?)\b/);
   if (mPerf3) {
-    const suffix = mPerf3[2] || "";
+    const suffix = mPerf3[2] === "LI" ? "LI" : "";
     return `BMW_M${mPerf3[1]}${suffix}`;
+  }
+  const mPerf3NoSuffix = m.match(/\bM\s*(\d{3})I?\b/);
+  if (mPerf3NoSuffix) {
+    return `BMW_M${mPerf3NoSuffix[1]}`;
   }
 
   // Full M-cars: M2, M3, M4, M5, M8 (single digit)
@@ -358,8 +364,9 @@ function extractAudiKey(model: string): string | null {
   // Pattern must handle WOORI "Q4 40 e-tron" (non-adjacent prefix) and MG "Q4 e-tron 40" (adjacent)
   if (/\bE-?TRON\b/.test(m)) {
     // Priority: GT/S suffix (e-tron GT, e-tron S) — applies only if no body prefix
-    // First check for body prefix anywhere in the name
-    const prefixMatch = m.match(/\b(S?Q[468]|A[468])\b/);
+    // First check for body prefix anywhere in the name. Cover both SUV (Q[468], SQ[468]) and
+    // sedan (A[468], S6) e-tron variants that ship in BNK (e.g. "S6 e-tron").
+    const prefixMatch = m.match(/\b(S?Q[468]|A[468]|S[68])\b/);
     // Check if "GT" or "S" follows e-tron token (S e-tron GT is actually RS e-tron GT)
     const suffixMatch = m.match(/\bE-?TRON\s+(GT|S)\b/);
     const prefix = prefixMatch ? prefixMatch[1] : "";
@@ -434,9 +441,11 @@ function extractLexusKey(model: string): string | null {
     const suffix = lcConv[2] || "";
     return `LEXUS_LC${lcConv[1]}${suffix}_CONV`;
   }
-  // LC Convertible with no number ("LC 컨버터블") — WOORI short form (Korean "컨버터블" already stripped as noise)
-  // After stripNoise "LC 컨버터블" → "LC" — fall through to 3-letter pattern OR...
-  if (/\bLC\s*CONV\b/.test(m) || /\bLC\b.*컨버터블/.test(model)) return "LEXUS_LC_CONV";
+  // LC Convertible with no number ("LC 컨버터블") — WOORI short form (Korean "컨버터블" already stripped as noise).
+  // After stripNoise "LC 컨버터블" → "LC" — fall through to 3-letter pattern OR match here.
+  // Only one LC convertible variant ships globally (LC 500), so normalize to LEXUS_LC500_CONV to match
+  // MG's verbose "LC Convertible 500 Sport+" key.
+  if (/\bLC\s*CONV\b/.test(m) || /\bLC\b.*컨버터블/.test(model)) return "LEXUS_LC500_CONV";
 
   // Models: RX350H, ES300H, NX350H, IS300H, LS500H, LC500, UX300E, LM500H
   const lexMatch = m.match(/\b([A-Z]{2,3})\s*(\d{3})([HE])?\b/);
@@ -466,7 +475,17 @@ function extractGenesisKey(model: string): string | null {
 // ---------------------------------------------------------------------------
 
 function extractPorscheKey(model: string): string | null {
-  const m = stripNoise(model);
+  // Translate Korean Porsche body/trim tokens to English BEFORE stripNoise removes them.
+  // BNK rows read like "911 8세대 타르가 가솔린 3.0 GTS Edition..." (타르가 = Targa) and
+  // "The New 911 카레라 가솔린 3.6 쿠페 GTS Carrera" (카레라 = Carrera). Without this
+  // translation stripNoise wipes those tokens and the 911 extractor falls through to the
+  // bare PORSCHE_911 key, breaking BNK ↔ MG/WOORI cross-matching.
+  let pre = model
+    .replace(/타르가/g, " TARGA ")
+    .replace(/카레라/g, " CARRERA ");
+  // 스파이더 (Spyder) — preserve for 718 models
+  pre = pre.replace(/스파이더/g, " SPYDER ");
+  let m = stripNoise(pre);
 
   // 911 variants — Carrera/Turbo/GT3/Targa + optional S/4/GTS
   if (/\b911\b/.test(m)) {
@@ -477,16 +496,22 @@ function extractPorscheKey(model: string): string | null {
     if (/\bTURBO\b/.test(m)) return "PORSCHE_911_TURBO";
     // GTS ordering: BNK may put "GTS" before Carrera, MG puts it after
     const hasGts = /\bGTS\b/.test(m);
+    const hasTarga = /\bTARGA\b/.test(m);
+    // If Targa body-style context is present AND a GTS badge → TARGA4GTS
+    // (Excel rows like "911 8세대 타르가 ... GTS Targa 4 GTS" should win over Carrera branch)
+    if (hasTarga && hasGts && /\bTARGA\s*4\b/.test(m)) return "PORSCHE_911_TARGA4GTS";
+    // Check "Carrera 4" before "Carrera GTS" because some BNK rows contain both
+    // "CARRERA GTS" (body+badge words) and "CARRERA 4" (variant marker) in the same string,
+    // e.g. "911 8세대 카레라 ... GTS Carrera 4". The 4 variant must win.
     if (/\bCARRERA\s*4\s*GTS\b/.test(m)) return "PORSCHE_911_CARRERA4GTS";
-    if (/\bCARRERA\s*GTS\b/.test(m)) return "PORSCHE_911_CARRERAGTS";
     if (hasGts && /\bCARRERA\s*4\b/.test(m)) return "PORSCHE_911_CARRERA4GTS";
+    if (/\bCARRERA\s*GTS\b/.test(m)) return "PORSCHE_911_CARRERAGTS";
     if (hasGts && /\bCARRERA\b/.test(m)) return "PORSCHE_911_CARRERAGTS";
     if (/\bCARRERA\s*4S\b/.test(m)) return "PORSCHE_911_CARRERA4S";
     if (/\bCARRERA\s*S\b/.test(m)) return "PORSCHE_911_CARRERAS";
     if (/\bCARRERA\s*4\b/.test(m)) return "PORSCHE_911_CARRERA4";
     if (/\bCARRERA\b/.test(m)) return "PORSCHE_911_CARRERA";
-    if (hasGts && /\bTARGA\s*4\b/.test(m)) return "PORSCHE_911_TARGA4GTS";
-    if (/\bTARGA\b/.test(m)) return "PORSCHE_911_TARGA";
+    if (hasTarga) return "PORSCHE_911_TARGA";
     return "PORSCHE_911";
   }
 
@@ -563,6 +588,17 @@ function extractMiniKey(model: string): string | null {
   else if (/\bJCW\b|\bJOHN\s*COOPER\s*WORKS\b/.test(m)) line = "JCW";
   else if (/\bCOOPER\b/.test(m)) line = "COOPER";
   else return null;
+
+  // Detect WOORI's "COOPER <BodyLine> E" pattern — the bare electric base model
+  // (WOORI prefixes all MINI vehicles with "COOPER " as a brand noise prefix, so
+  // "COOPER Aceman E" / "COOPER COUNTRYMAN E" means bare electric, NOT a COOPER variant).
+  // BNK writes "Aceman 전기 E Classic" / "The New ALL Electric Countryman 전기 E Classic" for the
+  // same physical cars → both should produce bare MINI_<LINE>.
+  const bareElectricOnBody = line !== "COOPER" && line !== "JCW"
+    && /\b(COUNTRYMAN|CLUBMAN|CONVERTIBLE|HATCH|ACEMAN)\s+E\b/.test(m)
+    && !/\bSE\b/.test(m)
+    && !/\bJCW\b|\bJOHN\s*COOPER\s*WORKS\b/.test(m);
+  if (bareElectricOnBody) return `MINI_${line}`;
 
   // Variant: JCW > Cooper SD > Cooper S > Cooper D > Cooper SE > Cooper E > Cooper
   // WOORI format: "COOPER CLUBMAN S (2.0)" — the S follows the line name, not COOPER
