@@ -107,14 +107,27 @@ export function ImportPage() {
   }
 
   return (
-    <div className="p-6 max-w-4xl mx-auto flex flex-col gap-5">
+    <div className="px-10 pt-8 pb-16 max-w-5xl mx-auto">
+
+      {/* Page header */}
+      <div className="mb-6 flex items-center justify-between">
+        <h1 className="text-[1.65rem] font-bold tracking-[-0.03em] text-foreground">워크북 임포트</h1>
+        <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-accent/[0.08] border border-accent/15 text-[0.76rem] font-medium text-accent">
+          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-[pulse-dot_2s_ease-in-out_infinite]" />
+          자동 정규화 파이프라인 가동
+        </div>
+      </div>
+
+      <div className="flex flex-col gap-5">
 
       {/* ── Upload panel ── */}
       <div className="rounded-2xl border border-border bg-white shadow-[var(--shadow-elev-2)] overflow-hidden animate-fade-up" style={{ animationDelay: '0ms' }}>
         {/* Panel header */}
-        <div className="px-6 py-4 border-b border-border flex items-center gap-3">
-          <Upload size={13} className="text-primary" strokeWidth={2} />
-          <span className="text-sm font-semibold text-foreground tracking-tight">워크북 업로드</span>
+        <div className="px-7 py-4 border-b border-border flex items-center gap-2.5">
+          <span className="w-5 h-5 rounded-md flex items-center justify-center bg-accent/10 text-accent">
+            <Upload size={12} strokeWidth={2.2} />
+          </span>
+          <span className="text-[0.95rem] font-semibold text-foreground tracking-tight">워크북 업로드</span>
           <div className="ml-auto flex items-center gap-2">
             <span className="text-[10px] text-muted-foreground font-medium">금융사</span>
             <select
@@ -281,9 +294,11 @@ export function ImportPage() {
         style={{ animationDelay: '60ms' }}
       >
         {/* Header */}
-        <div className="px-6 py-4 border-b border-border flex items-center gap-3">
-          <History size={13} className="text-primary" strokeWidth={2} />
-          <span className="text-sm font-semibold text-foreground tracking-tight">임포트 기록</span>
+        <div className="px-7 py-4 border-b border-border flex items-center gap-2.5">
+          <span className="w-5 h-5 rounded-md flex items-center justify-center bg-accent/10 text-accent">
+            <History size={12} strokeWidth={2.2} />
+          </span>
+          <span className="text-[0.95rem] font-semibold text-foreground tracking-tight">임포트 기록</span>
           {!historyLoading && connected !== null && (
             <div className="ml-auto flex items-center gap-2">
               {imports.length > 0 && (
@@ -339,6 +354,8 @@ export function ImportPage() {
             </div>
           )}
         </div>
+      </div>
+
       </div>
     </div>
   )
