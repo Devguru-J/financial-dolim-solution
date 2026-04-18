@@ -9,6 +9,7 @@ import { getLenderAdapter } from "@/domain/imports/lender-registry";
 import { calculateMgOperatingLeaseQuote } from "@/domain/lenders/mg-capital/operating-lease-service";
 import { calculateBnkOperatingLeaseQuote } from "@/domain/lenders/bnk-capital/operating-lease-service";
 import { calculateWooriOperatingLeaseQuote } from "@/domain/lenders/woori-card/operating-lease-service";
+import { computeResidualDiff } from "@/domain/dashboard/residual-diff";
 import { createDbClient } from "@/lib/db/client";
 
 type Bindings = Env;
@@ -29,6 +30,14 @@ const catalogQuerySchema = z.object({
 const catalogModelsQuerySchema = z.object({
   lenderCode: z.string().min(1).optional(),
   brand: z.string().min(1),
+});
+
+const residualDiffQuerySchema = z.object({
+  lenderCode: z.string().min(1),
+  term: z
+    .union([z.literal("12"), z.literal("24"), z.literal("36"), z.literal("48"), z.literal("60")])
+    .default("60"),
+  brands: z.string().optional(),
 });
 
 const calculateQuoteSchema = z.object({
@@ -202,6 +211,23 @@ const catalogDealersQuerySchema = z.object({
 app.get("/api/catalog/bnk-dealers", zValidator("query", catalogDealersQuerySchema), async (c) => {
   const { brand } = c.req.valid("query");
   const result = await getBnkDealersForBrand({ databaseUrl: resolveDbUrl(c.env), brand });
+  return c.json({ ok: true, ...result });
+});
+
+app.get("/api/dashboard/residual-diff", zValidator("query", residualDiffQuerySchema), async (c) => {
+  const { lenderCode, term, brands } = c.req.valid("query");
+  const brandFilter = brands
+    ? brands
+        .split(",")
+        .map((b) => b.trim().toUpperCase())
+        .filter((b) => b.length > 0)
+    : null;
+  const result = await computeResidualDiff({
+    databaseUrl: resolveDbUrl(c.env),
+    lenderCode,
+    term: Number(term) as 12 | 24 | 36 | 48 | 60,
+    brandFilter,
+  });
   return c.json({ ok: true, ...result });
 });
 

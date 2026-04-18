@@ -60,6 +60,45 @@ export async function fetchImports(lenderCode = 'mg-capital'): Promise<ImportLis
   return apiFetch<ImportListResponse>(`/api/imports?lenderCode=${encodeURIComponent(lenderCode)}`)
 }
 
+export interface ResidualDiffVehicle {
+  vehicleKey: string | null
+  brandCode: string
+  brandDisplay: string
+  displayName: string
+  previousRate: number | null
+  currentRate: number | null
+  deltaPct: number | null
+}
+
+export interface ResidualDiffImportMeta {
+  id: string
+  versionLabel: string
+  importedAt: string
+}
+
+export interface ResidualDiffResponse {
+  ok: boolean
+  lenderCode: string
+  term: number
+  activeImport: ResidualDiffImportMeta | null
+  previousImport: ResidualDiffImportMeta | null
+  changed: ResidualDiffVehicle[]
+  added: ResidualDiffVehicle[]
+  removed: ResidualDiffVehicle[]
+}
+
+export async function fetchResidualDiff(params: {
+  lenderCode: string
+  term?: 12 | 24 | 36 | 48 | 60
+  brands?: string[]
+}): Promise<ResidualDiffResponse> {
+  const qs = new URLSearchParams()
+  qs.set('lenderCode', params.lenderCode)
+  if (params.term) qs.set('term', String(params.term))
+  if (params.brands && params.brands.length > 0) qs.set('brands', params.brands.join(','))
+  return apiFetch<ResidualDiffResponse>(`/api/dashboard/residual-diff?${qs.toString()}`)
+}
+
 export async function previewWorkbook(file: File, lenderCode = 'mg-capital'): Promise<PreviewResponse> {
   const formData = new FormData()
   formData.append('file', file)
