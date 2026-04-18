@@ -110,7 +110,7 @@ export function ImportPage() {
     <div className="p-6 max-w-4xl mx-auto flex flex-col gap-5">
 
       {/* ── Upload panel ── */}
-      <div className="rounded-2xl border border-border bg-white shadow-[0_20px_60px_-15px_rgba(29,51,184,0.07)] overflow-hidden animate-fade-up" style={{ animationDelay: '0ms' }}>
+      <div className="rounded-2xl border border-border bg-white shadow-[var(--shadow-elev-2)] overflow-hidden animate-fade-up" style={{ animationDelay: '0ms' }}>
         {/* Panel header */}
         <div className="px-6 py-4 border-b border-border flex items-center gap-3">
           <Upload size={13} className="text-primary" strokeWidth={2} />
@@ -277,7 +277,7 @@ export function ImportPage() {
 
       {/* ── Import history ── */}
       <div
-        className="rounded-2xl border border-border bg-white shadow-[0_20px_60px_-15px_rgba(29,51,184,0.07)] overflow-hidden animate-fade-up"
+        className="rounded-2xl border border-border bg-white shadow-[var(--shadow-elev-2)] overflow-hidden animate-fade-up"
         style={{ animationDelay: '60ms' }}
       >
         {/* Header */}

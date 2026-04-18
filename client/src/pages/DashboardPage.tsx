@@ -131,7 +131,7 @@ export function DashboardPage() {
             <LenderStatusCard key={lender.code} lender={lender} animationDelay={i * 40} />
           ))}
         </div>
-        <div className="rounded-2xl border border-border bg-white shadow-[0_20px_60px_-15px_rgba(29,51,184,0.08)] overflow-hidden self-start">
+        <div className="rounded-2xl border border-border bg-white shadow-[var(--shadow-elev-2)] overflow-hidden self-start">
           <img src="/reference-poster.png" alt="" className="w-full block" />
         </div>
       </div>
@@ -221,7 +221,7 @@ function LenderStatusCard({ lender, animationDelay }: { lender: LenderSnapshot; 
 
   return (
     <div
-      className="rounded-2xl border border-border bg-white shadow-[0_20px_60px_-15px_rgba(29,51,184,0.08)] animate-fade-up"
+      className="rounded-2xl border border-border bg-white shadow-[var(--shadow-elev-2)] animate-fade-up"
       style={{ animationDelay: `${animationDelay}ms` }}
     >
       <div className="relative" style={{ minHeight: 80 }}>
@@ -318,7 +318,7 @@ function MonthlyDiffPanel({ lenders }: { lenders: LenderSnapshot[] }) {
   }, [activeTab, active.loading, active.activeImport, active.previousImport, diffMap])
 
   return (
-    <div className="rounded-2xl border border-border bg-white shadow-[0_20px_60px_-15px_rgba(29,51,184,0.08)] overflow-hidden">
+    <div className="rounded-2xl border border-border bg-white shadow-[var(--shadow-elev-2)] overflow-hidden">
       {/* Header */}
       <div className="px-5 py-3.5 border-b border-border flex items-center gap-2.5">
         <TrendingUp size={13} className="text-primary shrink-0" strokeWidth={2} />

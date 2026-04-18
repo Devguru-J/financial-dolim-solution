@@ -19,10 +19,7 @@ export function App() {
     <div className="h-[100dvh] flex overflow-hidden">
 
       {/* ── Sidebar ── */}
-      <aside
-        className="w-[220px] shrink-0 flex flex-col border-r border-white/[0.05]"
-        style={{ background: 'oklch(0.115 0.012 255)' }}
-      >
+      <aside className="w-[220px] shrink-0 flex flex-col bg-sidebar border-r border-sidebar-border">
         {/* Brand */}
         <div className="px-5 pt-6 pb-5">
           <div className="flex items-center gap-3 mb-4">
