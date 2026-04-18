@@ -12,10 +12,12 @@ export interface WorkbookImport {
 
 export interface WorkbookPreview {
   lenderCode: string
-  versionLabel: string
-  vehicleProgramCount: number
-  residualMatrixRowCount: number
-  brandRatePolicyCount: number
+  detectedVersionLabel: string
+  sourceFileName: string
+  sheetNames: string[]
+  vehiclePrograms: unknown[]
+  residualMatrixRows: unknown[]
+  brandRatePolicies: unknown[]
 }
 
 export interface ImportListResponse {

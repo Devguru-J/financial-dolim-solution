@@ -84,7 +84,8 @@ export function ImportPage() {
     setSuccessMsg(null)
     try {
       const res = await importWorkbook(selectedFile, selectedLender, true)
-      setSuccessMsg(`${res.workbook.versionLabel} — 차량 ${res.workbook.vehicleProgramCount}개, 잔가 ${res.workbook.residualMatrixRowCount}행 활성화 완료`)
+      const wb = res.workbook
+      setSuccessMsg(`${wb.detectedVersionLabel} — 차량 ${wb.vehiclePrograms.length}개, 잔가 ${wb.residualMatrixRows.length}행 활성화 완료`)
       setSelectedFile(null)
       setPreview(null)
       if (fileInputRef.current) fileInputRef.current.value = ''
@@ -240,17 +241,17 @@ export function ImportPage() {
                 {/* Left: version hero */}
                 <div className="px-5 py-4">
                   <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest mb-1.5 leading-none">버전</div>
-                  <div className="text-lg font-bold font-mono text-primary tracking-tight leading-none">{preview.versionLabel}</div>
+                  <div className="text-lg font-bold font-mono text-primary tracking-tight leading-none">{preview.detectedVersionLabel}</div>
                 </div>
                 {/* Right: counts stacked */}
                 <div className="divide-y divide-primary/10">
                   <div className="px-4 py-2.5 flex items-center justify-between">
                     <span className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wider">차량</span>
-                    <span className="text-sm font-black font-mono tabular-nums text-foreground">{preview.vehicleProgramCount}</span>
+                    <span className="text-sm font-black font-mono tabular-nums text-foreground">{preview.vehiclePrograms.length}</span>
                   </div>
                   <div className="px-4 py-2.5 flex items-center justify-between">
                     <span className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wider">잔가</span>
-                    <span className="text-sm font-black font-mono tabular-nums text-foreground">{preview.residualMatrixRowCount}</span>
+                    <span className="text-sm font-black font-mono tabular-nums text-foreground">{preview.residualMatrixRows.length}</span>
                   </div>
                 </div>
               </div>
