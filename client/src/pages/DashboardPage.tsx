@@ -224,17 +224,34 @@ function LenderStatusCard({ lender, animationDelay }: { lender: LenderSnapshot; 
       className="rounded-2xl border border-border bg-white shadow-[0_20px_60px_-15px_rgba(29,51,184,0.08)] overflow-hidden animate-fade-up"
       style={{ animationDelay: `${animationDelay}ms` }}
     >
-      <div
-        className="grid"
-        style={{ gridTemplateColumns: '64px 1fr 128px', alignItems: 'stretch', minHeight: 80 }}
-      >
-        {/* Left accent: logo chip — full-height, explicit rounded-l so corners match outer card */}
-        <div className={`self-stretch h-full flex items-center justify-center bg-gradient-to-b ${lender.accentClass} rounded-l-2xl`}>
+      <div className="relative" style={{ minHeight: 80 }}>
+        {/* Left accent chip — absolute so it always spans full card height */}
+        <div className={`absolute inset-y-0 left-0 w-16 flex items-center justify-center bg-gradient-to-b ${lender.accentClass}`}>
           <div className="text-white text-sm font-black tracking-tight">{lender.shortName}</div>
         </div>
 
-        {/* Middle: lender info */}
-        <div className="self-stretch min-w-0 px-5 py-4 border-x border-border flex flex-col justify-center">
+        {/* Right vehicle-count column — absolute so it always spans full card height */}
+        <div className="absolute inset-y-0 right-0 w-32 flex flex-col items-center justify-center bg-muted/50 border-l border-border">
+          {loading ? (
+            <div className="skeleton h-6 w-12 rounded" />
+          ) : hasActive ? (
+            <>
+              <div className="text-2xl font-black font-mono tabular-nums text-foreground leading-none tracking-tighter">
+                {vehicleCount ?? '—'}
+              </div>
+              <div className="text-[10px] text-muted-foreground mt-1.5 uppercase tracking-widest font-semibold">
+                취급 차량
+              </div>
+            </>
+          ) : (
+            <div className="text-[10px] text-muted-foreground uppercase tracking-widest font-semibold">
+              —
+            </div>
+          )}
+        </div>
+
+        {/* Middle content — padding reserves space for absolute left/right columns */}
+        <div className="min-h-[80px] pl-20 pr-36 py-4 flex flex-col justify-center border-l border-border">
           {loading ? (
             <>
               <div className="skeleton h-4 w-28 rounded mb-2" />
@@ -268,26 +285,6 @@ function LenderStatusCard({ lender, animationDelay }: { lender: LenderSnapshot; 
               <div className="text-sm font-semibold text-foreground tracking-tight mb-1">{lender.name}</div>
               <div className="text-[11px] text-muted-foreground">활성 워크북 없음 · 임포트 필요</div>
             </>
-          )}
-        </div>
-
-        {/* Right: vehicle count — full-height, fully saturated muted, explicit rounded-r */}
-        <div className="self-stretch h-full flex flex-col items-center justify-center bg-muted/50 rounded-r-2xl">
-          {loading ? (
-            <div className="skeleton h-6 w-12 rounded" />
-          ) : hasActive ? (
-            <>
-              <div className="text-2xl font-black font-mono tabular-nums text-foreground leading-none tracking-tighter">
-                {vehicleCount ?? '—'}
-              </div>
-              <div className="text-[10px] text-muted-foreground mt-1.5 uppercase tracking-widest font-semibold">
-                취급 차량
-              </div>
-            </>
-          ) : (
-            <div className="text-[10px] text-muted-foreground uppercase tracking-widest font-semibold">
-              —
-            </div>
           )}
         </div>
       </div>
