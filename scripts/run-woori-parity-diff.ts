@@ -55,7 +55,7 @@ type DiffEntry = {
   model: string;
   term: number;
   residualMode: string;
-  verdict: "pass" | "fail";
+  verdict: "pass" | "fail" | "fallback" | "excel_missing";
   excel: {
     monthlyPayment: number;
     effectiveRate: number;
@@ -238,9 +238,29 @@ for (const scenario of scenarios) {
     deltaRv <= TOLERANCE.residualAmount &&
     deltaTax <= TOLERANCE.acquisitionTax;
 
-  const verdict = pass ? "pass" : "fail";
-  if (pass) passCount++;
-  else failCount++;
+  // Categorize non-pass outcomes:
+  //  - "excel_missing": Excel itself returned a "missing value" winnerProvider
+  //    (Excel can't compute — engine result is incomparable)
+  //  - "fallback": engine warns that 고잔가 was unavailable and auto-fell-back
+  //    to 일반잔가; Excel shows 0-residual garbage. Engine is correct by design.
+  //  - "fail": genuine mismatch.
+  const excelMissing = String(excel.winnerProvider || "").toLowerCase().includes("missing");
+  const fallbackWarning = (engineResult.warnings ?? []).some((w) =>
+    w.includes("일반잔가로 자동 전환")
+  );
+
+  let verdict: DiffEntry["verdict"];
+  if (pass) {
+    verdict = "pass";
+    passCount++;
+  } else if (excelMissing) {
+    verdict = "excel_missing";
+  } else if (fallbackWarning && excel.residualRate === 0) {
+    verdict = "fallback";
+  } else {
+    verdict = "fail";
+    failCount++;
+  }
 
   diffs.push({
     id: scenario.id,
@@ -276,11 +296,15 @@ for (const scenario of scenarios) {
 
 writeFileSync(opts.output, JSON.stringify(diffs, null, 2));
 
+const fallbackCount = diffs.filter((d) => d.verdict === "fallback").length;
+const excelMissingCount = diffs.filter((d) => d.verdict === "excel_missing").length;
 const total = passCount + failCount;
 const pct = total > 0 ? ((passCount / total) * 100).toFixed(1) : "0";
 console.log(`\n=== Parity Results ===`);
 console.log(`Pass: ${passCount}/${total} (${pct}%)`);
 console.log(`Fail: ${failCount}`);
+if (fallbackCount > 0) console.log(`Fallback (일반잔가 자동전환, Excel 0잔가 — 엔진이 더 올바름): ${fallbackCount}`);
+if (excelMissingCount > 0) console.log(`Excel missing value (비교 불가): ${excelMissingCount}`);
 console.log(`Skip: ${skipCount}`);
 console.log(`Output: ${opts.output}`);
 

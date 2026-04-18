@@ -723,7 +723,7 @@ function computeQuote(params: WooriQuoteContext): CanonicalQuoteResult {
     // CM+AG fees for provider selection (included in cashOut)
     const cmAgFees = 0; // CM/AG are rate-based, not lump-sum in Woori
 
-    const winner = selectBestProvider({
+    let winner = selectBestProvider({
       vehiclePrice: invoiceVehiclePrice,
       acquisitionCost,
       irr: annualIrr,
@@ -739,6 +739,34 @@ function computeQuote(params: WooriQuoteContext): CanonicalQuoteResult {
       cmAgFees,
     });
 
+    // Fallback: 고잔가 mode yields no candidates for non-eligible brands whose
+    // yuca/autohands grades are empty — retry in 일반잔가 so the user gets a
+    // valid quote instead of an error. Flag via warning so the UI can surface it.
+    let effectiveResidualMode = residualMode;
+    if (!winner && residualMode === "고잔가") {
+      winner = selectBestProvider({
+        vehiclePrice: invoiceVehiclePrice,
+        acquisitionCost,
+        irr: annualIrr,
+        term,
+        upfront: upfrontPayment,
+        deposit: depositAmount,
+        providerRates,
+        rawRow: vehicle.rawRow,
+        residualMode: "일반잔가",
+        brand: vehicle.brand,
+        annualMileageKm: annualMileage,
+        stampDuty,
+        cmAgFees,
+      });
+      if (winner) {
+        effectiveResidualMode = "일반잔가";
+        warnings.push(
+          "고잔가 미지원 차량이어서 일반잔가로 자동 전환되어 계산되었습니다."
+        );
+      }
+    }
+
     if (!winner) {
       throw new Error(
         `우리카드 워크북에서 '${vehicle.brand} ${vehicle.modelName}'의 잔가사 데이터가 없어 견적을 계산할 수 없습니다.`
@@ -750,11 +778,10 @@ function computeQuote(params: WooriQuoteContext): CanonicalQuoteResult {
     winnerName = winner.name;
     winnerGuaranteeFee = winner.guaranteeFee;
 
-    // Determine matrixGroup for the winner
     const providerKey = winnerName === "삼일" ? "SAMIL" : winnerName === "유카" ? "YUCA" : "AUTOHANDS";
     const gradeKey = winnerName === "삼일" ? rawRow.samilGrade :
       winnerName === "유카" ? rawRow.yucaGrade : rawRow.autohandsGrade;
-    const highPrefix = residualMode !== "일반잔가" ? "_HIGH" : "";
+    const highPrefix = effectiveResidualMode !== "일반잔가" ? "_HIGH" : "";
     residualMatrixGroup = gradeKey ? `WOORI_${providerKey}${highPrefix}_${gradeKey}` : null;
   }
 
