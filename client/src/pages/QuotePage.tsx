@@ -171,7 +171,7 @@ export function QuotePage() {
     <div className="px-10 pt-8 pb-16 max-w-[1100px] mx-auto min-h-[100dvh]">
       {/* Page header */}
       <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-[1.65rem] font-bold tracking-[-0.03em] text-foreground">견적 계산</h1>
+        <h1 className="text-[1.65rem] font-bold tracking-[-0.03em] text-foreground">값어림 계산</h1>
         <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-accent/[0.08] border border-accent/15 text-[0.76rem] font-medium text-accent">
           <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-[pulse-dot_2s_ease-in-out_infinite]" />
           멀티 렌더 병렬 계산 가동
@@ -273,7 +273,7 @@ export function QuotePage() {
                 <span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                 계산 중
               </>
-            ) : '견적 계산'}
+            ) : '값어림 계산'}
           </button>
 
         </div>
@@ -359,7 +359,7 @@ export function QuotePage() {
           <div>
             <p className="text-sm font-semibold text-foreground">견적 준비 완료</p>
             <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
-              차량과 조건을 선택한 뒤 <strong className="font-semibold text-foreground">견적 계산</strong> 을 눌러주세요
+              차량과 조건을 선택한 뒤 <strong className="font-semibold text-foreground">값어림 계산</strong> 을 눌러주세요
             </p>
           </div>
         </div>
