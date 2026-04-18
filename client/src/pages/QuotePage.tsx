@@ -287,7 +287,7 @@ export function QuotePage() {
             if (notAvailable) return null
             if (loading) {
               return (
-                <div key={lenderCode} className="rounded-2xl border border-border bg-white shadow-[var(--shadow-elev-2)] overflow-hidden">
+                <div key={lenderCode} className="rounded-[2rem] border border-border bg-white shadow-[var(--shadow-elev-2)] overflow-hidden">
                   <div className="h-[3px] bg-border" />
                   <div className="px-6 pt-5 pb-3 flex items-center justify-between">
                     <span className="text-[0.92rem] font-semibold text-foreground">{lenderName}</span>
@@ -307,7 +307,7 @@ export function QuotePage() {
             }
             if (error) {
               return (
-                <div key={lenderCode} className="rounded-2xl border border-amber-200 bg-amber-50 overflow-hidden">
+                <div key={lenderCode} className="rounded-[2rem] border border-amber-200 bg-amber-50 overflow-hidden">
                   <div className="h-[3px] bg-amber-300" />
                   <div className="px-6 pt-5 pb-3">
                     <span className="text-[0.92rem] font-semibold text-amber-900">{lenderName}</span>
@@ -349,7 +349,7 @@ export function QuotePage() {
 
       {/* Empty state when no calculation yet */}
       {!multiQuote.hasAnyResult && !multiQuote.isAnyLoading && (
-        <div className="mt-8 border border-dashed border-border rounded-2xl bg-white/50 flex flex-col items-center justify-center text-center gap-3 py-16 px-8">
+        <div className="mt-8 border border-dashed border-border rounded-[2rem] bg-white/50 flex flex-col items-center justify-center text-center gap-3 py-16 px-8">
           <div className="w-12 h-12 rounded-2xl bg-muted flex items-center justify-center">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-muted-foreground">
               <rect x="2" y="3" width="20" height="14" rx="2" />
@@ -392,7 +392,7 @@ function ComparisonBarCard({
   }
 
   return (
-    <div className="mt-6 rounded-2xl border border-border bg-white shadow-[var(--shadow-elev-2)] overflow-hidden">
+    <div className="mt-6 rounded-[2rem] border border-border bg-white shadow-[var(--shadow-elev-2)] overflow-hidden">
       <div className="px-7 py-4 border-b border-border flex items-center gap-2.5">
         <span className="w-5 h-5 rounded-md flex items-center justify-center bg-accent/10 text-accent">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">

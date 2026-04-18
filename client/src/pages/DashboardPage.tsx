@@ -131,7 +131,7 @@ export function DashboardPage() {
             <LenderStatusCard key={lender.code} lender={lender} animationDelay={i * 40} />
           ))}
         </div>
-        <div className="rounded-2xl border border-border bg-white shadow-[var(--shadow-elev-2)] overflow-hidden self-start">
+        <div className="rounded-[2rem] border border-border bg-white shadow-[var(--shadow-elev-2)] overflow-hidden self-start">
           <img src="/reference-poster.png" alt="" className="w-full block" />
         </div>
       </div>
@@ -160,7 +160,7 @@ function StatusBanner({
 
   return (
     <div
-      className={`rounded-2xl border px-6 py-4 flex items-center gap-5 transition-colors duration-500 ${
+      className={`rounded-[2rem] border px-6 py-4 flex items-center gap-5 transition-colors duration-500 ${
         loading ? 'bg-muted/40 border-border' : isOk ? 'bg-emerald-50 border-emerald-200/80' : 'bg-amber-50 border-amber-200/80'
       }`}
     >
@@ -221,7 +221,7 @@ function LenderStatusCard({ lender, animationDelay }: { lender: LenderSnapshot; 
 
   return (
     <div
-      className="rounded-2xl border border-border shadow-[var(--shadow-elev-2)] animate-fade-up overflow-hidden grid min-h-[82px]"
+      className="rounded-[2rem] border border-border shadow-[var(--shadow-elev-2)] animate-fade-up overflow-hidden grid min-h-[82px]"
       style={{ gridTemplateColumns: '64px 1fr 128px', animationDelay: `${animationDelay}ms` }}
     >
       {/* Left accent chip */}
@@ -316,7 +316,7 @@ function MonthlyDiffPanel({ lenders }: { lenders: LenderSnapshot[] }) {
   }, [activeTab, active.loading, active.activeImport, active.previousImport, diffMap])
 
   return (
-    <div className="rounded-2xl border border-border bg-white shadow-[var(--shadow-elev-2)] overflow-hidden">
+    <div className="rounded-[2rem] border border-border bg-white shadow-[var(--shadow-elev-2)] overflow-hidden">
       {/* Header */}
       <div className="px-5 py-3.5 border-b border-border flex items-center gap-2.5">
         <TrendingUp size={13} className="text-primary shrink-0" strokeWidth={2} />

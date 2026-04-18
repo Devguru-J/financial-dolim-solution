@@ -92,7 +92,7 @@ export function QuoteConditionsCard(props: QuoteConditionsCardProps) {
   const uid = useId()
 
   return (
-    <Card className="shadow-[var(--shadow-elev-2)] border border-border overflow-hidden py-0 gap-0">
+    <Card className="rounded-[2rem] shadow-[var(--shadow-elev-2)] border border-border overflow-hidden py-0 gap-0">
       {/* Header */}
       <div className="px-7 py-4 border-b border-border flex items-center gap-2.5">
         <span className="w-5 h-5 rounded-md flex items-center justify-center bg-accent/10 text-accent">

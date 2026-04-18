@@ -30,7 +30,7 @@ export function QuoteResultCard({ result, lenderName, lenderCode, isBest = false
 
   return (
     <Card
-      className={`shadow-[var(--shadow-elev-3)] border overflow-hidden relative py-0 gap-0 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[var(--shadow-elev-4)] ${
+      className={`rounded-[2rem] shadow-[var(--shadow-elev-3)] border overflow-hidden relative py-0 gap-0 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[var(--shadow-elev-4)] ${
         isBest ? 'border-accent/30' : 'border-border'
       }`}
     >

@@ -193,8 +193,8 @@
 }
 
 :root {
-  /* Warm cream page background, pure white cards */
-  --background: #f6f5f3;
+  /* Cool off-white page background (Bento 2.0), pure white cards */
+  --background: #f9fafb;
   --foreground: #1a1a1a;
   --card: #ffffff;
   --card-foreground: #1a1a1a;
