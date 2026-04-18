@@ -172,8 +172,10 @@ function parseVehiclePrograms(workbook: XLSX.WorkBook): WorkbookVehicleProgram[]
 
 function classifyFuel(fuel: string | null): string {
   if (!fuel) return "ICE";
-  if (fuel === "전기" || fuel === "전기_비감면") return "EV";
+  if (fuel === "전기") return "EV";
+  if (fuel === "전기_비감면") return "EV_NONEXEMPT";
   if (fuel === "수소") return "HYDROGEN";
+  if (fuel === "HEV_비감면") return "ICE";
   if (fuel === "HEV" || fuel.includes("하이브리드")) return "HEV";
   if (fuel === "PHEV") return "PHEV";
   return "ICE";

@@ -384,7 +384,7 @@ function selectBestProvider(params: {
   {
     const fuelType = (rr.fuelType as string) ?? "ICE";
     // 오토핸즈 고잔가 not available for EV (BW30 formula)
-    const evBlocked = isHigh && (fuelType === "EV" || fuelType === "전기_비감면");
+    const evBlocked = isHigh && (fuelType === "EV" || fuelType === "EV_NONEXEMPT");
     // 오토핸즈 not available for 40000km+ (mileage adjustment = -1)
     const mileageBlocked = annualMileageKm >= 40000;
 
