@@ -1,0 +1,1506 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>금융돌림 — Industrial Brutalist UI</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  /* ============================================
+     RESET & BASE
+     ============================================ */
+  *, *::before, *::after {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  :root {
+    --bg-primary: #0a0a0a;
+    --bg-secondary: #111111;
+    --bg-tertiary: #161616;
+    --bg-panel: #0d0d0d;
+    --border: #2a2a2a;
+    --border-strong: #3a3a3a;
+    --text-primary: #e8e8e8;
+    --text-secondary: #888888;
+    --text-tertiary: #555555;
+    --text-muted: #3a3a3a;
+    --accent: #f0c000;
+    --accent-dim: #b89800;
+    --accent-glow: rgba(240, 192, 0, 0.08);
+    --danger: #ff3333;
+    --success: #33ff66;
+    --mono: 'IBM Plex Mono', 'Courier New', monospace;
+    --display: 'Space Mono', 'IBM Plex Mono', monospace;
+  }
+
+  html {
+    font-size: 14px;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    font-family: var(--mono);
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ============================================
+     SCAN LINE OVERLAY
+     ============================================ */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(0, 0, 0, 0.15) 2px,
+      rgba(0, 0, 0, 0.15) 4px
+    );
+    pointer-events: none;
+    z-index: 9999;
+  }
+
+  /* NOISE TEXTURE */
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    opacity: 0.035;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    background-size: 256px 256px;
+    pointer-events: none;
+    z-index: 9998;
+  }
+
+  /* ============================================
+     LAYOUT SHELL
+     ============================================ */
+  .shell {
+    display: flex;
+    min-height: 100vh;
+    max-width: 1400px;
+    margin: 0 auto;
+  }
+
+  /* ============================================
+     SIDEBAR
+     ============================================ */
+  .sidebar {
+    width: 220px;
+    min-width: 220px;
+    background: var(--bg-secondary);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    position: relative;
+  }
+
+  .sidebar::after {
+    content: '';
+    position: absolute;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    width: 1px;
+    background: linear-gradient(
+      180deg,
+      var(--accent) 0%,
+      var(--border) 30%,
+      var(--border) 100%
+    );
+  }
+
+  .sidebar-brand {
+    padding: 24px 20px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .sidebar-brand-label {
+    font-family: var(--display);
+    font-size: 10px;
+    font-weight: 400;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--text-tertiary);
+    margin-bottom: 6px;
+  }
+
+  .sidebar-brand-name {
+    font-family: var(--display);
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+    color: var(--accent);
+    line-height: 1;
+  }
+
+  .sidebar-brand-sub {
+    font-size: 9px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--text-tertiary);
+    margin-top: 8px;
+  }
+
+  .sidebar-nav {
+    padding: 16px 0;
+    flex: 1;
+  }
+
+  .nav-section-label {
+    font-size: 9px;
+    font-weight: 600;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--text-tertiary);
+    padding: 12px 20px 8px;
+  }
+
+  .nav-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 20px;
+    font-size: 12px;
+    font-weight: 400;
+    color: var(--text-secondary);
+    text-decoration: none;
+    cursor: pointer;
+    position: relative;
+    transition: color 0.15s, background 0.15s;
+    letter-spacing: 0.5px;
+  }
+
+  .nav-item:hover {
+    color: var(--text-primary);
+    background: rgba(255, 255, 255, 0.03);
+  }
+
+  .nav-item.active {
+    color: var(--accent);
+    background: var(--accent-glow);
+  }
+
+  .nav-item.active::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 4px;
+    bottom: 4px;
+    width: 3px;
+    background: var(--accent);
+  }
+
+  .nav-icon {
+    font-size: 14px;
+    width: 18px;
+    text-align: center;
+    opacity: 0.7;
+  }
+
+  .nav-item.active .nav-icon {
+    opacity: 1;
+  }
+
+  .sidebar-status {
+    padding: 16px 20px;
+    border-top: 1px solid var(--border);
+  }
+
+  .status-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 10px;
+    color: var(--text-tertiary);
+    letter-spacing: 0.5px;
+    margin-bottom: 6px;
+  }
+
+  .status-row:last-child {
+    margin-bottom: 0;
+  }
+
+  .status-dot {
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--success);
+    margin-right: 4px;
+    animation: pulse-dot 2s ease-in-out infinite;
+  }
+
+  @keyframes pulse-dot {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+
+  /* ============================================
+     MAIN CONTENT
+     ============================================ */
+  .main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+  }
+
+  /* TOP BAR */
+  .topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 32px;
+    height: 48px;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg-secondary);
+    flex-shrink: 0;
+  }
+
+  .topbar-breadcrumb {
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--text-tertiary);
+  }
+
+  .topbar-breadcrumb span {
+    color: var(--text-secondary);
+  }
+
+  .topbar-right {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+  }
+
+  .topbar-clock {
+    font-family: var(--display);
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text-secondary);
+    letter-spacing: 1px;
+  }
+
+  .topbar-user {
+    font-size: 10px;
+    color: var(--text-tertiary);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+
+  /* CONTENT AREA */
+  .content {
+    padding: 32px;
+    flex: 1;
+  }
+
+  /* PAGE HEADER */
+  .page-header {
+    margin-bottom: 32px;
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+  }
+
+  .page-header-left {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .page-title-prefix {
+    font-size: 9px;
+    font-weight: 600;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    color: var(--text-tertiary);
+  }
+
+  .page-title {
+    font-family: var(--display);
+    font-size: 28px;
+    font-weight: 700;
+    letter-spacing: -1px;
+    color: var(--text-primary);
+    line-height: 1;
+  }
+
+  .page-title-accent {
+    color: var(--accent);
+  }
+
+  .page-header-right {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .header-badge {
+    font-size: 9px;
+    font-weight: 600;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    padding: 4px 10px;
+    border: 1px solid var(--border-strong);
+    color: var(--text-secondary);
+  }
+
+  .header-badge.active {
+    border-color: var(--accent-dim);
+    color: var(--accent);
+    background: var(--accent-glow);
+  }
+
+  /* ============================================
+     SECTION PANELS
+     ============================================ */
+  .panel {
+    border: 1px solid var(--border);
+    background: var(--bg-panel);
+    margin-bottom: 24px;
+    position: relative;
+  }
+
+  .panel::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(
+      90deg,
+      var(--accent) 0%,
+      var(--accent) 60px,
+      var(--border) 60px,
+      var(--border) 100%
+    );
+  }
+
+  .panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 20px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .panel-title {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+  }
+
+  .panel-tag {
+    font-size: 9px;
+    letter-spacing: 1.5px;
+    color: var(--text-tertiary);
+    text-transform: uppercase;
+  }
+
+  .panel-body {
+    padding: 20px;
+  }
+
+  /* ============================================
+     FORM GRID
+     ============================================ */
+  .form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 1px;
+    background: var(--border);
+  }
+
+  .form-grid-4 {
+    grid-template-columns: 1fr 1fr 1fr 1fr;
+  }
+
+  .form-cell {
+    background: var(--bg-panel);
+    padding: 16px 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .form-label {
+    font-size: 9px;
+    font-weight: 600;
+    letter-spacing: 2.5px;
+    text-transform: uppercase;
+    color: var(--text-tertiary);
+  }
+
+  .form-value {
+    font-family: var(--display);
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text-primary);
+    letter-spacing: -0.3px;
+  }
+
+  .form-value-accent {
+    color: var(--accent);
+  }
+
+  .form-select {
+    font-family: var(--mono);
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-primary);
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-strong);
+    padding: 8px 12px;
+    appearance: none;
+    cursor: pointer;
+    letter-spacing: 0.3px;
+  }
+
+  .form-input {
+    font-family: var(--display);
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text-primary);
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid var(--border-strong);
+    padding: 4px 0;
+    outline: none;
+    letter-spacing: -0.3px;
+  }
+
+  .form-unit {
+    font-size: 10px;
+    font-weight: 400;
+    color: var(--text-tertiary);
+    letter-spacing: 0.5px;
+    margin-top: 2px;
+  }
+
+  .form-divider {
+    grid-column: 1 / -1;
+    background: var(--bg-panel);
+    height: 0;
+  }
+
+  /* ============================================
+     VEHICLE SUMMARY BAR
+     ============================================ */
+  .summary-bar {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 1px;
+    background: var(--border);
+    border-top: 1px solid var(--border);
+  }
+
+  .summary-cell {
+    background: var(--bg-tertiary);
+    padding: 12px 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .summary-label {
+    font-size: 9px;
+    font-weight: 500;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--text-tertiary);
+  }
+
+  .summary-value {
+    font-family: var(--display);
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--accent);
+    letter-spacing: -0.3px;
+  }
+
+  /* ============================================
+     RESULTS GRID
+     ============================================ */
+  .results-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 1px;
+    background: var(--border);
+  }
+
+  .result-card {
+    background: var(--bg-panel);
+    padding: 0;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .result-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 20px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .result-lender-code {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+  }
+
+  .result-rank {
+    font-family: var(--display);
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    padding: 2px 8px;
+    border: 1px solid var(--border-strong);
+    color: var(--text-tertiary);
+  }
+
+  .result-rank.best {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: var(--accent-glow);
+  }
+
+  .result-card-body {
+    padding: 24px 20px;
+  }
+
+  .result-payment-label {
+    font-size: 9px;
+    font-weight: 500;
+    letter-spacing: 2.5px;
+    text-transform: uppercase;
+    color: var(--text-tertiary);
+    margin-bottom: 4px;
+  }
+
+  .result-payment {
+    font-family: var(--display);
+    font-size: 36px;
+    font-weight: 700;
+    color: var(--text-primary);
+    letter-spacing: -2px;
+    line-height: 1;
+    margin-bottom: 2px;
+  }
+
+  .result-payment-unit {
+    font-size: 14px;
+    font-weight: 400;
+    color: var(--text-secondary);
+    letter-spacing: 0;
+    margin-left: 2px;
+  }
+
+  .result-card.best .result-payment {
+    color: var(--accent);
+  }
+
+  .result-card.best::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: var(--accent);
+  }
+
+  .result-details {
+    margin-top: 20px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1px;
+    background: var(--border);
+    border: 1px solid var(--border);
+  }
+
+  .result-detail-cell {
+    background: var(--bg-tertiary);
+    padding: 10px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+  }
+
+  .result-detail-label {
+    font-size: 8px;
+    font-weight: 500;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--text-tertiary);
+  }
+
+  .result-detail-value {
+    font-family: var(--display);
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text-primary);
+    letter-spacing: -0.3px;
+  }
+
+  .result-detail-value.rate {
+    color: var(--accent);
+  }
+
+  .result-card-footer {
+    padding: 10px 20px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .result-provider {
+    font-size: 9px;
+    letter-spacing: 1.5px;
+    color: var(--text-tertiary);
+    text-transform: uppercase;
+  }
+
+  .result-fee {
+    font-size: 9px;
+    letter-spacing: 1px;
+    color: var(--text-tertiary);
+  }
+
+  .result-fee-value {
+    color: var(--text-secondary);
+    font-weight: 600;
+  }
+
+  /* ============================================
+     COMPARISON STRIP
+     ============================================ */
+  .comparison-strip {
+    margin-top: 24px;
+    border: 1px solid var(--border);
+    background: var(--bg-panel);
+    position: relative;
+  }
+
+  .comparison-strip::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(
+      90deg,
+      var(--accent) 0%,
+      var(--accent) 40px,
+      var(--border) 40px
+    );
+  }
+
+  .comparison-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 20px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .comparison-title {
+    font-size: 9px;
+    font-weight: 600;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--text-tertiary);
+  }
+
+  .comparison-body {
+    display: grid;
+    grid-template-columns: 180px 1fr;
+    gap: 0;
+  }
+
+  .comparison-labels {
+    border-right: 1px solid var(--border);
+  }
+
+  .comparison-label-cell {
+    padding: 10px 16px;
+    font-size: 9px;
+    font-weight: 600;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--text-tertiary);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .comparison-label-cell:last-child {
+    border-bottom: none;
+  }
+
+  .comparison-data {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+  }
+
+  .comparison-col {
+    border-right: 1px solid var(--border);
+  }
+
+  .comparison-col:last-child {
+    border-right: none;
+  }
+
+  .comparison-data-cell {
+    padding: 10px 16px;
+    font-family: var(--display);
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text-primary);
+    letter-spacing: -0.3px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .comparison-data-cell:last-child {
+    border-bottom: none;
+  }
+
+  .comparison-data-cell.highlight {
+    color: var(--accent);
+    background: var(--accent-glow);
+  }
+
+  .comparison-data-cell.dim {
+    color: var(--text-secondary);
+    font-weight: 400;
+  }
+
+  /* ============================================
+     CONDITIONS ROW
+     ============================================ */
+  .conditions-grid {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 1px;
+    background: var(--border);
+  }
+
+  .condition-cell {
+    background: var(--bg-panel);
+    padding: 14px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .condition-label {
+    font-size: 8px;
+    font-weight: 600;
+    letter-spacing: 2.5px;
+    text-transform: uppercase;
+    color: var(--text-tertiary);
+  }
+
+  .condition-value {
+    font-family: var(--display);
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text-primary);
+    letter-spacing: -0.5px;
+  }
+
+  .condition-unit {
+    font-size: 10px;
+    font-weight: 400;
+    color: var(--text-secondary);
+    letter-spacing: 0;
+    margin-left: 2px;
+  }
+
+  /* ============================================
+     DECODED STAMP / WATERMARK
+     ============================================ */
+  .stamp {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    font-size: 8px;
+    font-weight: 600;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    writing-mode: vertical-rl;
+    z-index: 10;
+  }
+
+  /* ============================================
+     GRID LINES DECORATION
+     ============================================ */
+  .grid-decoration {
+    position: absolute;
+    top: 0;
+    right: -1px;
+    width: 1px;
+    height: 100%;
+    background: repeating-linear-gradient(
+      180deg,
+      var(--border) 0px,
+      var(--border) 4px,
+      transparent 4px,
+      transparent 8px
+    );
+  }
+
+  /* ============================================
+     LENDER TAGS
+     ============================================ */
+  .lender-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    padding: 4px 10px;
+    border: 1px solid var(--border-strong);
+    color: var(--text-secondary);
+  }
+
+  .lender-tag .dot {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+  }
+
+  .lender-tag.mg .dot { background: #5588ff; }
+  .lender-tag.bnk .dot { background: #ff6644; }
+  .lender-tag.woori .dot { background: #44cc88; }
+
+  /* ============================================
+     ACQUISITION COST PANEL
+     ============================================ */
+  .acq-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr 1fr;
+    gap: 1px;
+    background: var(--border);
+  }
+
+  .acq-cell {
+    background: var(--bg-panel);
+    padding: 14px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .acq-label {
+    font-size: 8px;
+    font-weight: 600;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--text-tertiary);
+  }
+
+  .acq-value {
+    font-family: var(--display);
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text-primary);
+    letter-spacing: -0.3px;
+  }
+
+  .acq-value.total {
+    color: var(--accent);
+    font-size: 16px;
+  }
+
+  /* ============================================
+     DECORATIVE ELEMENTS
+     ============================================ */
+  .corner-mark {
+    position: absolute;
+    font-size: 8px;
+    letter-spacing: 2px;
+    color: var(--text-muted);
+    font-weight: 600;
+  }
+
+  .corner-mark.tl { top: 4px; left: 8px; }
+  .corner-mark.tr { top: 4px; right: 8px; }
+  .corner-mark.bl { bottom: 4px; left: 8px; }
+  .corner-mark.br { bottom: 4px; right: 8px; }
+
+  /* ============================================
+     SECTION DIVIDER
+     ============================================ */
+  .section-divider {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 28px 0 20px;
+  }
+
+  .section-divider-line {
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  .section-divider-text {
+    font-size: 9px;
+    font-weight: 600;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    color: var(--text-tertiary);
+    white-space: nowrap;
+  }
+
+  /* ============================================
+     DATA TABLE STYLES
+     ============================================ */
+  .data-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  .data-table th {
+    font-size: 8px;
+    font-weight: 600;
+    letter-spacing: 2.5px;
+    text-transform: uppercase;
+    color: var(--text-tertiary);
+    padding: 10px 16px;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg-tertiary);
+  }
+
+  .data-table td {
+    font-family: var(--display);
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text-primary);
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--border);
+    letter-spacing: -0.3px;
+  }
+
+  .data-table td.dim {
+    font-weight: 400;
+    color: var(--text-secondary);
+    font-family: var(--mono);
+  }
+
+  .saving-badge {
+    display: inline-block;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    padding: 2px 6px;
+    background: rgba(240, 192, 0, 0.1);
+    border: 1px solid var(--accent-dim);
+    color: var(--accent);
+  }
+</style>
+</head>
+<body>
+
+<!-- WATERMARK STAMP -->
+<div class="stamp">DOC-FIN-2026-04-17 // CLASSIFIED</div>
+
+<div class="shell">
+  <!-- ========================================
+       SIDEBAR
+       ======================================== -->
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <div class="sidebar-brand-label">SYSTEM</div>
+      <div class="sidebar-brand-name">금융돌림</div>
+      <div class="sidebar-brand-sub">Auto Finance Terminal v2.4</div>
+    </div>
+
+    <nav class="sidebar-nav">
+      <div class="nav-section-label">Navigation</div>
+
+      <a class="nav-item" href="#">
+        <span class="nav-icon">&#9632;</span>
+        대시보드
+      </a>
+      <a class="nav-item active" href="#">
+        <span class="nav-icon">&#9654;</span>
+        견적 계산
+      </a>
+      <a class="nav-item" href="#">
+        <span class="nav-icon">&#9660;</span>
+        워크북 임포트
+      </a>
+
+      <div class="nav-section-label" style="margin-top: 20px;">Data</div>
+
+      <a class="nav-item" href="#">
+        <span class="nav-icon">&#9679;</span>
+        차량 카탈로그
+      </a>
+      <a class="nav-item" href="#">
+        <span class="nav-icon">&#9675;</span>
+        잔가 매트릭스
+      </a>
+      <a class="nav-item" href="#">
+        <span class="nav-icon">&#9651;</span>
+        금리 정책
+      </a>
+    </nav>
+
+    <div class="sidebar-status">
+      <div class="status-row">
+        <span>DB STATUS</span>
+        <span><span class="status-dot"></span> ONLINE</span>
+      </div>
+      <div class="status-row">
+        <span>LENDERS</span>
+        <span style="color: var(--text-secondary);">3 ACTIVE</span>
+      </div>
+      <div class="status-row">
+        <span>VEHICLES</span>
+        <span style="color: var(--text-secondary);">2,913</span>
+      </div>
+      <div class="status-row">
+        <span>WORKBOOKS</span>
+        <span style="color: var(--text-secondary);">3 LOADED</span>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ========================================
+       MAIN
+       ======================================== -->
+  <main class="main">
+    <!-- TOP BAR -->
+    <div class="topbar">
+      <div class="topbar-breadcrumb">
+        SYS <span>/ 견적 계산 / 운용리스</span>
+      </div>
+      <div class="topbar-right">
+        <div class="topbar-clock">14:37:22 KST</div>
+        <div class="topbar-user">OPERATOR_01</div>
+      </div>
+    </div>
+
+    <!-- CONTENT -->
+    <div class="content">
+
+      <!-- PAGE HEADER -->
+      <div class="page-header">
+        <div class="page-header-left">
+          <div class="page-title-prefix">Operating Lease Calculator</div>
+          <div class="page-title">견적 <span class="page-title-accent">계산</span></div>
+        </div>
+        <div class="page-header-right">
+          <div class="header-badge active">운용리스</div>
+          <div class="header-badge">금융리스</div>
+          <div class="header-badge">할부</div>
+        </div>
+      </div>
+
+      <!-- ========================================
+           SECTION 1: 차량 정보
+           ======================================== -->
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-title">01 &mdash; 차량 정보</div>
+          <div class="panel-tag">Vehicle Information</div>
+        </div>
+        <div class="panel-body" style="padding: 0;">
+          <div class="form-grid form-grid-4">
+            <div class="form-cell">
+              <div class="form-label">브랜드</div>
+              <div class="form-select" style="border-color: var(--accent-dim);">BMW</div>
+            </div>
+            <div class="form-cell">
+              <div class="form-label">모델</div>
+              <div class="form-select">3 Series</div>
+            </div>
+            <div class="form-cell">
+              <div class="form-label">트림</div>
+              <div class="form-select">320d Touring M Sport</div>
+            </div>
+            <div class="form-cell">
+              <div class="form-label">차량 구분</div>
+              <div class="form-value" style="font-size: 13px;">승용 / 1,995cc</div>
+            </div>
+
+            <div class="form-cell">
+              <div class="form-label">차량가격</div>
+              <div class="form-value" style="color: var(--accent);">63,800,000</div>
+              <div class="form-unit">원 (VAT 포함)</div>
+            </div>
+            <div class="form-cell">
+              <div class="form-label">옵션가격</div>
+              <div class="form-value">3,200,000</div>
+              <div class="form-unit">원</div>
+            </div>
+            <div class="form-cell">
+              <div class="form-label">할인금액</div>
+              <div class="form-value">0</div>
+              <div class="form-unit">원</div>
+            </div>
+            <div class="form-cell">
+              <div class="form-label">전기차 보조금</div>
+              <div class="form-value" style="color: var(--text-tertiary);">비해당</div>
+            </div>
+          </div>
+
+          <div class="summary-bar">
+            <div class="summary-cell">
+              <div class="summary-label">최종 차량가</div>
+              <div class="summary-value">67,000,000</div>
+            </div>
+            <div class="summary-cell">
+              <div class="summary-label">일반 잔가율 (60M)</div>
+              <div class="summary-value">43.0%</div>
+            </div>
+            <div class="summary-cell">
+              <div class="summary-label">최대(고) 잔가율</div>
+              <div class="summary-value">51.0%</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ========================================
+           SECTION 2: 취득원가 산출
+           ======================================== -->
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-title">02 &mdash; 취득원가 산출</div>
+          <div class="panel-tag">Acquisition Cost</div>
+        </div>
+        <div class="panel-body" style="padding: 0;">
+          <div class="acq-grid">
+            <div class="acq-cell">
+              <div class="acq-label">취득세 감면</div>
+              <div class="acq-value" style="font-size: 12px;">자동 (7%)</div>
+            </div>
+            <div class="acq-cell">
+              <div class="acq-label">취득세</div>
+              <div class="acq-value">4,263,630</div>
+            </div>
+            <div class="acq-cell">
+              <div class="acq-label">인지대</div>
+              <div class="acq-value">10,000</div>
+            </div>
+            <div class="acq-cell">
+              <div class="acq-label">탁송료</div>
+              <div class="acq-value" style="color: var(--text-tertiary);">0</div>
+            </div>
+            <div class="acq-cell">
+              <div class="acq-label">부대비용</div>
+              <div class="acq-value" style="color: var(--text-tertiary);">0</div>
+            </div>
+            <div class="acq-cell">
+              <div class="acq-label">공채 할인</div>
+              <div class="acq-value" style="color: var(--text-tertiary);">0</div>
+            </div>
+            <div class="acq-cell">
+              <div class="acq-label">명의 구분</div>
+              <div class="acq-value" style="font-size: 12px;">법인</div>
+            </div>
+            <div class="acq-cell" style="border-left: 2px solid var(--accent-dim);">
+              <div class="acq-label">취득원가</div>
+              <div class="acq-value total">71,273,630</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ========================================
+           SECTION 3: 견적 조건
+           ======================================== -->
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-title">03 &mdash; 견적 조건</div>
+          <div class="panel-tag">Quote Parameters</div>
+        </div>
+        <div class="panel-body" style="padding: 0;">
+          <div class="conditions-grid">
+            <div class="condition-cell">
+              <div class="condition-label">기간</div>
+              <div class="condition-value">60<span class="condition-unit">개월</span></div>
+            </div>
+            <div class="condition-cell">
+              <div class="condition-label">약정거리</div>
+              <div class="condition-value">20,000<span class="condition-unit">km</span></div>
+            </div>
+            <div class="condition-cell">
+              <div class="condition-label">보증금</div>
+              <div class="condition-value">0<span class="condition-unit">원</span></div>
+            </div>
+            <div class="condition-cell">
+              <div class="condition-label">선납금</div>
+              <div class="condition-value">0<span class="condition-unit">원</span></div>
+            </div>
+            <div class="condition-cell">
+              <div class="condition-label">잔존가치</div>
+              <div class="condition-value" style="color: var(--accent);">고잔가</div>
+            </div>
+            <div class="condition-cell">
+              <div class="condition-label">판매사</div>
+              <div class="condition-value" style="font-size: 12px;">비제휴</div>
+            </div>
+          </div>
+          <div class="conditions-grid" style="border-top: 1px solid var(--border);">
+            <div class="condition-cell">
+              <div class="condition-label">CM 수수료</div>
+              <div class="condition-value">0<span class="condition-unit">%</span></div>
+            </div>
+            <div class="condition-cell">
+              <div class="condition-label">AG 수수료</div>
+              <div class="condition-value">0<span class="condition-unit">%</span></div>
+            </div>
+            <div class="condition-cell">
+              <div class="condition-label">제휴수수료 면제</div>
+              <div class="condition-value" style="font-size: 12px;">비해당</div>
+            </div>
+            <div class="condition-cell">
+              <div class="condition-label">소유 형태</div>
+              <div class="condition-value" style="font-size: 12px;">법인</div>
+            </div>
+            <div class="condition-cell" style="grid-column: span 2;">
+              <div class="condition-label">비고</div>
+              <div class="condition-value" style="font-size: 11px; color: var(--text-tertiary);">&mdash;</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ========================================
+           SECTION DIVIDER
+           ======================================== -->
+      <div class="section-divider">
+        <div class="section-divider-line"></div>
+        <div class="section-divider-text">Calculation Results</div>
+        <div class="section-divider-line"></div>
+      </div>
+
+      <!-- ========================================
+           SECTION 4: 결과 패널
+           ======================================== -->
+      <div class="results-grid">
+        <!-- WOORI CARD (BEST) -->
+        <div class="result-card best">
+          <div class="result-card-header">
+            <div class="result-lender-code">
+              <span class="lender-tag woori"><span class="dot"></span>우리카드</span>
+            </div>
+            <div class="result-rank best">BEST</div>
+          </div>
+          <div class="result-card-body">
+            <div class="result-payment-label">월 납입금</div>
+            <div class="result-payment">747,300<span class="result-payment-unit">원</span></div>
+            <div class="result-details">
+              <div class="result-detail-cell">
+                <div class="result-detail-label">표시금리</div>
+                <div class="result-detail-value rate">4.820%</div>
+              </div>
+              <div class="result-detail-cell">
+                <div class="result-detail-label">잔존가치</div>
+                <div class="result-detail-value">34,170,000</div>
+              </div>
+              <div class="result-detail-cell">
+                <div class="result-detail-label">잔가율</div>
+                <div class="result-detail-value">51.0%</div>
+              </div>
+              <div class="result-detail-cell">
+                <div class="result-detail-label">원금합계</div>
+                <div class="result-detail-value">71,273,630</div>
+              </div>
+            </div>
+          </div>
+          <div class="result-card-footer">
+            <div class="result-provider">잔가사: 유카</div>
+            <div class="result-fee">수수료 <span class="result-fee-value">0.00%</span></div>
+          </div>
+        </div>
+
+        <!-- BNK CAPITAL -->
+        <div class="result-card">
+          <div class="result-card-header">
+            <div class="result-lender-code">
+              <span class="lender-tag bnk"><span class="dot"></span>BNK캐피탈</span>
+            </div>
+            <div class="result-rank">#2</div>
+          </div>
+          <div class="result-card-body">
+            <div class="result-payment-label">월 납입금</div>
+            <div class="result-payment">777,500<span class="result-payment-unit">원</span></div>
+            <div class="result-details">
+              <div class="result-detail-cell">
+                <div class="result-detail-label">표시금리</div>
+                <div class="result-detail-value rate">5.273%</div>
+              </div>
+              <div class="result-detail-cell">
+                <div class="result-detail-label">잔존가치</div>
+                <div class="result-detail-value">33,500,000</div>
+              </div>
+              <div class="result-detail-cell">
+                <div class="result-detail-label">잔가율</div>
+                <div class="result-detail-value">50.0%</div>
+              </div>
+              <div class="result-detail-cell">
+                <div class="result-detail-label">원금합계</div>
+                <div class="result-detail-value">71,273,630</div>
+              </div>
+            </div>
+          </div>
+          <div class="result-card-footer">
+            <div class="result-provider">잔가사: CB</div>
+            <div class="result-fee">수수료 <span class="result-fee-value">0.44%</span></div>
+          </div>
+        </div>
+
+        <!-- MG CAPITAL -->
+        <div class="result-card">
+          <div class="result-card-header">
+            <div class="result-lender-code">
+              <span class="lender-tag mg"><span class="dot"></span>MG캐피탈</span>
+            </div>
+            <div class="result-rank">#3</div>
+          </div>
+          <div class="result-card-body">
+            <div class="result-payment-label">월 납입금</div>
+            <div class="result-payment">824,034<span class="result-payment-unit">원</span></div>
+            <div class="result-details">
+              <div class="result-detail-cell">
+                <div class="result-detail-label">표시금리</div>
+                <div class="result-detail-value rate">5.690%</div>
+              </div>
+              <div class="result-detail-cell">
+                <div class="result-detail-label">잔존가치</div>
+                <div class="result-detail-value">32,830,000</div>
+              </div>
+              <div class="result-detail-cell">
+                <div class="result-detail-label">잔가율</div>
+                <div class="result-detail-value">49.0%</div>
+              </div>
+              <div class="result-detail-cell">
+                <div class="result-detail-label">원금합계</div>
+                <div class="result-detail-value">71,283,630</div>
+              </div>
+            </div>
+          </div>
+          <div class="result-card-footer">
+            <div class="result-provider">잔가사: APS</div>
+            <div class="result-fee">수수료 <span class="result-fee-value">0.22%</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ========================================
+           COMPARISON TABLE
+           ======================================== -->
+      <div class="comparison-strip">
+        <div class="comparison-header">
+          <div class="comparison-title">금융사 비교 매트릭스</div>
+          <div class="panel-tag">Lender Comparison Matrix</div>
+        </div>
+        <div class="comparison-body">
+          <div class="comparison-labels">
+            <div class="comparison-label-cell">금융사</div>
+            <div class="comparison-label-cell">월 납입금</div>
+            <div class="comparison-label-cell">표시금리</div>
+            <div class="comparison-label-cell">잔가율</div>
+            <div class="comparison-label-cell">잔존가치</div>
+            <div class="comparison-label-cell">잔가보증 수수료</div>
+            <div class="comparison-label-cell">총 납입액 (60M)</div>
+            <div class="comparison-label-cell">절감액</div>
+          </div>
+          <div class="comparison-data">
+            <!-- WOORI -->
+            <div class="comparison-col">
+              <div class="comparison-data-cell" style="color: var(--accent); font-size: 10px; letter-spacing: 2px;">우리카드</div>
+              <div class="comparison-data-cell highlight">747,300</div>
+              <div class="comparison-data-cell highlight">4.820%</div>
+              <div class="comparison-data-cell">51.0%</div>
+              <div class="comparison-data-cell">34,170,000</div>
+              <div class="comparison-data-cell highlight">0.00%</div>
+              <div class="comparison-data-cell highlight">44,838,000</div>
+              <div class="comparison-data-cell highlight"><span class="saving-badge">BEST</span></div>
+            </div>
+            <!-- BNK -->
+            <div class="comparison-col">
+              <div class="comparison-data-cell dim" style="font-size: 10px; letter-spacing: 2px;">BNK캐피탈</div>
+              <div class="comparison-data-cell">777,500</div>
+              <div class="comparison-data-cell">5.273%</div>
+              <div class="comparison-data-cell">50.0%</div>
+              <div class="comparison-data-cell">33,500,000</div>
+              <div class="comparison-data-cell">0.44%</div>
+              <div class="comparison-data-cell">46,650,000</div>
+              <div class="comparison-data-cell dim">+1,812,000</div>
+            </div>
+            <!-- MG -->
+            <div class="comparison-col">
+              <div class="comparison-data-cell dim" style="font-size: 10px; letter-spacing: 2px;">MG캐피탈</div>
+              <div class="comparison-data-cell">824,034</div>
+              <div class="comparison-data-cell">5.690%</div>
+              <div class="comparison-data-cell">49.0%</div>
+              <div class="comparison-data-cell">32,830,000</div>
+              <div class="comparison-data-cell">0.22%</div>
+              <div class="comparison-data-cell">49,442,040</div>
+              <div class="comparison-data-cell dim">+4,604,040</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ========================================
+           FOOTER METADATA
+           ======================================== -->
+      <div style="margin-top: 32px; padding: 16px 0; border-top: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center;">
+        <div style="font-size: 9px; letter-spacing: 2px; text-transform: uppercase; color: var(--text-muted);">
+          Generated 2026-04-17T14:37:22+09:00 // Session FD-2026-0417-001
+        </div>
+        <div style="font-size: 9px; letter-spacing: 2px; text-transform: uppercase; color: var(--text-muted);">
+          Engine v2.4.0 // 158 Tests Passed // 3 Lenders Active
+        </div>
+      </div>
+
+      <div style="margin-top: 8px; padding-bottom: 40px; display: flex; gap: 24px;">
+        <div style="font-size: 8px; letter-spacing: 1.5px; color: var(--text-muted);">
+          MG-WORKBOOK: 2026-04-15 ACTIVE
+        </div>
+        <div style="font-size: 8px; letter-spacing: 1.5px; color: var(--text-muted);">
+          BNK-WORKBOOK: 2026-04-14 ACTIVE
+        </div>
+        <div style="font-size: 8px; letter-spacing: 1.5px; color: var(--text-muted);">
+          WOORI-WORKBOOK: 2026-04-16 ACTIVE
+        </div>
+        <div style="font-size: 8px; letter-spacing: 1.5px; color: var(--text-muted);">
+          DB: SUPABASE // REGION: AP-NORTHEAST-2
+        </div>
+      </div>
+
+    </div><!-- /.content -->
+  </main>
+</div><!-- /.shell -->
+
+</body>
+</html>

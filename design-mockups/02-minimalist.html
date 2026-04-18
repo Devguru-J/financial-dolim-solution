@@ -1,0 +1,1014 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>금융돌림 — Minimalist UI Mockup</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  :root {
+    --bg: #FAF9F7;
+    --bg-sidebar: #F4F3F0;
+    --surface: #FFFFFF;
+    --border: #E8E6E1;
+    --border-light: #F0EEED;
+    --text-primary: #2C2C2C;
+    --text-secondary: #7A7670;
+    --text-tertiary: #A8A49E;
+    --accent: #8FA89A;
+    --accent-light: #E8F0EB;
+    --accent-muted: #B5C9BC;
+    --charcoal: #3A3A38;
+    --warm-white: #FDFCFA;
+    --mono: 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
+    --sans: 'Noto Sans KR', -apple-system, BlinkMacSystemFont, sans-serif;
+  }
+
+  body {
+    font-family: var(--sans);
+    background: var(--bg);
+    color: var(--text-primary);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  .layout {
+    display: flex;
+    min-height: 100vh;
+    max-width: 1400px;
+    margin: 0 auto;
+  }
+
+  /* ─── Sidebar ─── */
+  .sidebar {
+    width: 220px;
+    flex-shrink: 0;
+    background: var(--bg-sidebar);
+    border-right: 1px solid var(--border);
+    padding: 40px 0;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .sidebar-brand {
+    padding: 0 28px;
+    margin-bottom: 48px;
+  }
+
+  .sidebar-brand h1 {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--charcoal);
+    letter-spacing: -0.02em;
+  }
+
+  .sidebar-brand span {
+    display: block;
+    font-size: 11px;
+    font-weight: 400;
+    color: var(--text-tertiary);
+    margin-top: 4px;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  .sidebar-nav {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .sidebar-nav li {
+    position: relative;
+  }
+
+  .sidebar-nav a {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 28px;
+    font-size: 13.5px;
+    font-weight: 400;
+    color: var(--text-secondary);
+    text-decoration: none;
+    transition: color 0.15s, background 0.15s;
+  }
+
+  .sidebar-nav a:hover {
+    color: var(--text-primary);
+    background: rgba(0,0,0,0.02);
+  }
+
+  .sidebar-nav a.active {
+    color: var(--text-primary);
+    font-weight: 500;
+    background: rgba(0,0,0,0.03);
+  }
+
+  .sidebar-nav a.active::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 6px;
+    bottom: 6px;
+    width: 3px;
+    background: var(--accent);
+    border-radius: 0 2px 2px 0;
+  }
+
+  .sidebar-nav .nav-icon {
+    width: 18px;
+    height: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0.5;
+  }
+
+  .sidebar-nav a.active .nav-icon {
+    opacity: 0.8;
+  }
+
+  .sidebar-footer {
+    margin-top: auto;
+    padding: 0 28px;
+  }
+
+  .sidebar-footer-text {
+    font-size: 11px;
+    color: var(--text-tertiary);
+    line-height: 1.5;
+  }
+
+  /* ─── Main ─── */
+  .main {
+    flex: 1;
+    padding: 48px 56px;
+    max-width: 1180px;
+    overflow-y: auto;
+  }
+
+  .page-header {
+    margin-bottom: 44px;
+  }
+
+  .page-header h2 {
+    font-size: 32px;
+    font-weight: 700;
+    color: var(--charcoal);
+    letter-spacing: -0.03em;
+    line-height: 1.2;
+  }
+
+  .page-header p {
+    font-size: 13.5px;
+    color: var(--text-tertiary);
+    margin-top: 8px;
+    font-weight: 300;
+  }
+
+  /* ─── Section Card ─── */
+  .section {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 32px;
+    margin-bottom: 24px;
+  }
+
+  .section-title {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-tertiary);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 24px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border-light);
+  }
+
+  /* ─── Form Grid ─── */
+  .form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 24px 32px;
+  }
+
+  .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .form-group.span-2 {
+    grid-column: span 2;
+  }
+
+  .form-label {
+    font-size: 12px;
+    font-weight: 400;
+    color: var(--text-secondary);
+    letter-spacing: 0.01em;
+  }
+
+  .form-value {
+    font-size: 14.5px;
+    font-weight: 500;
+    color: var(--text-primary);
+  }
+
+  .form-input {
+    height: 40px;
+    padding: 0 14px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-family: var(--sans);
+    font-size: 14px;
+    color: var(--text-primary);
+    background: var(--warm-white);
+    outline: none;
+    transition: border-color 0.15s;
+  }
+
+  .form-input:focus {
+    border-color: var(--accent-muted);
+  }
+
+  .form-select {
+    height: 40px;
+    padding: 0 14px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-family: var(--sans);
+    font-size: 14px;
+    color: var(--text-primary);
+    background: var(--warm-white);
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%23A8A49E' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 6h10z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 14px center;
+    cursor: pointer;
+    outline: none;
+  }
+
+  .form-select:focus {
+    border-color: var(--accent-muted);
+  }
+
+  .form-input-number {
+    font-family: var(--mono);
+    font-weight: 400;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.02em;
+  }
+
+  /* ─── Summary Row ─── */
+  .summary-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 32px;
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid var(--border-light);
+  }
+
+  .summary-item {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .summary-item-label {
+    font-size: 11.5px;
+    color: var(--text-tertiary);
+    font-weight: 400;
+  }
+
+  .summary-item-value {
+    font-family: var(--mono);
+    font-size: 15px;
+    font-weight: 500;
+    color: var(--text-primary);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .summary-item-value.accent {
+    color: var(--accent);
+  }
+
+  /* ─── Condition Grid ─── */
+  .condition-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr 1fr;
+    gap: 20px 28px;
+  }
+
+  /* ─── Tag / Chip ─── */
+  .tag {
+    display: inline-flex;
+    align-items: center;
+    height: 28px;
+    padding: 0 12px;
+    font-size: 12px;
+    font-weight: 400;
+    color: var(--accent);
+    background: var(--accent-light);
+    border-radius: 6px;
+    letter-spacing: 0.01em;
+  }
+
+  /* ─── Results Section ─── */
+  .results-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 24px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border-light);
+  }
+
+  .results-header h3 {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-tertiary);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+
+  .results-header .results-count {
+    font-size: 12px;
+    color: var(--text-tertiary);
+    font-weight: 300;
+  }
+
+  .results-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 20px;
+  }
+
+  .lender-card {
+    background: var(--warm-white);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 28px;
+    transition: border-color 0.2s;
+    position: relative;
+  }
+
+  .lender-card:hover {
+    border-color: var(--accent-muted);
+  }
+
+  .lender-card.best {
+    border-color: var(--accent);
+  }
+
+  .lender-card.best::after {
+    content: '최저';
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    font-size: 10.5px;
+    font-weight: 500;
+    color: var(--accent);
+    background: var(--accent-light);
+    padding: 3px 10px;
+    border-radius: 4px;
+    letter-spacing: 0.03em;
+  }
+
+  .lender-name {
+    font-size: 13px;
+    font-weight: 400;
+    color: var(--text-secondary);
+    margin-bottom: 16px;
+    letter-spacing: 0.01em;
+  }
+
+  .lender-payment {
+    font-family: var(--mono);
+    font-size: 28px;
+    font-weight: 500;
+    color: var(--text-primary);
+    letter-spacing: -0.03em;
+    font-variant-numeric: tabular-nums;
+    margin-bottom: 4px;
+  }
+
+  .lender-payment-unit {
+    font-family: var(--sans);
+    font-size: 14px;
+    font-weight: 400;
+    color: var(--text-tertiary);
+    margin-left: 2px;
+  }
+
+  .lender-details {
+    margin-top: 20px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border-light);
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+
+  .lender-detail {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+  }
+
+  .lender-detail-label {
+    font-size: 11px;
+    color: var(--text-tertiary);
+    font-weight: 400;
+  }
+
+  .lender-detail-value {
+    font-family: var(--mono);
+    font-size: 13.5px;
+    font-weight: 400;
+    color: var(--text-primary);
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* ─── Acquisition Cost ─── */
+  .acq-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 20px 28px;
+  }
+
+  .acq-item {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .acq-label {
+    font-size: 12px;
+    color: var(--text-secondary);
+    font-weight: 400;
+  }
+
+  .acq-value {
+    font-family: var(--mono);
+    font-size: 14px;
+    font-weight: 400;
+    color: var(--text-primary);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .acq-value.highlight {
+    font-weight: 500;
+    color: var(--charcoal);
+    font-size: 15px;
+  }
+
+  /* ─── Divider ─── */
+  .hairline {
+    border: none;
+    border-top: 1px solid var(--border-light);
+    margin: 20px 0;
+  }
+
+  /* ─── Toggle Group ─── */
+  .toggle-group {
+    display: inline-flex;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+    height: 36px;
+  }
+
+  .toggle-option {
+    padding: 0 16px;
+    font-size: 13px;
+    font-weight: 400;
+    color: var(--text-secondary);
+    background: var(--warm-white);
+    display: flex;
+    align-items: center;
+    border-right: 1px solid var(--border);
+    cursor: pointer;
+  }
+
+  .toggle-option:last-child {
+    border-right: none;
+  }
+
+  .toggle-option.selected {
+    background: var(--accent-light);
+    color: var(--accent);
+    font-weight: 500;
+  }
+
+  /* ─── Radio Pills ─── */
+  .radio-pills {
+    display: flex;
+    gap: 8px;
+  }
+
+  .radio-pill {
+    height: 32px;
+    padding: 0 14px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-size: 12.5px;
+    font-weight: 400;
+    color: var(--text-secondary);
+    background: var(--warm-white);
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+  }
+
+  .radio-pill.selected {
+    border-color: var(--accent-muted);
+    background: var(--accent-light);
+    color: var(--accent);
+    font-weight: 500;
+  }
+
+  /* ─── Additional Detail Rows ─── */
+  .detail-table {
+    width: 100%;
+    margin-top: 16px;
+  }
+
+  .detail-table-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 28px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border-light);
+  }
+
+  .detail-table-row:last-child {
+    border-bottom: none;
+  }
+
+  .detail-cell {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .detail-cell-label {
+    font-size: 12px;
+    color: var(--text-secondary);
+  }
+
+  .detail-cell-value {
+    font-family: var(--mono);
+    font-size: 13px;
+    font-weight: 400;
+    color: var(--text-primary);
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* ─── Footer Bar ─── */
+  .footer-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 40px;
+    padding-top: 20px;
+    border-top: 1px solid var(--border);
+  }
+
+  .footer-bar-text {
+    font-size: 11.5px;
+    color: var(--text-tertiary);
+    font-weight: 300;
+  }
+
+  .footer-bar-actions {
+    display: flex;
+    gap: 12px;
+  }
+
+  .btn {
+    height: 38px;
+    padding: 0 24px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-family: var(--sans);
+    font-size: 13px;
+    font-weight: 400;
+    color: var(--text-secondary);
+    background: var(--surface);
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .btn:hover {
+    border-color: var(--text-tertiary);
+    color: var(--text-primary);
+  }
+
+  .btn-primary {
+    background: var(--charcoal);
+    color: #fff;
+    border-color: var(--charcoal);
+    font-weight: 500;
+  }
+
+  .btn-primary:hover {
+    background: #2C2C2C;
+    border-color: #2C2C2C;
+    color: #fff;
+  }
+
+  /* ─── Responsive guard ─── */
+  @media (max-width: 1100px) {
+    .results-grid {
+      grid-template-columns: 1fr;
+    }
+    .form-grid, .condition-grid, .acq-grid {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+</style>
+</head>
+<body>
+
+<div class="layout">
+
+  <!-- ─── Sidebar ─── -->
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <h1>금융돌림</h1>
+      <span>Auto Lease Platform</span>
+    </div>
+
+    <ul class="sidebar-nav">
+      <li>
+        <a href="#">
+          <span class="nav-icon">
+            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
+          </span>
+          대시보드
+        </a>
+      </li>
+      <li>
+        <a href="#" class="active">
+          <span class="nav-icon">
+            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M9 7h6M9 11h6M9 15h4"/><rect x="4" y="3" width="16" height="18" rx="2"/></svg>
+          </span>
+          견적 계산
+        </a>
+      </li>
+      <li>
+        <a href="#">
+          <span class="nav-icon">
+            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M12 16v-8m-4 4l4-4 4 4"/><rect x="4" y="3" width="16" height="18" rx="2"/></svg>
+          </span>
+          워크북 임포트
+        </a>
+      </li>
+    </ul>
+
+    <div class="sidebar-footer">
+      <p class="sidebar-footer-text">v2.4.0<br>2026-04-17 업데이트</p>
+    </div>
+  </aside>
+
+  <!-- ─── Main Content ─── -->
+  <main class="main">
+
+    <!-- Page Header -->
+    <div class="page-header">
+      <h2>견적 계산</h2>
+      <p>운용리스 월 납입금을 금융사별로 비교합니다</p>
+    </div>
+
+    <!-- ─── 차량 정보 ─── -->
+    <div class="section">
+      <div class="section-title">차량 정보</div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label class="form-label">브랜드</label>
+          <select class="form-select">
+            <option selected>BMW</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">트림</label>
+          <select class="form-select">
+            <option selected>320d Touring M Sport Package</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">차량가격</label>
+          <input type="text" class="form-input form-input-number" value="63,800,000" readonly>
+        </div>
+        <div class="form-group">
+          <label class="form-label">옵션가격</label>
+          <input type="text" class="form-input form-input-number" value="0">
+        </div>
+        <div class="form-group">
+          <label class="form-label">할인금액</label>
+          <input type="text" class="form-input form-input-number" value="0">
+        </div>
+        <div class="form-group">
+          <label class="form-label">차종</label>
+          <div class="form-value">승용</div>
+        </div>
+      </div>
+
+      <div class="summary-row">
+        <div class="summary-item">
+          <span class="summary-item-label">최종 차량가</span>
+          <span class="summary-item-value">63,800,000</span>
+        </div>
+        <div class="summary-item">
+          <span class="summary-item-label">일반 잔가율</span>
+          <span class="summary-item-value">44.0%</span>
+        </div>
+        <div class="summary-item">
+          <span class="summary-item-label">최대(고) 잔가율</span>
+          <span class="summary-item-value accent">52.0%</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ─── 취득원가 산출 ─── -->
+    <div class="section">
+      <div class="section-title">취득원가 산출</div>
+      <div class="acq-grid">
+        <div class="acq-item">
+          <span class="acq-label">취득세 감면</span>
+          <div class="radio-pills">
+            <span class="radio-pill selected">자동</span>
+            <span class="radio-pill">면제</span>
+            <span class="radio-pill">감면</span>
+            <span class="radio-pill">고정</span>
+          </div>
+        </div>
+        <div class="acq-item">
+          <span class="acq-label">취득세</span>
+          <span class="acq-value">4,060,000</span>
+        </div>
+        <div class="acq-item">
+          <span class="acq-label">탁송료</span>
+          <span class="acq-value">0</span>
+        </div>
+        <div class="acq-item">
+          <span class="acq-label">부대비용</span>
+          <span class="acq-value">0</span>
+        </div>
+        <div class="acq-item">
+          <span class="acq-label">공채 할인</span>
+          <span class="acq-value">0</span>
+        </div>
+        <div class="acq-item">
+          <span class="acq-label">취득원가</span>
+          <span class="acq-value highlight">67,860,000</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ─── 견적 조건 ─── -->
+    <div class="section">
+      <div class="section-title">견적 조건</div>
+      <div class="condition-grid">
+        <div class="form-group">
+          <label class="form-label">판매사</label>
+          <select class="form-select">
+            <option selected>비제휴</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">기간 (개월)</label>
+          <div class="toggle-group">
+            <span class="toggle-option">12</span>
+            <span class="toggle-option">24</span>
+            <span class="toggle-option">36</span>
+            <span class="toggle-option">48</span>
+            <span class="toggle-option selected">60</span>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">약정거리</label>
+          <select class="form-select">
+            <option selected>20,000 km</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">명의</label>
+          <div class="radio-pills">
+            <span class="radio-pill selected">법인</span>
+            <span class="radio-pill">이용자</span>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">보증금</label>
+          <input type="text" class="form-input form-input-number" value="0" placeholder="0">
+        </div>
+        <div class="form-group">
+          <label class="form-label">선납금</label>
+          <input type="text" class="form-input form-input-number" value="0" placeholder="0">
+        </div>
+        <div class="form-group">
+          <label class="form-label">잔존가치</label>
+          <div class="radio-pills">
+            <span class="radio-pill">일반</span>
+            <span class="radio-pill selected">고잔가</span>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">제휴수수료 면제</label>
+          <div class="radio-pills">
+            <span class="radio-pill selected">비해당</span>
+            <span class="radio-pill">해당</span>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">CM 수수료</label>
+          <input type="text" class="form-input form-input-number" value="0%" placeholder="0%">
+        </div>
+        <div class="form-group">
+          <label class="form-label">AG 수수료</label>
+          <input type="text" class="form-input form-input-number" value="0%" placeholder="0%">
+        </div>
+        <div class="form-group">
+          <label class="form-label">전기차 보조금</label>
+          <div class="radio-pills">
+            <span class="radio-pill selected">비해당</span>
+            <span class="radio-pill">해당</span>
+          </div>
+        </div>
+        <div class="form-group">
+          <!-- empty cell for grid alignment -->
+        </div>
+      </div>
+    </div>
+
+    <!-- ─── 견적 결과 ─── -->
+    <div class="section">
+      <div class="results-header">
+        <h3>견적 결과</h3>
+        <span class="results-count">3개 금융사 비교</span>
+      </div>
+
+      <div class="results-grid">
+
+        <!-- MG 캐피탈 -->
+        <div class="lender-card">
+          <div class="lender-name">MG캐피탈</div>
+          <div class="lender-payment">824,034<span class="lender-payment-unit">원/월</span></div>
+          <div class="lender-details">
+            <div class="lender-detail">
+              <span class="lender-detail-label">적용금리</span>
+              <span class="lender-detail-value">5.90%</span>
+            </div>
+            <div class="lender-detail">
+              <span class="lender-detail-label">잔가율</span>
+              <span class="lender-detail-value">52.0%</span>
+            </div>
+            <div class="lender-detail">
+              <span class="lender-detail-label">잔존가치</span>
+              <span class="lender-detail-value">33,176,000</span>
+            </div>
+            <div class="lender-detail">
+              <span class="lender-detail-label">잔가사</span>
+              <span class="lender-detail-value">APS</span>
+            </div>
+            <div class="lender-detail">
+              <span class="lender-detail-label">취득원가</span>
+              <span class="lender-detail-value">67,870,000</span>
+            </div>
+            <div class="lender-detail">
+              <span class="lender-detail-label">잔가보증 수수료</span>
+              <span class="lender-detail-value">0.44%</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- BNK 캐피탈 -->
+        <div class="lender-card">
+          <div class="lender-name">BNK캐피탈</div>
+          <div class="lender-payment">777,500<span class="lender-payment-unit">원/월</span></div>
+          <div class="lender-details">
+            <div class="lender-detail">
+              <span class="lender-detail-label">적용금리</span>
+              <span class="lender-detail-value">5.54%</span>
+            </div>
+            <div class="lender-detail">
+              <span class="lender-detail-label">잔가율</span>
+              <span class="lender-detail-value">53.0%</span>
+            </div>
+            <div class="lender-detail">
+              <span class="lender-detail-label">잔존가치</span>
+              <span class="lender-detail-value">33,814,000</span>
+            </div>
+            <div class="lender-detail">
+              <span class="lender-detail-label">잔가사</span>
+              <span class="lender-detail-value">CB</span>
+            </div>
+            <div class="lender-detail">
+              <span class="lender-detail-label">취득원가</span>
+              <span class="lender-detail-value">67,860,000</span>
+            </div>
+            <div class="lender-detail">
+              <span class="lender-detail-label">잔가보증 수수료</span>
+              <span class="lender-detail-value">0.00%</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 우리카드 (best) -->
+        <div class="lender-card best">
+          <div class="lender-name">우리카드</div>
+          <div class="lender-payment">747,300<span class="lender-payment-unit">원/월</span></div>
+          <div class="lender-details">
+            <div class="lender-detail">
+              <span class="lender-detail-label">적용금리</span>
+              <span class="lender-detail-value">5.20%</span>
+            </div>
+            <div class="lender-detail">
+              <span class="lender-detail-label">잔가율</span>
+              <span class="lender-detail-value">54.0%</span>
+            </div>
+            <div class="lender-detail">
+              <span class="lender-detail-label">잔존가치</span>
+              <span class="lender-detail-value">34,452,000</span>
+            </div>
+            <div class="lender-detail">
+              <span class="lender-detail-label">잔가사</span>
+              <span class="lender-detail-value">유카</span>
+            </div>
+            <div class="lender-detail">
+              <span class="lender-detail-label">취득원가</span>
+              <span class="lender-detail-value">67,860,000</span>
+            </div>
+            <div class="lender-detail">
+              <span class="lender-detail-label">잔가보증 수수료</span>
+              <span class="lender-detail-value">0.22%</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Comparison summary row -->
+      <div class="detail-table">
+        <div class="detail-table-row">
+          <div class="detail-cell">
+            <span class="detail-cell-label">총 납입금액</span>
+            <span class="detail-cell-value">49,442,040</span>
+          </div>
+          <div class="detail-cell">
+            <span class="detail-cell-label">총 납입금액</span>
+            <span class="detail-cell-value">46,650,000</span>
+          </div>
+          <div class="detail-cell">
+            <span class="detail-cell-label">총 납입금액</span>
+            <span class="detail-cell-value">44,838,000</span>
+          </div>
+        </div>
+        <div class="detail-table-row">
+          <div class="detail-cell">
+            <span class="detail-cell-label">최저 대비</span>
+            <span class="detail-cell-value">+76,734원</span>
+          </div>
+          <div class="detail-cell">
+            <span class="detail-cell-label">최저 대비</span>
+            <span class="detail-cell-value">+30,200원</span>
+          </div>
+          <div class="detail-cell">
+            <span class="detail-cell-label">최저 대비</span>
+            <span class="detail-cell-value" style="color: var(--accent);">기준</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer-bar">
+      <span class="footer-bar-text">BMW 320d Touring M Sport Package &middot; 60개월 &middot; 고잔가 &middot; 비제휴</span>
+      <div class="footer-bar-actions">
+        <button class="btn">초기화</button>
+        <button class="btn">견적서 출력</button>
+        <button class="btn btn-primary">견적 계산</button>
+      </div>
+    </div>
+
+  </main>
+
+</div>
+
+</body>
+</html>
