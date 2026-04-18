@@ -221,17 +221,17 @@ function LenderStatusCard({ lender, animationDelay }: { lender: LenderSnapshot; 
 
   return (
     <div
-      className="rounded-2xl border border-border bg-white shadow-[0_20px_60px_-15px_rgba(29,51,184,0.08)] overflow-hidden animate-fade-up"
+      className="rounded-2xl border border-border bg-white shadow-[0_20px_60px_-15px_rgba(29,51,184,0.08)] animate-fade-up"
       style={{ animationDelay: `${animationDelay}ms` }}
     >
       <div className="relative" style={{ minHeight: 80 }}>
-        {/* Left accent chip — absolute so it always spans full card height */}
-        <div className={`absolute inset-y-0 left-0 w-16 flex items-center justify-center bg-gradient-to-b ${lender.accentClass}`}>
+        {/* Left accent chip — absolute, own rounded-l to match card corners */}
+        <div className={`absolute inset-y-0 left-0 w-16 flex items-center justify-center bg-gradient-to-b ${lender.accentClass} rounded-l-2xl`}>
           <div className="text-white text-sm font-black tracking-tight">{lender.shortName}</div>
         </div>
 
-        {/* Right vehicle-count column — absolute so it always spans full card height */}
-        <div className="absolute inset-y-0 right-0 w-32 flex flex-col items-center justify-center bg-muted/50 border-l border-border">
+        {/* Right vehicle-count column — absolute, own rounded-r to match card corners */}
+        <div className="absolute inset-y-0 right-0 w-32 flex flex-col items-center justify-center bg-muted/50 border-l border-border rounded-r-2xl">
           {loading ? (
             <div className="skeleton h-6 w-12 rounded" />
           ) : hasActive ? (
