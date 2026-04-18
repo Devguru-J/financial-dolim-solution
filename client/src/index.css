@@ -43,6 +43,87 @@
   animation: ping-ring 2s cubic-bezier(0, 0, 0.2, 1) infinite;
 }
 
+/* ─────────────────────────────────────────────
+   Form primitives — high-end mockup patterns
+───────────────────────────────────────────── */
+.form-input {
+  height: 40px;
+  padding: 0 14px;
+  border: 1px solid var(--input);
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 0.88rem;
+  font-weight: 450;
+  color: var(--foreground);
+  background: #fff;
+  outline: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.form-input::placeholder {
+  color: rgba(0, 0, 0, 0.30);
+}
+
+.form-input:focus,
+.form-input:focus-visible {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(59, 125, 216, 0.12);
+}
+
+.form-input:disabled {
+  background: #fafaf9;
+  color: var(--muted-foreground);
+  cursor: not-allowed;
+}
+
+.form-input-mono {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-weight: 400;
+  letter-spacing: -0.01em;
+}
+
+.form-value-display {
+  height: 40px;
+  padding: 0 14px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 0.88rem;
+  font-weight: 500;
+  color: var(--foreground);
+  background: #fafaf9;
+  display: flex;
+  align-items: center;
+}
+
+.form-label {
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: var(--muted-foreground);
+  letter-spacing: 0.01em;
+}
+
+.summary-label {
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: var(--muted-foreground);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.summary-value {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 1.05rem;
+  font-weight: 500;
+  color: var(--foreground);
+  letter-spacing: -0.01em;
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;

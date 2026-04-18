@@ -1,4 +1,5 @@
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Car } from 'lucide-react'
+import { Card } from '@/components/ui/card'
 import {
   Select,
   SelectContent,
@@ -47,25 +48,26 @@ export function VehicleInfoCard({
     (Number(discountPrice.replace(/,/g, '')) || 0)
 
   return (
-    <Card className="shadow-[var(--shadow-elev-2)]">
-      <CardHeader className="py-3 px-4 border-b border-border flex flex-row items-center gap-2.5 space-y-0">
-        <div className="w-1 h-3.5 rounded-sm bg-primary" />
-        <CardTitle className="text-sm font-semibold text-foreground">차량 정보</CardTitle>
-      </CardHeader>
-      <CardContent className="p-0">
-        <div className="grid grid-cols-[120px_1fr_120px_1fr]">
-          {/* Row 1: Brand / 차량 가격 */}
-          <FieldLabel>Brand</FieldLabel>
-          <FieldCell borderRight>
+    <Card className="shadow-[var(--shadow-elev-2)] border border-border overflow-hidden py-0 gap-0">
+      {/* Header */}
+      <div className="px-7 py-4 border-b border-border flex items-center gap-2.5">
+        <span className="w-5 h-5 rounded-md flex items-center justify-center bg-accent/10 text-accent">
+          <Car size={12} strokeWidth={2.2} />
+        </span>
+        <span className="text-[0.95rem] font-semibold text-foreground tracking-tight">차량 정보</span>
+      </div>
+
+      {/* Body */}
+      <div className="px-7 py-6">
+        <div className="grid grid-cols-4 gap-5">
+          <FormField label="Brand">
             <Select
               value={selectedBrand}
               onValueChange={(v) => v != null && onBrandChange(v)}
               disabled={brandsLoading}
             >
-              <SelectTrigger className="h-8 text-xs">
-                <SelectValue
-                  placeholder={brandsLoading ? '로딩 중...' : '브랜드 선택'}
-                />
+              <SelectTrigger className="form-input w-full">
+                <SelectValue placeholder={brandsLoading ? '로딩 중...' : '브랜드 선택'} />
               </SelectTrigger>
               <SelectContent>
                 {brands.map((b) => (
@@ -75,45 +77,24 @@ export function VehicleInfoCard({
                 ))}
               </SelectContent>
             </Select>
-          </FieldCell>
-          <FieldLabel>차량 가격</FieldLabel>
-          <FieldCell>
-            <input
-              className="w-full h-8 px-2 text-xs bg-muted border border-border rounded font-mono tabular-nums"
-              value={vehiclePrice}
-              onChange={(e) => onVehiclePriceChange(e.target.value)}
-              placeholder="0"
-            />
-          </FieldCell>
+          </FormField>
 
-          {/* Row 2: Model (disabled) / 옵션 가격 (read-only) */}
-          <FieldLabel>Model</FieldLabel>
-          <FieldCell borderRight>
+          <FormField label="Model" hint="비활성">
             <Select disabled>
-              <SelectTrigger className="h-8 text-xs opacity-50">
-                <SelectValue placeholder="모델 선택 (비활성)" />
+              <SelectTrigger className="form-input w-full opacity-50">
+                <SelectValue placeholder="브랜드가 선택되면 활성화" />
               </SelectTrigger>
             </Select>
-          </FieldCell>
-          <FieldLabel>옵션 가격</FieldLabel>
-          <FieldCell>
-            <div className="h-8 px-2 text-xs bg-muted border border-border rounded flex items-center text-muted-foreground font-mono tabular-nums">
-              0
-            </div>
-          </FieldCell>
+          </FormField>
 
-          {/* Row 3: Trim / 할인 가격 */}
-          <FieldLabel last>Trim</FieldLabel>
-          <FieldCell borderRight last>
+          <FormField label="Trim" span={2}>
             <Select
               value={selectedModel?.modelName ?? ''}
               onValueChange={(v) => v != null && onModelChange(v)}
               disabled={modelsLoading || !selectedBrand}
             >
-              <SelectTrigger className="h-8 text-xs">
-                <SelectValue
-                  placeholder={modelsLoading ? '로딩 중...' : '트림 선택'}
-                />
+              <SelectTrigger className="form-input w-full">
+                <SelectValue placeholder={modelsLoading ? '로딩 중...' : '트림 선택'} />
               </SelectTrigger>
               <SelectContent className="min-w-72">
                 {models.map((m) => (
@@ -123,88 +104,92 @@ export function VehicleInfoCard({
                 ))}
               </SelectContent>
             </Select>
-          </FieldCell>
-          <FieldLabel last>할인 가격</FieldLabel>
-          <FieldCell last>
+          </FormField>
+
+          <FormField label="차량 가격">
             <input
-              className="w-full h-8 px-2 text-xs bg-muted border border-border rounded font-mono tabular-nums"
+              className="form-input form-input-mono w-full"
+              value={vehiclePrice}
+              onChange={(e) => onVehiclePriceChange(e.target.value)}
+              placeholder="0"
+            />
+          </FormField>
+
+          <FormField label="옵션 가격">
+            <div className="form-value-display">0</div>
+          </FormField>
+
+          <FormField label="할인 가격" span={2}>
+            <input
+              className="form-input form-input-mono w-full"
               value={discountPrice}
               onChange={(e) => onDiscountPriceChange(e.target.value)}
               placeholder="0"
             />
-          </FieldCell>
+          </FormField>
         </div>
 
-        {/* Summary info line */}
+        {/* Selected vehicle hint strip */}
         {selectedModel && (
-          <div className="mx-3 my-2 px-3 py-2 bg-muted rounded text-xs text-muted-foreground">
-            기본차량가 {Number(selectedModel.vehiclePrice).toLocaleString('ko-KR')}
+          <div className="mt-5 px-4 py-2.5 rounded-lg bg-muted/50 border border-border/60 text-xs text-muted-foreground tracking-tight">
+            <span className="font-mono tabular-nums text-foreground">
+              기본차량가 {Number(selectedModel.vehiclePrice).toLocaleString('ko-KR')}
+            </span>
             {selectedModel.vehicleClass && ` · ${selectedModel.vehicleClass}`}
-            {selectedModel.engineDisplacementCc &&
-              ` · ${selectedModel.engineDisplacementCc.toLocaleString()}cc`}
+            {selectedModel.engineDisplacementCc && ` · ${selectedModel.engineDisplacementCc.toLocaleString()}cc`}
             {selectedModel.highResidualAllowed && ' · 고잔가 가능'}
-            {selectedModel.residualPromotionCode &&
-              ` · 프로모션 ${selectedModel.residualPromotionCode}`}
+            {selectedModel.residualPromotionCode && ` · 프로모션 ${selectedModel.residualPromotionCode}`}
           </div>
         )}
 
-        {/* Summary stat row */}
-        <div className="border-t border-border grid grid-cols-3 divide-x divide-border">
-          <StatItem label="최종차량가" value={formatKrw(finalPrice)} accent />
-          <StatItem
-            label={`일반잔가${baseResidualRate != null ? ` (${(baseResidualRate * 100).toFixed(2)}%)` : ''}`}
+        {/* Summary row */}
+        <div className="mt-6 pt-5 border-t border-border grid grid-cols-3 gap-4">
+          <SummaryItem label="최종차량가" value={formatKrw(finalPrice)} accent />
+          <SummaryItem
+            label={`일반잔가${baseResidualRate != null ? ` · ${(baseResidualRate * 100).toFixed(2)}%` : ''}`}
             value={baseResidualRate != null ? formatKrw(Math.floor(finalPrice * baseResidualRate / 1000) * 1000) : '—'}
           />
-          <StatItem
-            label={`최대잔가${maxResidualRate != null ? ` (${(maxResidualRate * 100).toFixed(2)}%)` : ''}`}
+          <SummaryItem
+            label={`최대잔가${maxResidualRate != null ? ` · ${(maxResidualRate * 100).toFixed(2)}%` : ''}`}
             value={maxResidualRate != null ? formatKrw(finalPrice * maxResidualRate) : '—'}
           />
         </div>
-      </CardContent>
+      </div>
     </Card>
   )
 }
 
-function FieldLabel({
+function FormField({
+  label,
+  hint,
+  span,
   children,
-  last = false,
 }: {
+  label: string
+  hint?: string
+  span?: number
   children: React.ReactNode
-  last?: boolean
 }) {
   return (
-    <div
-      className={`px-3 text-xs font-semibold text-foreground bg-muted flex items-center border-r border-border ${!last ? 'border-b border-border' : ''}`}
-      style={{ minHeight: 40 }}
-    >
+    <div className={`flex flex-col gap-1.5 ${span === 2 ? 'col-span-2' : ''}`}>
+      <label className="text-[0.72rem] font-medium text-muted-foreground tracking-[0.01em] flex items-center gap-2">
+        <span>{label}</span>
+        {hint && <span className="text-[0.65rem] text-muted-foreground/60 font-normal">{hint}</span>}
+      </label>
       {children}
     </div>
   )
 }
 
-function FieldCell({
-  children,
-  borderRight = false,
-  last = false,
-}: {
-  children: React.ReactNode
-  borderRight?: boolean
-  last?: boolean
-}) {
+function SummaryItem({ label, value, accent = false }: { label: string; value: string; accent?: boolean }) {
   return (
-    <div
-      className={`px-2 py-1.5 flex items-center ${borderRight ? 'border-r border-border' : ''} ${!last ? 'border-b border-border' : ''}`}
-    >
-      {children}
-    </div>
-  )
-}
-
-function StatItem({ label, value, accent = false }: { label: string; value: string; accent?: boolean }) {
-  return (
-    <div className="px-4 py-3">
-      <div className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider mb-1.5 leading-none">{label}</div>
-      <div className={`text-sm font-normal font-mono tabular-nums ${accent ? 'text-primary' : 'text-foreground'}`}>{value}</div>
+    <div className="flex flex-col gap-1">
+      <span className="text-[0.68rem] font-semibold uppercase tracking-[0.06em] text-muted-foreground/80">
+        {label}
+      </span>
+      <span className={`font-mono tabular-nums text-[1.05rem] font-medium tracking-tight ${accent ? 'text-primary' : 'text-foreground'}`}>
+        {value}
+      </span>
     </div>
   )
 }
