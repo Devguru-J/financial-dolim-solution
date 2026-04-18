@@ -111,7 +111,7 @@ export function ImportPage() {
 
       {/* Page header */}
       <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-[1.65rem] font-bold tracking-[-0.03em] text-foreground">워크북 임포트</h1>
+        <h1 className="text-[1.65rem] font-bold tracking-[-0.03em] text-foreground">문건 들여오기</h1>
         <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-accent/[0.08] border border-accent/15 text-[0.76rem] font-medium text-accent">
           <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-[pulse-dot_2s_ease-in-out_infinite]" />
           자동 정규화 파이프라인 가동
@@ -127,25 +127,34 @@ export function ImportPage() {
           <span className="w-5 h-5 rounded-md flex items-center justify-center bg-accent/10 text-accent">
             <Upload size={12} strokeWidth={2.2} />
           </span>
-          <span className="text-[0.95rem] font-semibold text-foreground tracking-tight">워크북 업로드</span>
-          <div className="ml-auto flex items-center gap-2">
-            <span className="text-[10px] text-muted-foreground font-medium">금융사</span>
-            <select
-              className="h-7 px-2.5 text-[11px] font-semibold rounded-full border border-border bg-muted text-foreground tracking-wide appearance-none cursor-pointer hover:border-primary/50 transition-colors"
-              value={selectedLender}
-              onChange={(e) => handleLenderChange(e.target.value)}
-            >
-              {lenders.length > 0
-                ? lenders.map(l => (
-                    <option key={l.lenderCode} value={l.lenderCode}>{l.lenderName}</option>
-                  ))
-                : <option value="mg-capital">MG Capital</option>
-              }
-            </select>
-          </div>
+          <span className="text-[0.95rem] font-semibold text-foreground tracking-tight">문건 업로드</span>
         </div>
 
         <div className="p-5 flex flex-col gap-4">
+          {/* Lender segmented buttons */}
+          <div className="flex flex-col gap-1.5">
+            <label className="text-[0.72rem] font-medium text-muted-foreground tracking-[0.01em]">금융사 선택</label>
+            <div className="grid gap-2" style={{ gridTemplateColumns: `repeat(${Math.max(lenders.length, 1)}, minmax(0, 1fr))` }}>
+              {(lenders.length > 0 ? lenders : [{ lenderCode: 'mg-capital', lenderName: 'MG캐피탈', status: 'active-development' as const }]).map((l) => {
+                const isSelected = selectedLender === l.lenderCode
+                return (
+                  <button
+                    key={l.lenderCode}
+                    type="button"
+                    onClick={() => handleLenderChange(l.lenderCode)}
+                    className={`h-11 px-4 rounded-lg border text-[0.86rem] font-semibold tracking-tight transition-all duration-150 active:scale-[0.98] ${
+                      isSelected
+                        ? 'bg-accent/[0.08] border-accent/40 text-primary shadow-[inset_0_0_0_1px_rgba(59,125,216,0.12)]'
+                        : 'bg-white border-input text-muted-foreground hover:border-input/80 hover:text-foreground'
+                    }`}
+                  >
+                    {l.lenderName}
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+
           {/* ── Drop zone (asymmetric: text left, icon right) ── */}
           <input
             ref={fileInputRef}
@@ -298,7 +307,7 @@ export function ImportPage() {
           <span className="w-5 h-5 rounded-md flex items-center justify-center bg-accent/10 text-accent">
             <History size={12} strokeWidth={2.2} />
           </span>
-          <span className="text-[0.95rem] font-semibold text-foreground tracking-tight">임포트 기록</span>
+          <span className="text-[0.95rem] font-semibold text-foreground tracking-tight">들여온 문건 기록</span>
           {!historyLoading && connected !== null && (
             <div className="ml-auto flex items-center gap-2">
               {imports.length > 0 && (
