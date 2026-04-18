@@ -155,9 +155,19 @@ export function QuotePage() {
   }
 
   return (
-    <div className="p-5 grid grid-cols-[minmax(0,720px)_440px] gap-5 min-h-[100dvh]">
+    <div className="px-10 pt-8 pb-16 min-h-[100dvh]">
+      {/* Page header */}
+      <div className="mb-6 flex items-center justify-between">
+        <h1 className="text-[1.65rem] font-bold tracking-[-0.03em] text-foreground">견적 계산</h1>
+        <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-accent/[0.08] border border-accent/15 text-[0.76rem] font-medium text-accent">
+          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-[pulse-dot_2s_ease-in-out_infinite]" />
+          멀티 렌더 병렬 계산 가동
+        </div>
+      </div>
+
+      <div className="grid grid-cols-[minmax(0,720px)_440px] gap-6">
       {/* Left: Form */}
-      <div className="flex flex-col gap-3">
+      <div className="flex flex-col gap-4">
         <VehicleInfoCard
           brands={catalog.brands}
           models={catalog.models}
@@ -306,6 +316,7 @@ export function QuotePage() {
             </div>
           </div>
         )}
+      </div>
       </div>
     </div>
   )
