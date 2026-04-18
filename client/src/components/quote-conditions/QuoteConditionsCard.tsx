@@ -222,7 +222,27 @@ export function QuoteConditionsCard(props: QuoteConditionsCardProps) {
 
           {/* 전기차 보조금 */}
           <FormField label="전기차 보조금">
-            <div className="flex items-center gap-2">
+            {evSubsidy ? (
+              <div className="flex items-center gap-2">
+                <div className="flex-1 min-w-0">
+                  <RadioGroupRow
+                    name={`${uid}-evSubsidy`}
+                    options={[
+                      { value: false, label: '비해당' },
+                      { value: true, label: '해당' },
+                    ]}
+                    selected={evSubsidy}
+                    onChange={onEvSubsidyChange}
+                  />
+                </div>
+                <input
+                  className="form-input form-input-mono w-32 shrink-0"
+                  value={evSubsidyAmount}
+                  onChange={(e) => onEvSubsidyAmountChange(e.target.value)}
+                  placeholder="금액"
+                />
+              </div>
+            ) : (
               <RadioGroupRow
                 name={`${uid}-evSubsidy`}
                 options={[
@@ -232,15 +252,7 @@ export function QuoteConditionsCard(props: QuoteConditionsCardProps) {
                 selected={evSubsidy}
                 onChange={onEvSubsidyChange}
               />
-              {evSubsidy && (
-                <input
-                  className="form-input form-input-mono flex-1"
-                  value={evSubsidyAmount}
-                  onChange={(e) => onEvSubsidyAmountChange(e.target.value)}
-                  placeholder="금액"
-                />
-              )}
-            </div>
+            )}
           </FormField>
 
           {/* AG수수료 */}
