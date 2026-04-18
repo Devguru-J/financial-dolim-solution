@@ -268,6 +268,8 @@ export async function getActiveWorkbookModels(params: {
     const rows = await db
       .select({
         brand: lenderVehicleOfferings.lenderBrand,
+        brandDisplay: brands.displayName,
+        brandCanonical: brands.canonicalName,
         modelName: lenderVehicleOfferings.lenderModelName,
         vehiclePrice: lenderVehicleOfferings.vehiclePrice,
         vehicleClass: vehicleModels.vehicleClass,
@@ -286,15 +288,26 @@ export async function getActiveWorkbookModels(params: {
       .from(lenderVehicleOfferings)
       .innerJoin(vehicleTrims, eq(lenderVehicleOfferings.trimId, vehicleTrims.id))
       .innerJoin(vehicleModels, eq(vehicleTrims.modelId, vehicleModels.id))
+      .innerJoin(brands, eq(brands.id, vehicleModels.brandId))
       .where(inArray(lenderVehicleOfferings.workbookImportId, importIds))
       .orderBy(asc(lenderVehicleOfferings.lenderModelName));
 
     // Show MG vehicles (vehiclePrice > 0) as the primary catalog.
     // BNK vehicles (vehiclePrice = 0) use different naming and would confuse the
     // trim dropdown.  They are matched at quote-time via vehicleKey fallback.
+    //
+    // Match the incoming params.brand against any of:
+    //  - raw lenderBrand (e.g. 'BENZ' / '벤츠')
+    //  - canonical name (e.g. 'BENZ')
+    //  - display name (e.g. 'Mercedes-Benz')
+    // so the dropdown (which now shows canonical display names) still resolves.
     const seen = new Map<string, (typeof rows)[number]>();
     for (const row of rows) {
-      if (row.brand !== params.brand) continue;
+      const matches =
+        row.brand === params.brand ||
+        row.brandCanonical === params.brand ||
+        row.brandDisplay === params.brand;
+      if (!matches) continue;
       if (Number(row.vehiclePrice) === 0) continue; // skip BNK-only entries
       const existing = seen.get(row.modelName);
       if (!existing) {
