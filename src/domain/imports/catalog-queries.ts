@@ -2,6 +2,7 @@ import { and, asc, desc, eq, inArray } from "drizzle-orm";
 
 import {
   brandRatePolicies,
+  brands,
   lenderVehicleOfferings,
   residualMatrixRows,
   vehicleModels,
@@ -170,24 +171,44 @@ export async function getActiveWorkbookBrands(params: {
   const { db, dispose } = createDbClient(params.databaseUrl!);
 
   try {
+    // Join through trims → models → brands so we return the normalized canonical
+    // brand name (e.g. both MG's "BENZ" and BNK's "벤츠" collapse to a single
+    // "Mercedes-Benz" display name).
     const rows = await db
-      .select({ brand: lenderVehicleOfferings.lenderBrand })
+      .select({
+        canonicalName: brands.canonicalName,
+        displayName: brands.displayName,
+        trimId: lenderVehicleOfferings.trimId,
+      })
       .from(lenderVehicleOfferings)
+      .innerJoin(vehicleTrims, eq(vehicleTrims.id, lenderVehicleOfferings.trimId))
+      .innerJoin(vehicleModels, eq(vehicleModels.id, vehicleTrims.modelId))
+      .innerJoin(brands, eq(brands.id, vehicleModels.brandId))
       .where(inArray(lenderVehicleOfferings.workbookImportId, importIds))
-      .orderBy(asc(lenderVehicleOfferings.lenderBrand), asc(lenderVehicleOfferings.lenderModelName));
+      .orderBy(asc(brands.canonicalName));
 
-    const countByBrand = new Map<string, number>();
+    // Dedupe per canonical brand, count unique trims per brand.
+    const seenTrims = new Map<string, Set<string>>();
+    const displayByCanonical = new Map<string, string>();
     rows.forEach((row) => {
-      countByBrand.set(row.brand, (countByBrand.get(row.brand) ?? 0) + 1);
+      if (!displayByCanonical.has(row.canonicalName)) {
+        displayByCanonical.set(row.canonicalName, row.displayName);
+      }
+      if (!seenTrims.has(row.canonicalName)) {
+        seenTrims.set(row.canonicalName, new Set());
+      }
+      seenTrims.get(row.canonicalName)!.add(row.trimId);
     });
 
     return {
       connected: true,
       workbookImport: refsResult.workbookImports[0],
-      brands: Array.from(countByBrand.entries()).map(([brand, modelCount]) => ({
-        brand,
-        modelCount,
-      })),
+      brands: Array.from(seenTrims.entries())
+        .map(([canonical, trimSet]) => ({
+          brand: displayByCanonical.get(canonical) ?? canonical,
+          modelCount: trimSet.size,
+        }))
+        .sort((a, b) => a.brand.localeCompare(b.brand, "ko")),
     };
   } finally {
     await dispose();
