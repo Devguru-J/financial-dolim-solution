@@ -1,0 +1,1488 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>금융돌림 - 견적 계산</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+KR:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+
+  :root {
+    --accent: #1a3a5c;
+    --accent-light: #2a5a8c;
+    --accent-vivid: #3b7dd8;
+    --accent-glow: rgba(59, 125, 216, 0.12);
+    --bg-page: #f6f5f3;
+    --bg-card: #ffffff;
+    --bg-sidebar: #111318;
+    --bg-sidebar-hover: rgba(255,255,255,0.06);
+    --bg-sidebar-active: rgba(255,255,255,0.10);
+    --text-primary: #1a1a1a;
+    --text-secondary: #6b6b6b;
+    --text-tertiary: #9a9a9a;
+    --text-sidebar: rgba(255,255,255,0.55);
+    --text-sidebar-active: rgba(255,255,255,0.95);
+    --border: rgba(0,0,0,0.06);
+    --border-strong: rgba(0,0,0,0.10);
+    --shadow-sm: 0 1px 2px rgba(0,0,0,0.04), 0 1px 3px rgba(0,0,0,0.03);
+    --shadow-md: 0 2px 4px rgba(0,0,0,0.03), 0 4px 12px rgba(0,0,0,0.05), 0 8px 24px rgba(0,0,0,0.03);
+    --shadow-lg: 0 4px 8px rgba(0,0,0,0.03), 0 8px 24px rgba(0,0,0,0.06), 0 16px 48px rgba(0,0,0,0.04);
+    --shadow-xl: 0 8px 16px rgba(0,0,0,0.04), 0 16px 40px rgba(0,0,0,0.08), 0 32px 80px rgba(0,0,0,0.04);
+    --radius-sm: 8px;
+    --radius-md: 12px;
+    --radius-lg: 16px;
+    --radius-xl: 20px;
+  }
+
+  html { font-size: 14px; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+
+  body {
+    font-family: 'Inter', 'Noto Sans KR', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: var(--bg-page);
+    color: var(--text-primary);
+    line-height: 1.6;
+    display: flex;
+    min-height: 100vh;
+  }
+
+  /* ── Sidebar ── */
+  .sidebar {
+    width: 220px;
+    min-height: 100vh;
+    background: var(--bg-sidebar);
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    z-index: 100;
+  }
+
+  .sidebar-logo {
+    padding: 28px 24px 32px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+  }
+
+  .sidebar-logo h1 {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #fff;
+    letter-spacing: -0.02em;
+  }
+
+  .sidebar-logo span {
+    display: block;
+    font-size: 0.71rem;
+    color: rgba(255,255,255,0.35);
+    font-weight: 400;
+    margin-top: 4px;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  .sidebar-nav {
+    padding: 16px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .nav-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 12px;
+    border-radius: var(--radius-sm);
+    color: var(--text-sidebar);
+    font-size: 0.9rem;
+    font-weight: 450;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    position: relative;
+    text-decoration: none;
+  }
+
+  .nav-item:hover {
+    background: var(--bg-sidebar-hover);
+    color: rgba(255,255,255,0.8);
+  }
+
+  .nav-item.active {
+    background: var(--bg-sidebar-active);
+    color: var(--text-sidebar-active);
+  }
+
+  .nav-item.active::before {
+    content: '';
+    position: absolute;
+    left: -12px;
+    top: 8px;
+    bottom: 8px;
+    width: 3px;
+    background: var(--accent-vivid);
+    border-radius: 0 2px 2px 0;
+  }
+
+  .nav-icon {
+    width: 18px;
+    height: 18px;
+    opacity: 0.7;
+    flex-shrink: 0;
+  }
+
+  .nav-item.active .nav-icon { opacity: 1; }
+
+  .sidebar-footer {
+    margin-top: auto;
+    padding: 16px 24px 20px;
+    border-top: 1px solid rgba(255,255,255,0.06);
+  }
+
+  .sidebar-footer-text {
+    font-size: 0.68rem;
+    color: rgba(255,255,255,0.2);
+    letter-spacing: 0.02em;
+  }
+
+  /* ── Main ── */
+  .main {
+    margin-left: 220px;
+    flex: 1;
+    min-height: 100vh;
+    padding: 0;
+  }
+
+  .main-header {
+    padding: 32px 48px 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .main-header h2 {
+    font-size: 1.65rem;
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    color: var(--text-primary);
+  }
+
+  .header-badge {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 14px;
+    background: rgba(59, 125, 216, 0.08);
+    border: 1px solid rgba(59, 125, 216, 0.12);
+    border-radius: 100px;
+    font-size: 0.78rem;
+    font-weight: 500;
+    color: var(--accent-vivid);
+  }
+
+  .header-badge-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #22c55e;
+    animation: pulse-dot 2s ease-in-out infinite;
+  }
+
+  @keyframes pulse-dot {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(0.85); }
+  }
+
+  .content {
+    padding: 24px 48px 64px;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+  }
+
+  /* ── Cards ── */
+  .card {
+    background: var(--bg-card);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow-md);
+    overflow: hidden;
+    transition: box-shadow 0.3s ease, transform 0.3s ease;
+  }
+
+  .card:hover {
+    box-shadow: var(--shadow-lg);
+  }
+
+  .card-header {
+    padding: 20px 28px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .card-title {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    letter-spacing: -0.01em;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .card-title-icon {
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    background: var(--accent-glow);
+    color: var(--accent-vivid);
+    font-size: 0.7rem;
+  }
+
+  .card-badge {
+    font-size: 0.68rem;
+    font-weight: 500;
+    padding: 3px 10px;
+    border-radius: 100px;
+    background: rgba(0,0,0,0.04);
+    color: var(--text-tertiary);
+  }
+
+  .card-body {
+    padding: 24px 28px 28px;
+  }
+
+  /* ── Form Grid ── */
+  .form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 20px;
+  }
+
+  .form-grid-4 {
+    grid-template-columns: 1fr 1fr 1fr 1fr;
+  }
+
+  .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .form-group.span-2 { grid-column: span 2; }
+
+  .form-label {
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+    letter-spacing: 0.01em;
+  }
+
+  .form-input,
+  .form-select {
+    height: 40px;
+    padding: 0 14px;
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius-sm);
+    font-family: inherit;
+    font-size: 0.88rem;
+    font-weight: 450;
+    color: var(--text-primary);
+    background: #fff;
+    outline: none;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    -webkit-appearance: none;
+    appearance: none;
+  }
+
+  .form-select {
+    background-image: url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%239a9a9a' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 14px center;
+    padding-right: 36px;
+  }
+
+  .form-input:focus,
+  .form-select:focus {
+    border-color: var(--accent-vivid);
+    box-shadow: 0 0 0 3px rgba(59, 125, 216, 0.1);
+  }
+
+  .form-input-mono {
+    font-family: 'JetBrains Mono', 'SF Mono', monospace;
+    font-variant-numeric: tabular-nums;
+    font-weight: 400;
+    letter-spacing: -0.02em;
+  }
+
+  .form-value-display {
+    height: 40px;
+    padding: 0 14px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    font-family: 'JetBrains Mono', 'SF Mono', monospace;
+    font-variant-numeric: tabular-nums;
+    font-size: 0.88rem;
+    font-weight: 500;
+    color: var(--text-primary);
+    background: #fafaf9;
+    display: flex;
+    align-items: center;
+  }
+
+  /* ── Summary Row ── */
+  .summary-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 16px;
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid var(--border);
+  }
+
+  .summary-item {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .summary-label {
+    font-size: 0.72rem;
+    font-weight: 500;
+    color: var(--text-tertiary);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  .summary-value {
+    font-family: 'JetBrains Mono', 'SF Mono', monospace;
+    font-variant-numeric: tabular-nums;
+    font-size: 1.1rem;
+    font-weight: 500;
+    color: var(--text-primary);
+  }
+
+  .summary-value .unit {
+    font-size: 0.78rem;
+    font-weight: 400;
+    color: var(--text-secondary);
+    margin-left: 2px;
+  }
+
+  /* ── Condition Tags ── */
+  .condition-row {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .condition-tag {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    background: #fafaf9;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    font-size: 0.82rem;
+    transition: all 0.2s ease;
+    cursor: default;
+  }
+
+  .condition-tag:hover {
+    border-color: var(--border-strong);
+    background: #f5f5f4;
+  }
+
+  .condition-tag.selected {
+    background: rgba(59, 125, 216, 0.06);
+    border-color: rgba(59, 125, 216, 0.25);
+    color: var(--accent-light);
+  }
+
+  .condition-tag-label {
+    font-weight: 400;
+    color: var(--text-secondary);
+  }
+
+  .condition-tag-value {
+    font-weight: 600;
+    color: var(--text-primary);
+    font-family: 'JetBrains Mono', 'SF Mono', monospace;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .condition-tag.selected .condition-tag-value {
+    color: var(--accent);
+  }
+
+  /* ── Results Grid ── */
+  .results-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 20px;
+  }
+
+  .result-card {
+    background: var(--bg-card);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow-md);
+    overflow: hidden;
+    transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+  }
+
+  .result-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: var(--border);
+    transition: background 0.35s ease;
+  }
+
+  .result-card:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-xl);
+  }
+
+  .result-card.best::before {
+    background: var(--accent-vivid);
+  }
+
+  .result-card.best {
+    border-color: rgba(59, 125, 216, 0.15);
+  }
+
+  .result-card-header {
+    padding: 24px 24px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .result-lender-name {
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    letter-spacing: -0.01em;
+  }
+
+  .result-lender-badge {
+    font-size: 0.65rem;
+    font-weight: 600;
+    padding: 3px 8px;
+    border-radius: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+
+  .result-lender-badge.best-badge {
+    background: rgba(59, 125, 216, 0.1);
+    color: var(--accent-vivid);
+  }
+
+  .result-lender-badge.neutral-badge {
+    background: rgba(0,0,0,0.04);
+    color: var(--text-tertiary);
+  }
+
+  .result-card-body {
+    padding: 0 24px 20px;
+  }
+
+  .result-monthly {
+    display: flex;
+    align-items: baseline;
+    gap: 4px;
+    margin-bottom: 20px;
+  }
+
+  .result-monthly-amount {
+    font-family: 'JetBrains Mono', 'SF Mono', monospace;
+    font-variant-numeric: tabular-nums;
+    font-size: 2rem;
+    font-weight: 600;
+    letter-spacing: -0.03em;
+    color: var(--text-primary);
+    line-height: 1;
+  }
+
+  .result-card.best .result-monthly-amount {
+    color: var(--accent);
+  }
+
+  .result-monthly-unit {
+    font-size: 0.85rem;
+    font-weight: 400;
+    color: var(--text-secondary);
+  }
+
+  .result-details {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border);
+  }
+
+  .result-detail-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .result-detail-label {
+    font-size: 0.78rem;
+    font-weight: 400;
+    color: var(--text-secondary);
+  }
+
+  .result-detail-value {
+    font-family: 'JetBrains Mono', 'SF Mono', monospace;
+    font-variant-numeric: tabular-nums;
+    font-size: 0.82rem;
+    font-weight: 500;
+    color: var(--text-primary);
+  }
+
+  .result-card-footer {
+    padding: 14px 24px;
+    background: #fafaf9;
+    border-top: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .result-provider {
+    font-size: 0.72rem;
+    color: var(--text-tertiary);
+  }
+
+  .result-provider-name {
+    font-weight: 600;
+    color: var(--text-secondary);
+  }
+
+  .result-action {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--accent-vivid);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    transition: gap 0.2s ease;
+  }
+
+  .result-action:hover {
+    gap: 6px;
+  }
+
+  /* ── Comparison Bar ── */
+  .comparison-section {
+    margin-top: 8px;
+  }
+
+  .comparison-title {
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 16px;
+    letter-spacing: -0.01em;
+  }
+
+  .comparison-bars {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .comparison-bar-row {
+    display: grid;
+    grid-template-columns: 100px 1fr 80px;
+    gap: 16px;
+    align-items: center;
+  }
+
+  .comparison-bar-label {
+    font-size: 0.78rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+    text-align: right;
+  }
+
+  .comparison-bar-track {
+    height: 28px;
+    background: #f5f5f4;
+    border-radius: 6px;
+    overflow: hidden;
+    position: relative;
+  }
+
+  .comparison-bar-fill {
+    height: 100%;
+    border-radius: 6px;
+    transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+    display: flex;
+    align-items: center;
+    padding-left: 12px;
+  }
+
+  .comparison-bar-fill.fill-best {
+    background: linear-gradient(135deg, var(--accent) 0%, var(--accent-vivid) 100%);
+  }
+
+  .comparison-bar-fill.fill-mid {
+    background: linear-gradient(135deg, #64748b 0%, #94a3b8 100%);
+  }
+
+  .comparison-bar-fill.fill-high {
+    background: linear-gradient(135deg, #78716c 0%, #a8a29e 100%);
+  }
+
+  .comparison-bar-amount {
+    font-family: 'JetBrains Mono', 'SF Mono', monospace;
+    font-variant-numeric: tabular-nums;
+    font-size: 0.78rem;
+    font-weight: 500;
+    color: var(--text-primary);
+    text-align: right;
+  }
+
+  /* ── Section Divider ── */
+  .section-divider {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 4px 0;
+  }
+
+  .section-divider-line {
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  .section-divider-label {
+    font-size: 0.7rem;
+    font-weight: 500;
+    color: var(--text-tertiary);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+
+  /* ── Acquisition Summary ── */
+  .acquisition-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr 1fr;
+    gap: 16px;
+  }
+
+  .acquisition-item {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 12px 16px;
+    background: #fafaf9;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border);
+  }
+
+  .acquisition-label {
+    font-size: 0.72rem;
+    font-weight: 500;
+    color: var(--text-tertiary);
+  }
+
+  .acquisition-value {
+    font-family: 'JetBrains Mono', 'SF Mono', monospace;
+    font-variant-numeric: tabular-nums;
+    font-size: 0.95rem;
+    font-weight: 500;
+    color: var(--text-primary);
+  }
+
+  .acquisition-item.highlight {
+    background: rgba(59, 125, 216, 0.04);
+    border-color: rgba(59, 125, 216, 0.12);
+  }
+
+  .acquisition-item.highlight .acquisition-value {
+    color: var(--accent);
+    font-weight: 600;
+  }
+
+  /* ── Toggle Group ── */
+  .toggle-group {
+    display: flex;
+    gap: 0;
+    background: #f5f5f4;
+    border-radius: var(--radius-sm);
+    padding: 3px;
+    border: 1px solid var(--border);
+  }
+
+  .toggle-item {
+    padding: 6px 16px;
+    font-size: 0.78rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+  }
+
+  .toggle-item.active {
+    background: #fff;
+    color: var(--text-primary);
+    box-shadow: var(--shadow-sm);
+  }
+
+  /* ── Conditions Mini Grid ── */
+  .conditions-mini-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 16px;
+  }
+
+  .conditions-mini-grid .form-group {
+    padding: 14px 16px;
+    background: #fafaf9;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border);
+    gap: 8px;
+  }
+
+  .conditions-mini-grid .form-label {
+    font-size: 0.72rem;
+  }
+
+  .conditions-mini-grid .form-value-display {
+    height: auto;
+    padding: 0;
+    border: none;
+    background: transparent;
+    font-size: 1rem;
+    font-weight: 600;
+  }
+
+  /* ── Responsive inner scroll ── */
+  .main-scroll {
+    width: 100%;
+    max-width: 1080px;
+  }
+
+  /* ── Subtle entrance animation ── */
+  @keyframes fade-up {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .animate-in {
+    animation: fade-up 0.5s ease both;
+  }
+
+  .animate-in:nth-child(1) { animation-delay: 0.05s; }
+  .animate-in:nth-child(2) { animation-delay: 0.1s; }
+  .animate-in:nth-child(3) { animation-delay: 0.15s; }
+  .animate-in:nth-child(4) { animation-delay: 0.2s; }
+  .animate-in:nth-child(5) { animation-delay: 0.25s; }
+
+  /* ── Rate Pill ── */
+  .rate-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-family: 'JetBrains Mono', 'SF Mono', monospace;
+    font-variant-numeric: tabular-nums;
+    font-size: 0.72rem;
+    font-weight: 500;
+  }
+
+  .rate-pill.green {
+    background: rgba(34, 197, 94, 0.08);
+    color: #16a34a;
+  }
+
+  .rate-pill.neutral {
+    background: rgba(0,0,0,0.04);
+    color: var(--text-secondary);
+  }
+</style>
+<style>
+  /* ── Dashboard-specific ── */
+  .dashboard-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    color: var(--text-primary);
+  }
+
+  .main-grid {
+    display: grid;
+    grid-template-columns: 1fr 300px;
+    gap: 24px;
+  }
+
+  .lender-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .lender-card {
+    background: var(--bg-card);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow-md);
+    overflow: hidden;
+    display: grid;
+    grid-template-columns: 72px 1fr 140px;
+    min-height: 88px;
+    transition: box-shadow 0.3s ease, transform 0.3s ease;
+  }
+
+  .lender-card:hover {
+    box-shadow: var(--shadow-lg);
+    transform: translateY(-1px);
+  }
+
+  .lender-chip {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'JetBrains Mono', 'SF Mono', monospace;
+    font-size: 0.85rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    color: #fff;
+  }
+
+  .lender-chip.mg { background: linear-gradient(180deg, #2a5a8c 0%, #1a3a5c 100%); }
+  .lender-chip.bnk { background: linear-gradient(180deg, #d97334 0%, #b55a20 100%); }
+  .lender-chip.woori { background: linear-gradient(180deg, #3b7dd8 0%, #2a5a8c 100%); }
+
+  .lender-body {
+    padding: 18px 22px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 6px;
+    border-right: 1px solid var(--border);
+  }
+
+  .lender-name-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .lender-name {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    letter-spacing: -0.01em;
+  }
+
+  .status-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 2px 8px;
+    border-radius: 100px;
+    background: rgba(34, 197, 94, 0.08);
+    color: #16a34a;
+    font-size: 0.68rem;
+    font-weight: 600;
+    border: 1px solid rgba(34, 197, 94, 0.18);
+  }
+
+  .status-pill-dot {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: #22c55e;
+  }
+
+  .lender-meta {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.76rem;
+    color: var(--text-tertiary);
+  }
+
+  .lender-meta-mono {
+    font-family: 'JetBrains Mono', 'SF Mono', monospace;
+    font-variant-numeric: tabular-nums;
+    color: var(--text-secondary);
+    font-weight: 500;
+  }
+
+  .lender-meta-sep { color: rgba(0,0,0,0.18); }
+
+  .lender-count {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: #fafaf9;
+    gap: 4px;
+  }
+
+  .lender-count-num {
+    font-family: 'JetBrains Mono', 'SF Mono', monospace;
+    font-variant-numeric: tabular-nums;
+    font-size: 1.5rem;
+    font-weight: 600;
+    letter-spacing: -0.03em;
+    color: var(--text-primary);
+  }
+
+  .lender-count-label {
+    font-size: 0.64rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-tertiary);
+  }
+
+  /* Poster column */
+  .poster-card {
+    background: var(--bg-card);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow-md);
+    overflow: hidden;
+    align-self: flex-start;
+  }
+
+  .poster-card img {
+    width: 100%;
+    display: block;
+  }
+
+  /* Global status banner */
+  .status-banner {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 16px 24px;
+    background: rgba(34, 197, 94, 0.04);
+    border: 1px solid rgba(34, 197, 94, 0.14);
+    border-radius: var(--radius-lg);
+  }
+
+  .status-banner-dot-wrap {
+    position: relative;
+    width: 10px;
+    height: 10px;
+    flex-shrink: 0;
+  }
+
+  .status-banner-dot {
+    position: absolute;
+    inset: 2px;
+    border-radius: 50%;
+    background: #16a34a;
+  }
+
+  .status-banner-ring {
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    border: 1.5px solid rgba(34, 197, 94, 0.3);
+    animation: pulse-ring 2s ease-in-out infinite;
+  }
+
+  @keyframes pulse-ring {
+    0% { transform: scale(0.9); opacity: 1; }
+    100% { transform: scale(1.8); opacity: 0; }
+  }
+
+  .status-banner-text {
+    flex: 1;
+  }
+
+  .status-banner-title {
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: #15803d;
+    margin-bottom: 2px;
+  }
+
+  .status-banner-sub {
+    font-size: 0.74rem;
+    color: #16a34a;
+  }
+
+  .status-banner-right {
+    text-align: right;
+  }
+
+  .status-banner-label {
+    font-size: 0.62rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #16a34a;
+    margin-bottom: 2px;
+  }
+
+  .status-banner-value {
+    font-family: 'JetBrains Mono', 'SF Mono', monospace;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #15803d;
+    letter-spacing: -0.01em;
+  }
+
+  /* Diff panel */
+  .diff-tabs {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .diff-tab {
+    padding: 6px 12px;
+    border-radius: var(--radius-sm);
+    font-size: 0.76rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .diff-tab:hover {
+    background: rgba(0,0,0,0.04);
+  }
+
+  .diff-tab.active {
+    background: var(--accent);
+    color: #fff;
+  }
+
+  .diff-version-row {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    gap: 16px;
+    padding: 12px 16px;
+    background: #fafaf9;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    margin-bottom: 16px;
+    font-size: 0.76rem;
+    align-items: center;
+  }
+
+  .diff-version-label {
+    color: var(--text-tertiary);
+    font-size: 0.7rem;
+    margin-right: 6px;
+  }
+
+  .diff-version-value {
+    font-family: 'JetBrains Mono', 'SF Mono', monospace;
+    font-weight: 500;
+    color: var(--text-primary);
+  }
+
+  .diff-version-date {
+    color: var(--text-tertiary);
+    margin-left: 6px;
+  }
+
+  .diff-arrow {
+    color: var(--text-tertiary);
+    font-size: 1rem;
+  }
+
+  .diff-section-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    background: rgba(0,0,0,0.015);
+    border-radius: var(--radius-sm);
+    margin-bottom: 8px;
+    font-size: 0.82rem;
+    font-weight: 600;
+  }
+
+  .diff-section-title .count {
+    font-family: 'JetBrains Mono', 'SF Mono', monospace;
+    font-size: 0.7rem;
+    font-weight: 500;
+    color: var(--text-tertiary);
+  }
+
+  .diff-row {
+    display: grid;
+    grid-template-columns: 48px 1fr auto auto 80px;
+    gap: 12px;
+    padding: 10px 14px;
+    align-items: center;
+    border-bottom: 1px solid var(--border);
+    transition: background 0.15s ease;
+  }
+
+  .diff-row:hover { background: #fafaf9; }
+  .diff-row:last-child { border-bottom: none; }
+
+  .diff-brand {
+    font-family: 'JetBrains Mono', 'SF Mono', monospace;
+    font-size: 0.68rem;
+    font-weight: 700;
+    color: var(--accent);
+    letter-spacing: 0.06em;
+  }
+
+  .diff-model {
+    font-size: 0.84rem;
+    font-weight: 500;
+    color: var(--text-primary);
+  }
+
+  .diff-key {
+    font-family: 'JetBrains Mono', 'SF Mono', monospace;
+    font-size: 0.68rem;
+    color: var(--text-tertiary);
+  }
+
+  .diff-rate {
+    font-family: 'JetBrains Mono', 'SF Mono', monospace;
+    font-variant-numeric: tabular-nums;
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .diff-rate .prev {
+    color: var(--text-tertiary);
+  }
+
+  .diff-rate .sep {
+    color: rgba(0,0,0,0.2);
+  }
+
+  .diff-delta {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 4px;
+    padding: 3px 8px;
+    border-radius: 6px;
+    font-family: 'JetBrains Mono', 'SF Mono', monospace;
+    font-variant-numeric: tabular-nums;
+    font-size: 0.74rem;
+    font-weight: 600;
+  }
+
+  .diff-delta.up {
+    background: rgba(59, 125, 216, 0.08);
+    color: var(--accent-vivid);
+  }
+
+  .diff-delta.down {
+    background: rgba(220, 38, 38, 0.08);
+    color: #dc2626;
+  }
+
+  .baseline-empty {
+    text-align: center;
+    padding: 32px 20px;
+    color: var(--text-tertiary);
+    font-size: 0.86rem;
+  }
+
+  .baseline-empty strong {
+    color: var(--text-primary);
+    font-weight: 600;
+    display: block;
+    margin-bottom: 4px;
+  }
+</style>
+</head>
+<body>
+
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <h1>금융돌림</h1>
+    <span>Auto Lease Platform</span>
+  </div>
+  <nav class="sidebar-nav">
+    <a class="nav-item active" href="#">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3" y="3" width="7" height="7" rx="1.5"/>
+        <rect x="14" y="3" width="7" height="7" rx="1.5"/>
+        <rect x="3" y="14" width="7" height="7" rx="1.5"/>
+        <rect x="14" y="14" width="7" height="7" rx="1.5"/>
+      </svg>
+      대시보드
+    </a>
+    <a class="nav-item" href="#">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M9 7h6M9 11h6M9 15h4"/>
+        <rect x="4" y="3" width="16" height="18" rx="2"/>
+      </svg>
+      견적 계산
+    </a>
+    <a class="nav-item" href="#">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+        <polyline points="14 2 14 8 20 8"/>
+      </svg>
+      워크북 임포트
+    </a>
+  </nav>
+  <div class="sidebar-footer">
+    <p class="sidebar-footer-text">v2.4.0 &middot; 3 lenders active</p>
+  </div>
+</aside>
+
+<main class="main">
+  <div class="main-header">
+    <h2 class="dashboard-title">대시보드</h2>
+    <div class="header-badge">
+      <span class="header-badge-dot"></span>
+      금융사 3/3 활성
+    </div>
+  </div>
+
+  <div class="content">
+
+    <!-- Status banner -->
+    <div class="status-banner">
+      <div class="status-banner-dot-wrap">
+        <div class="status-banner-ring"></div>
+        <div class="status-banner-dot"></div>
+      </div>
+      <div class="status-banner-text">
+        <div class="status-banner-title">해결책 정상 가동 중</div>
+        <div class="status-banner-sub">금융사 3/3곳 활성 · 운용리스 견적 서비스 가동</div>
+      </div>
+      <div class="status-banner-right">
+        <div class="status-banner-label">가동 중</div>
+        <div class="status-banner-value">3 / 3</div>
+      </div>
+    </div>
+
+    <!-- Lender cards + poster -->
+    <div class="main-grid">
+      <div class="lender-stack">
+
+        <!-- MG -->
+        <div class="lender-card">
+          <div class="lender-chip mg">MG</div>
+          <div class="lender-body">
+            <div class="lender-name-row">
+              <span class="lender-name">MG캐피탈</span>
+              <span class="status-pill"><span class="status-pill-dot"></span>활성</span>
+            </div>
+            <div class="lender-meta">
+              <span class="lender-meta-mono">mg</span>
+              <span class="lender-meta-sep">·</span>
+              <span>6일 전</span>
+              <span class="lender-meta-sep">·</span>
+              <span>누적 7건</span>
+            </div>
+          </div>
+          <div class="lender-count">
+            <div class="lender-count-num">638</div>
+            <div class="lender-count-label">취급 차량</div>
+          </div>
+        </div>
+
+        <!-- BNK -->
+        <div class="lender-card">
+          <div class="lender-chip bnk">BNK</div>
+          <div class="lender-body">
+            <div class="lender-name-row">
+              <span class="lender-name">BNK캐피탈</span>
+              <span class="status-pill"><span class="status-pill-dot"></span>활성</span>
+            </div>
+            <div class="lender-meta">
+              <span class="lender-meta-mono">2026_3_V2_1</span>
+              <span class="lender-meta-sep">·</span>
+              <span>6일 전</span>
+              <span class="lender-meta-sep">·</span>
+              <span>누적 6건</span>
+            </div>
+          </div>
+          <div class="lender-count">
+            <div class="lender-count-num">2,275</div>
+            <div class="lender-count-label">취급 차량</div>
+          </div>
+        </div>
+
+        <!-- WOORI -->
+        <div class="lender-card">
+          <div class="lender-chip woori">우리</div>
+          <div class="lender-body">
+            <div class="lender-name-row">
+              <span class="lender-name">우리카드</span>
+              <span class="status-pill"><span class="status-pill-dot"></span>활성</span>
+            </div>
+            <div class="lender-meta">
+              <span class="lender-meta-mono">견적 Version</span>
+              <span class="lender-meta-sep">·</span>
+              <span>1일 전</span>
+              <span class="lender-meta-sep">·</span>
+              <span>누적 2건</span>
+            </div>
+          </div>
+          <div class="lender-count">
+            <div class="lender-count-num">566</div>
+            <div class="lender-count-label">취급 차량</div>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="poster-card">
+        <img src="https://picsum.photos/seed/revolution/600/800" alt="">
+      </div>
+    </div>
+
+    <!-- Monthly workbook diff -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">
+          <span class="card-title-icon">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/>
+              <polyline points="17 6 23 6 23 12"/>
+            </svg>
+          </span>
+          월별 워크북 변동 <span style="color: var(--text-tertiary); font-weight: 400; font-size: 0.78rem; margin-left: 8px;">BMW · BENZ · AUDI · 60개월 기준잔가율</span>
+        </div>
+        <div class="diff-tabs">
+          <button class="diff-tab active">MG</button>
+          <button class="diff-tab">BNK</button>
+          <button class="diff-tab">우리</button>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="diff-version-row">
+          <div>
+            <span class="diff-version-label">이전</span>
+            <span class="diff-version-value">MG_수입견적_26.03월_2603_vol1</span>
+            <span class="diff-version-date">(2026년 4월 11일)</span>
+          </div>
+          <div class="diff-arrow">→</div>
+          <div style="text-align: right;">
+            <span class="diff-version-label">현재</span>
+            <span class="diff-version-value">mg</span>
+            <span class="diff-version-date">(2026년 4월 18일)</span>
+          </div>
+        </div>
+
+        <div class="diff-section-title">
+          잔가율 변동 <span class="count">·  5건</span>
+        </div>
+        <div>
+          <div class="diff-row">
+            <span class="diff-brand">BMW</span>
+            <span class="diff-model">320d Touring M Sport</span>
+            <span class="diff-key">BMW_320D</span>
+            <span class="diff-rate"><span class="prev">52.0%</span><span class="sep">→</span><span>55.0%</span></span>
+            <span class="diff-delta up">↗ +3.00p</span>
+          </div>
+          <div class="diff-row">
+            <span class="diff-brand">BENZ</span>
+            <span class="diff-model">E220d 4Matic Exclusive</span>
+            <span class="diff-key">BENZ_E220D</span>
+            <span class="diff-rate"><span class="prev">58.5%</span><span class="sep">→</span><span>56.0%</span></span>
+            <span class="diff-delta down">↘ −2.50p</span>
+          </div>
+          <div class="diff-row">
+            <span class="diff-brand">AUDI</span>
+            <span class="diff-model">A7 50 TFSI quattro</span>
+            <span class="diff-key">AUDI_A7</span>
+            <span class="diff-rate"><span class="prev">54.0%</span><span class="sep">→</span><span>55.5%</span></span>
+            <span class="diff-delta up">↗ +1.50p</span>
+          </div>
+          <div class="diff-row">
+            <span class="diff-brand">BMW</span>
+            <span class="diff-model">520i Luxury Line</span>
+            <span class="diff-key">BMW_520I</span>
+            <span class="diff-rate"><span class="prev">53.0%</span><span class="sep">→</span><span>54.2%</span></span>
+            <span class="diff-delta up">↗ +1.20p</span>
+          </div>
+          <div class="diff-row">
+            <span class="diff-brand">BENZ</span>
+            <span class="diff-model">A 220 Sedan</span>
+            <span class="diff-key">BENZ_A220</span>
+            <span class="diff-rate"><span class="prev">48.0%</span><span class="sep">→</span><span>47.3%</span></span>
+            <span class="diff-delta down">↘ −0.70p</span>
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 20px;">
+          <div>
+            <div class="diff-section-title" style="background: rgba(34, 197, 94, 0.04); color: #15803d;">
+              신규 편입 <span class="count" style="color: #16a34a;">· 3건</span>
+            </div>
+            <div class="diff-row" style="grid-template-columns: 48px 1fr auto;">
+              <span class="diff-brand">BMW</span>
+              <span class="diff-model">iX3 M Sport</span>
+              <span class="diff-key">BMW_IX3</span>
+            </div>
+            <div class="diff-row" style="grid-template-columns: 48px 1fr auto;">
+              <span class="diff-brand">AUDI</span>
+              <span class="diff-model">Q8 e-tron 50</span>
+              <span class="diff-key">AUDI_Q8_ETRON</span>
+            </div>
+            <div class="diff-row" style="grid-template-columns: 48px 1fr auto;">
+              <span class="diff-brand">BENZ</span>
+              <span class="diff-model">GLA 250 4Matic</span>
+              <span class="diff-key">BENZ_GLA250</span>
+            </div>
+          </div>
+          <div>
+            <div class="diff-section-title" style="background: rgba(220, 38, 38, 0.04); color: #b91c1c;">
+              제외 <span class="count" style="color: #dc2626;">· 2건</span>
+            </div>
+            <div class="diff-row" style="grid-template-columns: 48px 1fr auto;">
+              <span class="diff-brand">BMW</span>
+              <span class="diff-model">M240i xDrive Coupe</span>
+              <span class="diff-key">BMW_M240I</span>
+            </div>
+            <div class="diff-row" style="grid-template-columns: 48px 1fr auto;">
+              <span class="diff-brand">BENZ</span>
+              <span class="diff-model">CLS 450 4Matic Coupe</span>
+              <span class="diff-key">BENZ_CLS450</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+</main>
+
+</body>
+</html>
