@@ -138,14 +138,17 @@ export function normalizeBrand(brand: string): string {
 function stripNoise(model: string): string {
   let m = model.toUpperCase();
   // Korean engine/powertrain words
-  m = m.replace(/(가솔린|디젤|전기|하이브리드|터보|MHEV|PHEV|HEV|SHEV)/g, " ");
+  m = m.replace(/(가솔린|디젤|전기|수소전기|하이브리드|터보|MHEV|PHEV|HEV|SHEV|FHEV|BEV)/g, " ");
   // Korean body style words
-  m = m.replace(/(세단|해치백|왜건|쿠페|컨버터블|카브리올레|투어링|쉐보레|그란쿠페|스파이더|로드스터|카레라)/g, " ");
+  m = m.replace(/(세단|해치백|왜건|쿠페|컨버터블|카브리올레|투어링|쉐보레|그란쿠페|스파이더|로드스터|카레라|트리뷰토|컨버터블)/g, " ");
+  // Korean edition / variant noise (not part of model name)
+  m = m.replace(/(디\s*올\s*뉴|디올뉴|더\s*뉴|더뉴|올\s*뉴|올뉴|뉴\s*제너레이션|뉴제너레이션|신형|\bFACELIFT\b|\bPRE-?FACELIFT\b)/g, " ");
   // Trim noise
-  m = m.replace(/\b(THE|NEW|ALL|F\/L|LCI|FIRST|EDITION|BASE|LIMITED|ROADSTER)\b/g, " ");
+  m = m.replace(/\b(THE|NEW|ALL|F\/L|LCI|FIRST|EDITION|BASE|LIMITED|ROADSTER|LWB|SWB)\b/g, " ");
   // Body style markers in English
   m = m.replace(/\b4\s*DOOR\b/g, " ");
   m = m.replace(/\b2\s*DOOR\b/g, " ");
+  m = m.replace(/\b[3-5]-?DOOR\b/g, " ");
   // Engine displacement patterns like "2.0", "3.0", "4.4"
   m = m.replace(/\b\d\.\d[L]?\b/g, " ");
   // Double spaces
@@ -161,7 +164,18 @@ function extractBmwKey(model: string): string | null {
 
   // iX variants — must be checked first (iX contains "I" that could confuse other patterns)
   // "iX M60", "iX 전기 M60", "New iX 전기 M70 xDrive LCI"
+  // Also iX1, iX2, iX3 (smaller electric SUVs)
   if (/\bIX\b/.test(m) || /\bIX\d/.test(m)) {
+    // iX1 / iX2 / iX3 (numbered electric SUVs) — capture variant if present
+    const ixNumbered = m.match(/\bIX([123])\b/);
+    if (ixNumbered) {
+      const ixNum = ixNumbered[1];
+      // Capture eDrive20/xDrive30 variant
+      const variant = m.match(/\b[EX]DRIVE\s*(\d{2})\b/);
+      if (variant) return `BMW_IX${ixNum}_${variant[1]}`;
+      return `BMW_IX${ixNum}`;
+    }
+
     // iX M-variant: iX M60, iX M70
     const ixM = m.match(/\bIX\b[^A-Z0-9]*.*?\bM(\d{2})\b/);
     if (ixM) return `BMW_IX_M${ixM[1]}`;
@@ -169,9 +183,6 @@ function extractBmwKey(model: string): string | null {
     // iX with xDrive N: iX xDrive 40/45/50/60
     const ixX = m.match(/\bIX\b[^A-Z0-9]*.*?\bX?DRIVE\s*(\d{2})\b/);
     if (ixX) return `BMW_IX${ixX[1]}`;
-
-    // iX3 — special: "iX3 M Sport" (3-series SUV)
-    if (/\bIX3\b/.test(m)) return "BMW_IX3";
 
     // Bare "iX"
     if (/\bIX\b/.test(m)) return "BMW_IX";
@@ -245,24 +256,68 @@ function extractBmwKey(model: string): string | null {
 function extractBenzKey(model: string): string | null {
   const m = stripNoise(model);
 
-  // AMG GT series — "AMG GT 43", "AMG GT 55", "AMG GT 63"
-  // Must match AFTER stripping "4door" noise (handled in stripNoise)
-  const gtMatch = m.match(/\bGT\s*(\d{2,3})\b/);
-  if (gtMatch) return `BENZ_GT${gtMatch[1]}`;
+  // Sprinter (commercial van) — numbered like "519CDI"
+  if (/\bSPRINTER\b|스프린터/.test(m)) {
+    const sprinterNum = m.match(/(\d{3,4})\s*CDI/);
+    if (sprinterNum) return `BENZ_SPRINTER${sprinterNum[1]}`;
+    return "BENZ_SPRINTER";
+  }
 
-  // EQ models: EQA, EQB, EQC, EQE, EQS — REQUIRE the 3-digit number first (BNK duplicates "EQA 전기 EQA 250")
-  const eqWithNum = m.match(/\bEQ([ABCES])\s*\+?\s*(\d{3})\b/);
+  // CLA 45 S disambiguation — BNK writes "CLA-Class ... AMG 45 S ..." (CLA token doesn't appear after stripNoise if Class is removed).
+  // Detect by presence of "CLA" anywhere + number.
+  if (/\bCLA\b/.test(m)) {
+    const claNum = m.match(/\bCLA\b.*?(\d{2,3})|(\d{2,3}).*?\bCLA\b|AMG\s*(\d{2})\s*S/);
+    if (claNum) {
+      const num = claNum[1] || claNum[2] || claNum[3];
+      if (num) return `BENZ_CLA${num}`;
+    }
+  }
+
+  // EQ G-Class explicit: "EQ G-Class G580"
+  if (/\bG580\b/.test(m) && /\bEQ\b/.test(m)) return "BENZ_EQG580";
+
+  // Maybach models — prefixed or suffixed (Maybach S580, Maybach GLS 600, Maybach SL680, Maybach EQS 680 SUV)
+  if (/\bMAYBACH\b/.test(m)) {
+    // Maybach + multi-letter class + number: "Maybach GLS 600", "Maybach EQS 680 SUV", "Maybach SL680"
+    const maybachMulti = m.match(/\b(GLS|GLE|GLC|EQS|SL|S)\s*(\d{3})/);
+    if (maybachMulti) return `BENZ_MAYBACH_${maybachMulti[1]}${maybachMulti[2]}`;
+    return "BENZ_MAYBACH";
+  }
+
+  // AMG GT series — must check ordering: "AMG GT 63 S", "AMG GT C Roadster", "AMG GT R"
+  // Bare "AMG GT" (no number) or "AMG GT R" / "AMG GT C"
+  if (/\bAMG\s+GT\b|\bGT\s+R\b|\bGT\s+C\b/.test(m)) {
+    const gtNumS = m.match(/\bGT\s*(\d{2,3})\s*S\b/);
+    if (gtNumS) return `BENZ_GT${gtNumS[1]}S`;
+    const gtNum = m.match(/\bGT\s*(\d{2,3})\b/);
+    if (gtNum) return `BENZ_GT${gtNum[1]}`;
+    if (/\bGT\s+R\b/.test(m)) return "BENZ_GTR";
+    if (/\bGT\s+C\b/.test(m)) return "BENZ_GTC";
+    if (/\bGT\s+S\b/.test(m)) return "BENZ_GTS";
+    return "BENZ_GT";
+  }
+
+  // EQ models: EQA, EQB, EQC, EQE, EQS — 2-digit or 3-digit number, may be separated by "SUV" or "+"
+  // "EQS 53 AMG" (2-digit), "EQS SUV 450 4Matic" (SUV between), "EQA 250 AMG Line" (3-digit)
+  // Also supports no space: "EQB300 4MATIC" (WOORI)
+  const eqAdjacent = m.match(/\bEQ([ABCES])(\d{2,3})\b/);
+  if (eqAdjacent) return `BENZ_EQ${eqAdjacent[1]}${eqAdjacent[2]}`;
+  const eqWithNum = m.match(/\bEQ([ABCES])\b(?:\s*(?:SUV|AMG|\+|\s))*\s*(\d{2,3})\b/);
   if (eqWithNum) return `BENZ_EQ${eqWithNum[1]}${eqWithNum[2]}`;
   // Bare EQ without number (fallback)
   const eqBare = m.match(/\bEQ([ABCES])\b/);
   if (eqBare) return `BENZ_EQ${eqBare[1]}`;
 
   // Multi-letter class + digits: CLE53, CLA250, CLS450, GLC300, GLE350, GLS580, GLB250
-  const multiMatch = m.match(/\b(CL[AES]|GL[ABCES]|SL[CK]?)\s*(\d{2,3})/);
+  const multiMatch = m.match(/\b(CL[AES]|GL[ABCES]|SL[CK]?|ML)\s*(\d{2,3})/);
   if (multiMatch) {
     const cls = multiMatch[1].replace(/\s+/g, "");
     return `BENZ_${cls}${multiMatch[2]}`;
   }
+
+  // SL63 AMG / SL680 (Maybach) — SL alone with number
+  const slClass = m.match(/\bSL\s*(\d{2,3})\b/);
+  if (slClass) return `BENZ_SL${slClass[1]}`;
 
   // G-Class: G63 AMG, G450d — 2 or 3 digit with optional suffix letter (no space between G and digits in BNK)
   const gClass = m.match(/\bG\s*(\d{2,3})([DEL])?\b/);
@@ -278,14 +333,14 @@ function extractBenzKey(model: string): string | null {
   }
 
   // Single-letter class + 3 digits + optional letter: E220D, A200D, S500, C300D, A220
+  // Also supports "E 220 d" (space between digits and suffix)
   const singleMatch = m.match(/\b([ABCES])\s*(\d{3})\s*([DEIL])?\b/);
   if (singleMatch) {
     const letter = singleMatch[3] || "";
     return `BENZ_${singleMatch[1]}${singleMatch[2]}${letter}`;
   }
 
-  // Maybach, V-Class
-  if (/\bMAYBACH\b/.test(m)) return "BENZ_MAYBACH";
+  // V-Class
   const vClass = m.match(/\bV\s*(\d{3})\b/);
   if (vClass) return `BENZ_V${vClass[1]}`;
 
@@ -299,13 +354,18 @@ function extractBenzKey(model: string): string | null {
 function extractAudiKey(model: string): string | null {
   const m = stripNoise(model);
 
-  // e-tron variants: "e-tron GT", "Q4 e-tron", "Q8 e-tron", "e-tron S", "SQ8 e-tron"
-  const etronMatch = m.match(/\b(S?Q[48])?\s*E-?TRON\s*(GT|S)?\b/);
-  if (etronMatch) {
-    const prefix = etronMatch[1] || "";
-    const suffix = etronMatch[2] || "";
-    const key = [prefix, "ETRON", suffix].filter(Boolean).join("_");
-    return `AUDI_${key}`;
+  // e-tron variants: "e-tron GT", "Q4 e-tron", "Q6 e-tron", "Q8 e-tron", "A6 e-tron", "e-tron S", "SQ8 e-tron"
+  // Pattern must handle WOORI "Q4 40 e-tron" (non-adjacent prefix) and MG "Q4 e-tron 40" (adjacent)
+  if (/\bE-?TRON\b/.test(m)) {
+    // Priority: GT/S suffix (e-tron GT, e-tron S) — applies only if no body prefix
+    // First check for body prefix anywhere in the name
+    const prefixMatch = m.match(/\b(S?Q[468]|A[468])\b/);
+    // Check if "GT" or "S" follows e-tron token (S e-tron GT is actually RS e-tron GT)
+    const suffixMatch = m.match(/\bE-?TRON\s+(GT|S)\b/);
+    const prefix = prefixMatch ? prefixMatch[1] : "";
+    const suffix = suffixMatch ? suffixMatch[1] : "";
+    const parts = [prefix, "ETRON", suffix].filter(Boolean);
+    return `AUDI_${parts.join("_")}`;
   }
 
   // RS Q8, RS Q3
@@ -374,6 +434,9 @@ function extractLexusKey(model: string): string | null {
     const suffix = lcConv[2] || "";
     return `LEXUS_LC${lcConv[1]}${suffix}_CONV`;
   }
+  // LC Convertible with no number ("LC 컨버터블") — WOORI short form (Korean "컨버터블" already stripped as noise)
+  // After stripNoise "LC 컨버터블" → "LC" — fall through to 3-letter pattern OR...
+  if (/\bLC\s*CONV\b/.test(m) || /\bLC\b.*컨버터블/.test(model)) return "LEXUS_LC_CONV";
 
   // Models: RX350H, ES300H, NX350H, IS300H, LS500H, LC500, UX300E, LM500H
   const lexMatch = m.match(/\b([A-Z]{2,3})\s*(\d{3})([HE])?\b/);
@@ -412,12 +475,17 @@ function extractPorscheKey(model: string): string | null {
     if (/\bGT3\b/.test(m)) return "PORSCHE_911_GT3";
     if (/\bTURBO\s*S\b/.test(m)) return "PORSCHE_911_TURBOS";
     if (/\bTURBO\b/.test(m)) return "PORSCHE_911_TURBO";
+    // GTS ordering: BNK may put "GTS" before Carrera, MG puts it after
+    const hasGts = /\bGTS\b/.test(m);
     if (/\bCARRERA\s*4\s*GTS\b/.test(m)) return "PORSCHE_911_CARRERA4GTS";
     if (/\bCARRERA\s*GTS\b/.test(m)) return "PORSCHE_911_CARRERAGTS";
+    if (hasGts && /\bCARRERA\s*4\b/.test(m)) return "PORSCHE_911_CARRERA4GTS";
+    if (hasGts && /\bCARRERA\b/.test(m)) return "PORSCHE_911_CARRERAGTS";
     if (/\bCARRERA\s*4S\b/.test(m)) return "PORSCHE_911_CARRERA4S";
     if (/\bCARRERA\s*S\b/.test(m)) return "PORSCHE_911_CARRERAS";
     if (/\bCARRERA\s*4\b/.test(m)) return "PORSCHE_911_CARRERA4";
     if (/\bCARRERA\b/.test(m)) return "PORSCHE_911_CARRERA";
+    if (hasGts && /\bTARGA\s*4\b/.test(m)) return "PORSCHE_911_TARGA4GTS";
     if (/\bTARGA\b/.test(m)) return "PORSCHE_911_TARGA";
     return "PORSCHE_911";
   }
@@ -461,11 +529,15 @@ function extractPorscheKey(model: string): string | null {
 
   // Taycan variants
   if (/\bTAYCAN\b/.test(m)) {
+    // Cross Turismo takes precedence over variant letters (WOORI "Taycan 크로스투리스모 4S" = cross+4S, MG "Taycan Cross Turismo S" = cross+S)
+    const isCross = /\bCROSS\s*TURISMO\b/.test(m) || /크로스투리스모|크로스\s*투리스모/.test(m);
+    if (isCross) return "PORSCHE_TAYCAN_CROSS";
     if (/\bTURBO\s*S\b/.test(m)) return "PORSCHE_TAYCAN_TURBOS";
+    if (/\bTURBO\s*GT\b/.test(m)) return "PORSCHE_TAYCAN_TURBOGT";
     if (/\bTURBO\b/.test(m)) return "PORSCHE_TAYCAN_TURBO";
     if (/\bGTS\b/.test(m)) return "PORSCHE_TAYCAN_GTS";
     if (/\b4S\b/.test(m)) return "PORSCHE_TAYCAN_4S";
-    if (/\bCROSS\s*TURISMO\b/.test(m)) return "PORSCHE_TAYCAN_CROSS";
+    if (/\b4\b/.test(m)) return "PORSCHE_TAYCAN_4";
     return "PORSCHE_TAYCAN";
   }
 
@@ -479,11 +551,22 @@ function extractPorscheKey(model: string): string | null {
 function extractMiniKey(model: string): string | null {
   const m = stripNoise(model);
 
-  const lineMatch = m.match(/\b(COUNTRYMAN|CLUBMAN|CONVERTIBLE|HATCH|ACEMAN|JCW|COOPER)\b/);
-  if (!lineMatch) return null;
-  const line = lineMatch[1];
+  // Line detection: check body-line tokens anywhere in name (WOORI writes "COOPER Hatch S (2.0)"
+  // where COOPER comes FIRST so the original regex prioritized COOPER incorrectly).
+  // Priority: COUNTRYMAN > CLUBMAN > CONVERTIBLE > ACEMAN > HATCH > JCW > COOPER
+  let line: string | null = null;
+  if (/\bCOUNTRYMAN\b/.test(m)) line = "COUNTRYMAN";
+  else if (/\bCLUBMAN\b/.test(m)) line = "CLUBMAN";
+  else if (/\bCONVERTIBLE\b/.test(m)) line = "CONVERTIBLE";
+  else if (/\bACEMAN\b/.test(m)) line = "ACEMAN";
+  else if (/\bHATCH\b/.test(m)) line = "HATCH";
+  else if (/\bJCW\b|\bJOHN\s*COOPER\s*WORKS\b/.test(m)) line = "JCW";
+  else if (/\bCOOPER\b/.test(m)) line = "COOPER";
+  else return null;
 
   // Variant: JCW > Cooper SD > Cooper S > Cooper D > Cooper SE > Cooper E > Cooper
+  // WOORI format: "COOPER CLUBMAN S (2.0)" — the S follows the line name, not COOPER
+  // So we check for "S" / "D" / "SD" as standalone tokens when the line isn't COOPER-bare
   let variant = "";
   if (/\bJCW\b|\bJOHN\s*COOPER\s*WORKS\b/.test(m)) variant = "_JCW";
   else if (/\bSE\b/.test(m)) variant = "_COOPER_SE";
@@ -492,11 +575,18 @@ function extractMiniKey(model: string): string | null {
   else if (/\bCOOPER\s*D\b/.test(m)) variant = "_COOPER_D";
   else if (/\bCOOPER\s*S\b/.test(m)) variant = "_COOPER_S";
   else if (/\bCOOPER\s*C\b/.test(m)) variant = "_COOPER_C";
+  // WOORI "COOPER CLUBMAN S (2.0)" — body line + S as separate token
+  else if (line !== "COOPER" && /\b(COUNTRYMAN|CLUBMAN|CONVERTIBLE|HATCH|ACEMAN)\s+S\b/.test(m)) variant = "_COOPER_S";
+  else if (line !== "COOPER" && /\b(COUNTRYMAN|CLUBMAN|CONVERTIBLE|HATCH|ACEMAN)\s+D\b/.test(m)) variant = "_COOPER_D";
+  else if (line !== "COOPER" && /\b(COUNTRYMAN|CLUBMAN|CONVERTIBLE|HATCH|ACEMAN)\s+SD\b/.test(m)) variant = "_COOPER_SD";
   else if (/\bCOOPER\b/.test(m)) variant = "_COOPER";
 
   if (line === "COOPER") {
-    // Bare COOPER as line — check if it's actually part of a longer name
+    // Bare COOPER as line — return with variant
     return variant ? `MINI${variant}` : "MINI_COOPER";
+  }
+  if (line === "JCW") {
+    return "MINI_JCW";
   }
   return `MINI_${line}${variant}`;
 }
@@ -507,6 +597,14 @@ function extractMiniKey(model: string): string | null {
 
 function extractJeepKey(model: string): string | null {
   const m = stripNoise(model);
+  // Korean model aliases — check before English (compound words: 그랜드체로키 before 체로키)
+  if (/그랜드\s*체로키/.test(m)) return "JEEP_GRANDCHEROKEE";
+  if (/체로키/.test(m)) return "JEEP_CHEROKEE";
+  if (/랭글러/.test(m)) return "JEEP_WRANGLER";
+  if (/컴패스/.test(m)) return "JEEP_COMPASS";
+  if (/레니게이드/.test(m)) return "JEEP_RENEGADE";
+  if (/어벤저/.test(m)) return "JEEP_AVENGER";
+  if (/글래디에이터/.test(m)) return "JEEP_GLADIATOR";
   const lineMatch = m.match(/\b(WRANGLER|GRAND\s*CHEROKEE|CHEROKEE|COMPASS|RENEGADE|AVENGER|GLADIATOR)\b/);
   if (!lineMatch) return null;
   const line = lineMatch[1].replace(/\s+/g, "");
@@ -539,11 +637,24 @@ function extractVwKey(model: string): string | null {
 
 function extractMaseratiKey(model: string): string | null {
   const m = stripNoise(model);
+  // New models: MC20, MCPura, GT2 Stradale
+  if (/\bMCPURA\b/.test(m)) return "MASERATI_MCPURA";
   if (/\bMC20\b/.test(m)) return "MASERATI_MC20";
+  if (/\bGT2\b/.test(m)) return "MASERATI_GT2";
+  // Korean aliases (에 트로페오, 기블리 etc) — fall through to English
   const lineMatch = m.match(/\b(GHIBLI|GRECALE|GRANTURISMO|GRANCABRIO|LEVANTE|QUATTROPORTE)\b/);
-  if (!lineMatch) return null;
+  if (!lineMatch) {
+    // Korean
+    if (/기블리/.test(m)) return "MASERATI_GHIBLI";
+    if (/그레칼레|그레케일/.test(m)) return "MASERATI_GRECALE";
+    if (/그란투리스모/.test(m)) return "MASERATI_GRANTURISMO";
+    if (/그란카브리오/.test(m)) return "MASERATI_GRANCABRIO";
+    if (/르반떼|레반떼|르반테/.test(m)) return "MASERATI_LEVANTE";
+    if (/콰트로포르테/.test(m)) return "MASERATI_QUATTROPORTE";
+    return null;
+  }
   const line = lineMatch[1];
-  if (/\bTROFEO\b/.test(m)) return `MASERATI_${line}_TROFEO`;
+  if (/\bTROFEO\b|트로페오/.test(m)) return `MASERATI_${line}_TROFEO`;
   if (/\bMODENA\b/.test(m)) return `MASERATI_${line}_MODENA`;
   if (/\bFOLGORE\b/.test(m)) return `MASERATI_${line}_FOLGORE`;
   if (/\bGT\b/.test(m)) return `MASERATI_${line}_GT`;
@@ -573,6 +684,16 @@ function extractToyotaKey(model: string): string | null {
   const m = stripNoise(model);
   if (/\bGR\s*86\b/.test(m)) return "TOYOTA_GR86";
   if (/\bGR\s*SUPRA\b/.test(m)) return "TOYOTA_SUPRA";
+  // Allow a space in RAV4 -> "RAV 4"
+  if (/\bRAV\s*4\b/.test(m)) return "TOYOTA_RAV4";
+  // Korean aliases
+  if (/캠리/.test(m)) return "TOYOTA_CAMRY";
+  if (/시에나/.test(m)) return "TOYOTA_SIENNA";
+  if (/하이랜더/.test(m)) return "TOYOTA_HIGHLANDER";
+  if (/알파드/.test(m)) return "TOYOTA_ALPHARD";
+  if (/프리우스/.test(m)) return "TOYOTA_PRIUS";
+  if (/크라운/.test(m)) return "TOYOTA_CROWN";
+  if (/수프라|수프라|슈프라/.test(m)) return "TOYOTA_SUPRA";
   const lineMatch = m.match(/\b(CROWN|PRIUS|RAV4|CAMRY|ALPHARD|HIGHLANDER|SIENNA|SUPRA|CENTURY|LANDCRUISER)\b/);
   if (!lineMatch) return null;
   return `TOYOTA_${lineMatch[1].replace(/\s+/g, "")}`;
@@ -586,9 +707,9 @@ function extractCadillacKey(model: string): string | null {
   const m = stripNoise(model);
   const ctxt = m.match(/\b([CX]T\d)\b/);
   if (ctxt) return `CADILLAC_${ctxt[1]}`;
-  if (/\bESCALADE\s*IQ\b/.test(m)) return "CADILLAC_ESCALADEIQ";
-  if (/\bESCALADE\b/.test(m)) return "CADILLAC_ESCALADE";
-  if (/\bLYRIQ\b/.test(m)) return "CADILLAC_LYRIQ";
+  if (/\bESCALADE\s*IQ\b/.test(m) || /에스컬레이드\s*IQ/.test(m)) return "CADILLAC_ESCALADEIQ";
+  if (/\bESCALADE\b/.test(m) || /에스컬레이드/.test(m)) return "CADILLAC_ESCALADE";
+  if (/\bLYRIQ\b/.test(m) || /리릭/.test(m)) return "CADILLAC_LYRIQ";
   return null;
 }
 
@@ -598,6 +719,16 @@ function extractCadillacKey(model: string): string | null {
 
 function extractFordKey(model: string): string | null {
   const m = stripNoise(model);
+  // WOORI mixes Lincoln models under the Ford brand with "링컨" prefix — delegate
+  if (/링컨|LINCOLN/.test(m)) {
+    return extractLincolnKey(model);
+  }
+  // Korean aliases
+  if (/브롱코/.test(m)) return "FORD_BRONCO";
+  if (/레인저/.test(m)) return "FORD_RANGER";
+  if (/익스플로러/.test(m)) return "FORD_EXPLORER";
+  if (/익스페디션/.test(m)) return "FORD_EXPEDITION";
+  if (/머스탱/.test(m)) return "FORD_MUSTANG";
   const lineMatch = m.match(/\b(EXPLORER|BRONCO|EXPEDITION|MUSTANG|F-?150|RANGER|EDGE|ESCAPE|ECOSPORT|FUSION|FOCUS)\b/);
   if (!lineMatch) return null;
   return `FORD_${lineMatch[1].replace(/-/g, "")}`;
@@ -609,6 +740,10 @@ function extractFordKey(model: string): string | null {
 
 function extractLincolnKey(model: string): string | null {
   const m = stripNoise(model);
+  if (/노틸러스/.test(m)) return "LINCOLN_NAUTILUS";
+  if (/코세어|코사이어/.test(m)) return "LINCOLN_CORSAIR";
+  if (/네비게이터|내비게이터/.test(m)) return "LINCOLN_NAVIGATOR";
+  if (/에비에이터|에이비에이터/.test(m)) return "LINCOLN_AVIATOR";
   const lineMatch = m.match(/\b(NAUTILUS|CORSAIR|NAVIGATOR|AVIATOR|CONTINENTAL|MK[A-Z])\b/);
   if (!lineMatch) return null;
   return `LINCOLN_${lineMatch[1]}`;
@@ -620,6 +755,12 @@ function extractLincolnKey(model: string): string | null {
 
 function extractHondaKey(model: string): string | null {
   const m = stripNoise(model);
+  // Korean aliases
+  if (/어코드/.test(m)) return "HONDA_ACCORD";
+  if (/시빅/.test(m)) return "HONDA_CIVIC";
+  if (/오딧세이|오디세이/.test(m)) return "HONDA_ODYSSEY";
+  if (/파일럿/.test(m)) return "HONDA_PILOT";
+  if (/패스포트/.test(m)) return "HONDA_PASSPORT";
   const lineMatch = m.match(/\b(ACCORD|CIVIC|CR-?V|ODYSSEY|PILOT|PASSPORT|RIDGELINE)\b/);
   if (!lineMatch) return null;
   return `HONDA_${lineMatch[1].replace(/-/g, "")}`;
@@ -642,12 +783,12 @@ function extractLamborghiniKey(model: string): string | null {
 
 function extractBentleyKey(model: string): string | null {
   const m = stripNoise(model);
-  if (/\bFLYING\s*SPUR\b/.test(m)) return "BENTLEY_FLYINGSPUR";
+  if (/\bFLYING\s*SPUR\b|플라잉\s*스퍼/.test(m)) return "BENTLEY_FLYINGSPUR";
   if (/\bCONTINENTAL\s*GTC\b/.test(m)) return "BENTLEY_CONTINENTAL_GTC";
   if (/\bCONTINENTAL\s*GT\b/.test(m)) return "BENTLEY_CONTINENTAL_GT";
-  if (/\bCONTINENTAL\b/.test(m)) return "BENTLEY_CONTINENTAL";
-  if (/\bBENTAYGA\b/.test(m)) return "BENTLEY_BENTAYGA";
-  if (/\bMULSANNE\b/.test(m)) return "BENTLEY_MULSANNE";
+  if (/\bCONTINENTAL\b|컨티넨탈/.test(m)) return "BENTLEY_CONTINENTAL";
+  if (/\bBENTAYGA\b|벤테이가/.test(m)) return "BENTLEY_BENTAYGA";
+  if (/\bMULSANNE\b|멀산|뮬산/.test(m)) return "BENTLEY_MULSANNE";
   return null;
 }
 
@@ -657,10 +798,18 @@ function extractBentleyKey(model: string): string | null {
 
 function extractFerrariKey(model: string): string | null {
   const m = stripNoise(model);
-  // Famous models: Portofino, Roma, F8, 296, 812, SF90, Purosangue, 12Cilindri, Amalfi
-  const lineMatch = m.match(/\b(PORTOFINO|ROMA|F8|296|812|SF90|PUROSANGUE|12CILINDRI|AMALFI|GTC4|LAFERRARI)\b/);
-  if (!lineMatch) return null;
-  return `FERRARI_${lineMatch[1]}`;
+  // 12 Cilindri — with or without space
+  if (/\b12\s*CILINDRI\b/.test(m)) return "FERRARI_12CILINDRI";
+  // 488 (GTB / Pista / Spider / 스파이더)
+  if (/\b488\b/.test(m)) return "FERRARI_488";
+  // Famous models: Portofino, Roma, F8, 296, 812, SF90, Purosangue, Amalfi, F80
+  const lineMatch = m.match(/\b(PORTOFINO|ROMA|F80|F8|296|812|SF90|PUROSANGUE|AMALFI|GTC4|LAFERRARI)\b/);
+  if (lineMatch) return `FERRARI_${lineMatch[1]}`;
+  // Korean aliases
+  if (/포르토피노/.test(m)) return "FERRARI_PORTOFINO";
+  if (/로마/.test(m)) return "FERRARI_ROMA";
+  if (/푸로산게|퓨로산게/.test(m)) return "FERRARI_PUROSANGUE";
+  return null;
 }
 
 // ---------------------------------------------------------------------------
@@ -669,6 +818,15 @@ function extractFerrariKey(model: string): string | null {
 
 function extractLandroverKey(model: string): string | null {
   const m = stripNoise(model);
+  // Korean aliases FIRST (more specific to less specific)
+  if (/레인지로버\s*스포츠/.test(m)) return "LR_RRSPORT";
+  if (/레인지로버\s*벨라/.test(m)) return "LR_RRVELAR";
+  if (/레인지로버\s*이보크/.test(m)) return "LR_RREVOQUE";
+  if (/레인지로버/.test(m)) return "LR_RANGEROVER";
+  if (/디스커버리\s*스포츠/.test(m)) return "LR_DISCOVERYSPORT";
+  if (/디스커버리/.test(m)) return "LR_DISCOVERY";
+  if (/디펜더|랜드로버\s*DEFENDER/.test(m)) return "LR_DEFENDER";
+
   if (/\bRANGE\s*ROVER\s*SPORT\b/.test(m)) return "LR_RRSPORT";
   if (/\bRANGE\s*ROVER\s*VELAR\b/.test(m)) return "LR_RRVELAR";
   if (/\bRANGE\s*ROVER\s*EVOQUE\b/.test(m)) return "LR_RREVOQUE";
@@ -683,7 +841,70 @@ function extractLandroverKey(model: string): string | null {
   if (/\bF-?TYPE\b/.test(m)) return "LR_FTYPE";
   if (/\bXE\b/.test(m)) return "LR_XE";
   if (/\bXF\b/.test(m)) return "LR_XF";
-  if (/\bXJ\b/.test(m)) return "LR_XJ";
+  if (/\bXJ\d*\b/.test(m)) return "LR_XJ";
+  return null;
+}
+
+// ---------------------------------------------------------------------------
+// HYUNDAI — Korean workbook catalog ("디 올 뉴 그랜저", "더 뉴 마이티", etc.)
+// ---------------------------------------------------------------------------
+
+function extractHyundaiKey(model: string): string | null {
+  const m = stripNoise(model);
+  // Common Hyundai Korean model tokens
+  if (/그랜저/.test(m)) return "HYUNDAI_GRANDEUR";
+  if (/넥쏘|넥소/.test(m)) return "HYUNDAI_NEXO";
+  if (/마이티/.test(m)) return "HYUNDAI_MIGHTY";
+  if (/쏘나타|소나타/.test(m)) return "HYUNDAI_SONATA";
+  if (/아반떼|아반테/.test(m)) return "HYUNDAI_AVANTE";
+  if (/싼타페/.test(m)) return "HYUNDAI_SANTAFE";
+  if (/투싼/.test(m)) return "HYUNDAI_TUCSON";
+  if (/팰리세이드|펠리세이드/.test(m)) return "HYUNDAI_PALISADE";
+  if (/코나/.test(m)) return "HYUNDAI_KONA";
+  if (/베뉴/.test(m)) return "HYUNDAI_VENUE";
+  if (/캐스퍼/.test(m)) return "HYUNDAI_CASPER";
+  if (/아이오닉/.test(m)) {
+    const ionicNum = m.match(/아이오닉\s*(\d)/);
+    if (ionicNum) return `HYUNDAI_IONIQ${ionicNum[1]}`;
+    return "HYUNDAI_IONIQ";
+  }
+  if (/코나\s*일렉트릭|코나\s*EV/.test(m)) return "HYUNDAI_KONA_EV";
+  if (/스타리아|스타렉스/.test(m)) return "HYUNDAI_STARIA";
+  if (/쏠라티/.test(m)) return "HYUNDAI_SOLATI";
+  if (/포터/.test(m)) return "HYUNDAI_PORTER";
+  if (/엑시언트/.test(m)) return "HYUNDAI_XCIENT";
+  if (/벨로스터/.test(m)) return "HYUNDAI_VELOSTER";
+  if (/그라이너/.test(m)) return "HYUNDAI_GREANER";
+  return null;
+}
+
+// ---------------------------------------------------------------------------
+// KIA — Korean workbook catalog
+// ---------------------------------------------------------------------------
+
+function extractKiaKey(model: string): string | null {
+  const m = stripNoise(model);
+  if (/그랜드\s*카니발|카니발/.test(m)) return "KIA_CARNIVAL";
+  if (/니로/.test(m)) return "KIA_NIRO";
+  if (/모닝/.test(m)) return "KIA_MORNING";
+  if (/레이/.test(m)) return "KIA_RAY";
+  if (/K3/.test(m)) return "KIA_K3";
+  if (/K5/.test(m)) return "KIA_K5";
+  if (/K7/.test(m)) return "KIA_K7";
+  if (/K8/.test(m)) return "KIA_K8";
+  if (/K9/.test(m)) return "KIA_K9";
+  if (/스포티지/.test(m)) return "KIA_SPORTAGE";
+  if (/쏘렌토|소렌토/.test(m)) return "KIA_SORENTO";
+  if (/모하비/.test(m)) return "KIA_MOHAVE";
+  if (/셀토스/.test(m)) return "KIA_SELTOS";
+  if (/봉고/.test(m)) return "KIA_BONGO";
+  if (/스팅어/.test(m)) return "KIA_STINGER";
+  if (/EV3/.test(m)) return "KIA_EV3";
+  if (/EV5/.test(m)) return "KIA_EV5";
+  if (/EV6/.test(m)) return "KIA_EV6";
+  if (/EV9/.test(m)) return "KIA_EV9";
+  if (/PV5/.test(m)) return "KIA_PV5";
+  if (/레이\s*EV/.test(m)) return "KIA_RAY_EV";
   return null;
 }
 
@@ -693,9 +914,13 @@ function extractLandroverKey(model: string): string | null {
 
 function extractGenericKey(brand: string, model: string): string | null {
   const cleaned = stripNoise(model);
+  // English alphanumeric token first
   const firstToken = cleaned.match(/\b([A-Z0-9][A-Z0-9-]{1,})\b/);
-  if (!firstToken) return null;
-  return `${brand.toUpperCase()}_${firstToken[1].replace(/-/g, "")}`;
+  if (firstToken) return `${brand.toUpperCase()}_${firstToken[1].replace(/-/g, "")}`;
+  // Fallback to first Korean / non-whitespace run (for purely Korean model names)
+  const hangul = cleaned.match(/([\uAC00-\uD7AF]{2,})/);
+  if (hangul) return `${brand.toUpperCase()}_${hangul[1]}`;
+  return null;
 }
 
 // ---------------------------------------------------------------------------
@@ -758,8 +983,9 @@ export function extractVehicleKey(
     case "LANDROVER":
       return extractLandroverKey(modelName);
     case "HYUNDAI":
+      return extractHyundaiKey(modelName) ?? extractGenericKey(b, modelName);
     case "KIA":
-      return extractGenericKey(b, modelName);
+      return extractKiaKey(modelName) ?? extractGenericKey(b, modelName);
     default:
       return extractGenericKey(b, modelName);
   }

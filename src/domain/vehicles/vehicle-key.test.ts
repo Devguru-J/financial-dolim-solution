@@ -364,3 +364,207 @@ test("resolve: works with extended candidate objects", () => {
   expect(result?.id).toBe(1);
   expect(result?.vehiclePrice).toBe(70000000);
 });
+
+// ---------------------------------------------------------------------------
+// Extended coverage — Korean model names + WOORI/BNK specific patterns
+// (added 2026-04-18 during cross-lender matching improvement)
+// ---------------------------------------------------------------------------
+
+// BMW iX1 / iX2 (numbered electric SUVs)
+test("BMW iX1 WOORI vs BNK cross match", () => {
+  expect(extractVehicleKey("BMW", "iX1 xDrive30")).toBe("BMW_IX1_30");
+  expect(extractVehicleKey("BMW", "iX1 전기 xDrive30 M Sport Package")).toBe("BMW_IX1_30");
+});
+
+test("BMW iX2 WOORI vs BNK cross match", () => {
+  expect(extractVehicleKey("BMW", "iX2 eDrive20")).toBe("BMW_IX2_20");
+  expect(extractVehicleKey("BMW", "New iX2 전기 eDrive20 M Sport Package")).toBe("BMW_IX2_20");
+});
+
+// BENZ EQ 2-digit AMG models (EQS 53)
+test("BENZ EQS 53 AMG (2-digit)", () => {
+  expect(extractVehicleKey("BENZ", "EQS 53 AMG 4Matic+")).toBe("BENZ_EQS53");
+  expect(extractVehicleKey("Benz", "AMG EQS 53 4Matic")).toBe("BENZ_EQS53");
+});
+
+test("BENZ EQB300 (no space between class and number)", () => {
+  expect(extractVehicleKey("Benz", "EQB300 4MATIC(Pre-Facelift)(5인승)")).toBe("BENZ_EQB300");
+});
+
+test("BENZ EQS SUV 450 (SUV word between class and number)", () => {
+  expect(extractVehicleKey("BENZ", "EQS SUV 450 4Matic")).toBe("BENZ_EQS450");
+});
+
+// BENZ Maybach variants
+test("BENZ Maybach S580", () => {
+  expect(extractVehicleKey("BENZ", "Maybach S 580 4Matic")).toBe("BENZ_MAYBACH_S580");
+  expect(extractVehicleKey("Benz", "Maybach S580 4Matic L")).toBe("BENZ_MAYBACH_S580");
+});
+
+// BENZ AMG GT bare (no number) / GT R / GT C
+test("BENZ AMG GT R / GT C bare", () => {
+  expect(extractVehicleKey("Benz", "AMG GT")).toBe("BENZ_GT");
+  expect(extractVehicleKey("Benz", "AMG GT R")).toBe("BENZ_GTR");
+  expect(extractVehicleKey("Benz", "AMG GT C Roadster")).toBe("BENZ_GTC");
+});
+
+test("BENZ Sprinter commercial van", () => {
+  expect(extractVehicleKey("Benz", "스프린터 519CDI(15인승)")).toBe("BENZ_SPRINTER519");
+});
+
+// BENZ CLA 45 S (BNK writes as "CLA-Class ... AMG 45 S" where CLA is split from number)
+test("BENZ CLA 45 AMG (BNK duplicate CLA-Class + AMG 45 S)", () => {
+  expect(extractVehicleKey("BENZ", "CLA 45 S 4Matic AMG")).toBe("BENZ_CLA45");
+  expect(extractVehicleKey("벤츠", "The New CLA-Class 가솔린 2.0 AMG 45 S AMG 4Matic+")).toBe(
+    "BENZ_CLA45",
+  );
+});
+
+// AUDI e-tron non-adjacent prefix (WOORI "Q4 40 e-tron")
+test("AUDI Q4 e-tron cross: MG vs WOORI word order", () => {
+  expect(extractVehicleKey("AUDI", "Q4 e-tron 40")).toBe("AUDI_Q4_ETRON");
+  expect(extractVehicleKey("Audi", "Q4 40 e-tron")).toBe("AUDI_Q4_ETRON");
+  expect(extractVehicleKey("Audi", "Q4 Sportback 45 e-tron")).toBe("AUDI_Q4_ETRON");
+});
+
+test("AUDI Q6 e-tron (BNK and WOORI)", () => {
+  expect(extractVehicleKey("Audi", "Q6 e-tron performance")).toBe("AUDI_Q6_ETRON");
+  expect(extractVehicleKey("아우디", "The new Q6 e-tron Performance Performance")).toBe(
+    "AUDI_Q6_ETRON",
+  );
+});
+
+// TOYOTA Korean aliases
+test("TOYOTA Korean model aliases", () => {
+  expect(extractVehicleKey("Toyota", "캠리 2.5 Hybrid")).toBe("TOYOTA_CAMRY");
+  expect(extractVehicleKey("Toyota", "New 시에나 HEV_2WD")).toBe("TOYOTA_SIENNA");
+  expect(extractVehicleKey("Toyota", "하이랜더")).toBe("TOYOTA_HIGHLANDER");
+  expect(extractVehicleKey("Toyota", "알파드")).toBe("TOYOTA_ALPHARD");
+  expect(extractVehicleKey("Toyota", "RAV 4 하이브리드")).toBe("TOYOTA_RAV4");
+});
+
+// HONDA Korean
+test("HONDA 어코드 (Accord Korean)", () => {
+  expect(extractVehicleKey("Honda", "어코드 1.5")).toBe("HONDA_ACCORD");
+  expect(extractVehicleKey("Honda", "어코드 2.0 Hybrid")).toBe("HONDA_ACCORD");
+});
+
+// JEEP Korean
+test("JEEP 레니게이드 / 그랜드체로키 / 체로키 (Korean)", () => {
+  expect(extractVehicleKey("Jeep", "JEEP 레니게이드 2.4")).toBe("JEEP_RENEGADE");
+  expect(extractVehicleKey("Jeep", "JEEP 그랜드체로키 3.6")).toBe("JEEP_GRANDCHEROKEE");
+});
+
+// LANDROVER Korean
+test("LANDROVER 디스커버리 / 레인지로버 / 벨라 / 이보크 / 스포츠", () => {
+  expect(extractVehicleKey("Landrover", "디스커버리 D250")).toBe("LR_DISCOVERY");
+  expect(extractVehicleKey("Landrover", "디스커버리 스포츠 P200 가솔린")).toBe(
+    "LR_DISCOVERYSPORT",
+  );
+  expect(extractVehicleKey("Landrover", "레인지로버 P530")).toBe("LR_RANGEROVER");
+  expect(extractVehicleKey("Landrover", "레인지로버 스포츠 D300")).toBe("LR_RRSPORT");
+  expect(extractVehicleKey("Landrover", "레인지로버 벨라 P250")).toBe("LR_RRVELAR");
+  expect(extractVehicleKey("Landrover", "레인지로버 이보크 P250")).toBe("LR_RREVOQUE");
+});
+
+// CADILLAC Korean
+test("CADILLAC 에스컬레이드", () => {
+  expect(extractVehicleKey("Cadillac", "에스컬레이드 6.2")).toBe("CADILLAC_ESCALADE");
+});
+
+// FORD delegates to LINCOLN for 링컨 prefix (WOORI puts Lincoln models under Ford brand)
+test("FORD 링컨 prefix delegates to Lincoln key", () => {
+  expect(extractVehicleKey("Ford", "링컨 Navigator")).toBe("LINCOLN_NAVIGATOR");
+  expect(extractVehicleKey("Ford", "링컨 All New Aviator 3.0")).toBe("LINCOLN_AVIATOR");
+  expect(extractVehicleKey("Ford", "링컨 All New Nautilus")).toBe("LINCOLN_NAUTILUS");
+  expect(extractVehicleKey("Ford", "링컨 Corsair 2.0")).toBe("LINCOLN_CORSAIR");
+});
+
+// FORD Korean
+test("FORD 브롱코 / 레인저 / 머스탱", () => {
+  expect(extractVehicleKey("Ford", "브롱코")).toBe("FORD_BRONCO");
+  expect(extractVehicleKey("Ford", "레인저(화물픽업)")).toBe("FORD_RANGER");
+});
+
+// FERRARI 488 / 12 CILINDRI (space)
+test("FERRARI 488 스파이더 / 12 CILINDRI (space)", () => {
+  expect(extractVehicleKey("Ferrari", "488 스파이더")).toBe("FERRARI_488");
+  expect(extractVehicleKey("Ferrari", "12 CILINDRI")).toBe("FERRARI_12CILINDRI");
+});
+
+// MINI WOORI format "COOPER CLUBMAN S (2.0)" vs MG "MINI Clubman Cooper S Classic"
+test("MINI Clubman S cross match (WOORI vs MG naming convention)", () => {
+  expect(extractVehicleKey("MINI", "MINI Clubman Cooper S Classic")).toBe("MINI_CLUBMAN_COOPER_S");
+  expect(extractVehicleKey("MINI", "COOPER CLUBMAN S (2.0)")).toBe("MINI_CLUBMAN_COOPER_S");
+});
+
+test("MINI Countryman / Hatch variant cross-match", () => {
+  expect(extractVehicleKey("MINI", "COOPER COUNTRYMAN S (2.0)")).toBe("MINI_COUNTRYMAN_COOPER_S");
+  expect(extractVehicleKey("MINI", "COOPER Hatch S (2.0)")).toBe("MINI_HATCH_COOPER_S");
+  expect(extractVehicleKey("MINI", "COOPER CONVERTIBLE S (2.0)")).toBe(
+    "MINI_CONVERTIBLE_COOPER_S",
+  );
+});
+
+// PORSCHE Taycan Cross Turismo (WOORI uses Korean "크로스투리스모")
+test("PORSCHE Taycan Cross Turismo (MG English vs WOORI Korean)", () => {
+  expect(extractVehicleKey("PORSCHE", "Taycan Cross Turismo S")).toBe("PORSCHE_TAYCAN_CROSS");
+  expect(extractVehicleKey("Porsche", "Taycan 크로스투리스모 4")).toBe("PORSCHE_TAYCAN_CROSS");
+  expect(extractVehicleKey("Porsche", "Taycan 크로스투리스모 Turbo")).toBe("PORSCHE_TAYCAN_CROSS");
+});
+
+// PORSCHE 911 Carrera GTS ordering (BNK puts GTS before Carrera, MG after)
+test("PORSCHE 911 Carrera GTS ordering fix", () => {
+  expect(extractVehicleKey("PORSCHE", "911 Carrera GTS")).toBe("PORSCHE_911_CARRERAGTS");
+  expect(extractVehicleKey("포르쉐", "911 8세대 카레라 가솔린 3.0 쿠페 GTS Carrera")).toBe(
+    "PORSCHE_911_CARRERAGTS",
+  );
+  expect(extractVehicleKey("PORSCHE", "911 Carrera 4 GTS Cabriolet")).toBe(
+    "PORSCHE_911_CARRERA4GTS",
+  );
+  expect(extractVehicleKey("포르쉐", "911 8세대 카레라 가솔린 3.0 쿠페 GTS Carrera 4")).toBe(
+    "PORSCHE_911_CARRERA4GTS",
+  );
+});
+
+// MASERATI new models (BNK)
+test("MASERATI new models — MC20 / MCPura / GT2", () => {
+  expect(extractVehicleKey("마세라티", "MC20 Cielo 가솔린 3.0 Fuoriserie by Fujiwara Hiroshi")).toBe(
+    "MASERATI_MC20",
+  );
+  expect(extractVehicleKey("마세라티", "MCPura 가솔린 3.0 V6")).toBe("MASERATI_MCPURA");
+  expect(extractVehicleKey("마세라티", "GT2 Stradale 가솔린 3.0 V6")).toBe("MASERATI_GT2");
+});
+
+// JAGUAR XJ
+test("JAGUAR XJ (with number suffix)", () => {
+  expect(extractVehicleKey("Jaguar", "XJ50 LWB")).toBe("LR_XJ");
+});
+
+// BENTLEY Flying Spur variants (ALL NEW prefix)
+test("BENTLEY ALL NEW FLYING SPUR", () => {
+  expect(extractVehicleKey("Bentley", "ALL NEW FLYING SPUR")).toBe("BENTLEY_FLYINGSPUR");
+});
+
+// LEXUS LC Convertible (WOORI short form with Korean body noise)
+test("LEXUS LC Convertible WOORI short form", () => {
+  expect(extractVehicleKey("Lexus", "LC 컨버터블")).toBe("LEXUS_LC_CONV");
+});
+
+// HYUNDAI Korean model extraction
+test("HYUNDAI Korean model names", () => {
+  expect(extractVehicleKey("현대", "디 올 뉴 그랜저 HEV 가솔린 1.6 하이브리드 익스클루시브")).toBe(
+    "HYUNDAI_GRANDEUR",
+  );
+  expect(extractVehicleKey("현대", "디 올 뉴 넥쏘 수소전기 익스클루시브")).toBe("HYUNDAI_NEXO");
+  expect(extractVehicleKey("현대", "더 뉴 마이티 2.5톤 카고")).toBe("HYUNDAI_MIGHTY");
+});
+
+// KIA Korean model extraction
+test("KIA Korean model names", () => {
+  expect(extractVehicleKey("기아", "디 올 뉴 니로 HEV 가솔린 1.6 하이브리드 시그니처")).toBe(
+    "KIA_NIRO",
+  );
+  expect(extractVehicleKey("기아", "더 뉴 모닝 가솔린 1.0 시그니처")).toBe("KIA_MORNING");
+  expect(extractVehicleKey("기아", "더 뉴 봉고3 특장차")).toBe("KIA_BONGO");
+});

@@ -19,3 +19,6 @@ woori-sweep.log
 
 # Claude local state
 .claude/
+
+# Vehicle-key audit output
+vehicle-key-audit.json
