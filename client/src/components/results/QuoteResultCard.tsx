@@ -6,9 +6,10 @@ interface QuoteResultCardProps {
   result: QuoteResult
   lenderName: string
   lenderCode?: string
+  isBest?: boolean
 }
 
-export function QuoteResultCard({ result, lenderName, lenderCode }: QuoteResultCardProps) {
+export function QuoteResultCard({ result, lenderName, lenderCode, isBest = false }: QuoteResultCardProps) {
   const displayMonthlyPayment = roundUpToNearestHundred(result.monthlyPayment)
   const leaseTermMonths = result.majorInputs.leaseTermMonths
   const totalCost = result.monthlyPayment * leaseTermMonths + result.residual.amount
@@ -28,9 +29,13 @@ export function QuoteResultCard({ result, lenderName, lenderCode }: QuoteResultC
   const subRatePercent = `${(subRate * 100).toFixed(3)}%`
 
   return (
-    <Card className="shadow-[var(--shadow-elev-3)] border border-border overflow-hidden relative py-0 gap-0 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[var(--shadow-elev-4)]">
-      {/* Accent bar top */}
-      <div className={`h-[3px] ${isHighResidual ? 'bg-accent' : 'bg-border'}`} />
+    <Card
+      className={`shadow-[var(--shadow-elev-3)] border overflow-hidden relative py-0 gap-0 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[var(--shadow-elev-4)] ${
+        isBest ? 'border-accent/30' : 'border-border'
+      }`}
+    >
+      {/* Accent bar top (vivid blue when best) */}
+      <div className={`h-[3px] ${isBest ? 'bg-accent' : isHighResidual ? 'bg-primary' : 'bg-border'}`} />
 
       {/* Header */}
       <div className="px-6 pt-5 pb-3 flex items-center justify-between">
@@ -38,6 +43,7 @@ export function QuoteResultCard({ result, lenderName, lenderCode }: QuoteResultC
           {lenderName}
         </span>
         <div className="flex items-center gap-1.5">
+          {isBest && <ResultBadge variant="accent">최저가</ResultBadge>}
           <ResultBadge variant="neutral">{ownerTag}</ResultBadge>
           <ResultBadge variant={isHighResidual ? 'accent' : 'neutral'}>{residualTag}</ResultBadge>
         </div>
@@ -48,7 +54,7 @@ export function QuoteResultCard({ result, lenderName, lenderCode }: QuoteResultC
         <div className="flex items-baseline gap-1.5">
           <span
             className={`font-mono tabular-nums font-semibold tracking-[-0.03em] leading-none text-[2.1rem] ${
-              isHighResidual ? 'text-primary' : 'text-foreground'
+              isBest ? 'text-accent' : isHighResidual ? 'text-primary' : 'text-foreground'
             }`}
           >
             {formatKrw(displayMonthlyPayment)}
