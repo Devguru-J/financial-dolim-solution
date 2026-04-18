@@ -224,14 +224,14 @@ function LenderStatusCard({ lender, animationDelay }: { lender: LenderSnapshot; 
       className="rounded-2xl border border-border bg-white shadow-[0_20px_60px_-15px_rgba(29,51,184,0.08)] overflow-hidden animate-fade-up"
       style={{ animationDelay: `${animationDelay}ms` }}
     >
-      <div className="flex items-stretch">
-        {/* Left accent: logo chip */}
-        <div className={`w-16 flex items-center justify-center shrink-0 bg-gradient-to-b ${lender.accentClass}`}>
+      <div className="grid" style={{ gridTemplateColumns: '64px 1fr 128px' }}>
+        {/* Left accent: logo chip — full-height */}
+        <div className={`flex items-center justify-center bg-gradient-to-b ${lender.accentClass}`}>
           <div className="text-white text-sm font-black tracking-tight">{lender.shortName}</div>
         </div>
 
         {/* Middle: lender info */}
-        <div className="flex-1 min-w-0 px-5 py-4 border-r border-border">
+        <div className="min-w-0 px-5 py-4 border-x border-border flex flex-col justify-center">
           {loading ? (
             <>
               <div className="skeleton h-4 w-28 rounded mb-2" />
@@ -268,8 +268,8 @@ function LenderStatusCard({ lender, animationDelay }: { lender: LenderSnapshot; 
           )}
         </div>
 
-        {/* Right: vehicle count */}
-        <div className="w-32 flex flex-col items-center justify-center shrink-0 bg-muted/20">
+        {/* Right: vehicle count — full-height, fully saturated muted */}
+        <div className="flex flex-col items-center justify-center bg-muted/50">
           {loading ? (
             <div className="skeleton h-6 w-12 rounded" />
           ) : hasActive ? (
