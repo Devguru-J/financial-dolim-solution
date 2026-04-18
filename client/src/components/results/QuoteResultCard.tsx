@@ -31,7 +31,7 @@ export function QuoteResultCard({ result, lenderName, lenderCode }: QuoteResultC
   const effectivePercent = `${(subRate * 100).toFixed(3)}%`
 
   return (
-    <Card className="overflow-hidden shadow-[0_12px_30px_rgba(29,51,184,0.15)]">
+    <Card className="overflow-hidden shadow-[var(--shadow-elev-3)]">
       {/* Header */}
       <CardHeader className="py-2.5 px-4 border-b border-border bg-muted/60 flex flex-row items-center gap-2 flex-wrap space-y-0">
         <span className="font-semibold text-sm text-foreground mr-1">{lenderName}</span>

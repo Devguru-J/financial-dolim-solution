@@ -244,7 +244,7 @@ export function QuotePage() {
           <button
             disabled={multiQuote.isAnyLoading || !catalog.selectedModel}
             onClick={handleCalculate}
-            className="w-full h-11 rounded-xl bg-primary text-white text-sm font-semibold tracking-tight flex items-center justify-center gap-2 shadow-[0_4px_16px_rgba(29,51,184,0.3)] hover:bg-primary/90 transition-all duration-150 active:scale-[0.985] active:translate-y-px active:shadow-[0_2px_8px_rgba(29,51,184,0.2)] disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none"
+            className="w-full h-11 rounded-xl bg-primary text-white text-sm font-semibold tracking-tight flex items-center justify-center gap-2 shadow-[0_4px_14px_rgba(26,58,92,0.22)] hover:bg-primary/90 transition-all duration-150 active:scale-[0.985] active:translate-y-px active:shadow-[0_2px_6px_rgba(26,58,92,0.18)] disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none"
           >
             {multiQuote.isAnyLoading ? (
               <>
@@ -265,7 +265,7 @@ export function QuotePage() {
             if (notAvailable) return null
             if (loading) {
               return (
-                <div key={lenderCode} className="rounded-2xl border border-border bg-white shadow-[0_12px_30px_rgba(29,51,184,0.08)] overflow-hidden">
+                <div key={lenderCode} className="rounded-2xl border border-border bg-white shadow-[var(--shadow-elev-2)] overflow-hidden">
                   <div className="px-4 py-2.5 border-b border-border bg-muted/60 flex items-center gap-2">
                     <span className="font-semibold text-sm text-foreground">{lenderName}</span>
                     <span className="w-3 h-3 border-2 border-muted-foreground/30 border-t-muted-foreground rounded-full animate-spin ml-auto" />

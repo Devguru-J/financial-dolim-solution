@@ -261,7 +261,7 @@ export function ImportPage() {
               <button
                 onClick={handleImport}
                 disabled={importLoading}
-                className="h-9 px-5 text-xs rounded-lg bg-primary text-white font-semibold tracking-tight hover:bg-primary/90 transition-all duration-150 active:scale-[0.97] active:translate-y-px disabled:opacity-50 disabled:cursor-not-allowed shadow-[0_4px_14px_rgba(29,51,184,0.25)]"
+                className="h-9 px-5 text-xs rounded-lg bg-primary text-white font-semibold tracking-tight hover:bg-primary/90 transition-all duration-150 active:scale-[0.97] active:translate-y-px disabled:opacity-50 disabled:cursor-not-allowed shadow-[0_4px_14px_rgba(26,58,92,0.22)]"
               >
                 {importLoading ? (
                   <span className="flex items-center gap-2">

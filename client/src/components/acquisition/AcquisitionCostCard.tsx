@@ -52,7 +52,7 @@ export function AcquisitionCostCard({
   onPublicBondChange,
 }: AcquisitionCostCardProps) {
   return (
-    <Card className="shadow-[0_20px_40px_-12px_rgba(25,28,31,0.08)]">
+    <Card className="shadow-[var(--shadow-elev-2)]">
       <CardHeader className="py-3 px-4 border-b border-border flex flex-row items-center gap-2.5 space-y-0">
         <div className="w-1 h-3.5 rounded-sm bg-primary" />
         <CardTitle className="text-sm font-semibold text-foreground">취득원가 산출</CardTitle>
