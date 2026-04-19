@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Activity, ArrowDownRight, ArrowUpRight, Building2, CalendarClock, CheckCircle2, Clock, Minus, TrendingUp } from 'lucide-react'
 import { fetchImports, fetchResidualDiff } from '@/lib/api'
-import type { ResidualDiffResponse, ResidualDiffVehicle } from '@/lib/api'
+import type { BrandRateDiff, ResidualDiffResponse, ResidualDiffVehicle } from '@/lib/api'
 import type { WorkbookImport } from '@/types/imports'
 
 type LenderCode = 'mg-capital' | 'bnk-capital' | 'woori-card'
@@ -371,7 +371,12 @@ function MonthlyDiffPanel({ lenders }: { lenders: LenderSnapshot[] }) {
 function DiffResult({ lender, diff }: { lender: LenderSnapshot; diff: ResidualDiffResponse }) {
   const prevDate = diff.previousImport ? formatDate(diff.previousImport.importedAt) : '—'
   const currDate = diff.activeImport ? formatDate(diff.activeImport.importedAt) : '—'
-  const nothingChanged = diff.changed.length === 0 && diff.added.length === 0 && diff.removed.length === 0
+  const rateChanges = diff.rateChanges ?? []
+  const nothingChanged =
+    diff.changed.length === 0 &&
+    diff.added.length === 0 &&
+    diff.removed.length === 0 &&
+    rateChanges.length === 0
 
   return (
     <div className="flex flex-col gap-4">
@@ -392,7 +397,7 @@ function DiffResult({ lender, diff }: { lender: LenderSnapshot; diff: ResidualDi
 
       {nothingChanged ? (
         <EmptyDiff
-          message={`${lender.name} — 독일 3사 기준 잔가율 변동 없음`}
+          message={`${lender.name} — 잔가율·기준금리 변동 없음`}
           variant="info"
         />
       ) : (
@@ -400,6 +405,11 @@ function DiffResult({ lender, diff }: { lender: LenderSnapshot; diff: ResidualDi
           {diff.changed.length > 0 && (
             <DiffSection title="잔가율 변동" count={diff.changed.length}>
               <DiffTable rows={diff.changed} />
+            </DiffSection>
+          )}
+          {rateChanges.length > 0 && (
+            <DiffSection title="기준금리 변동" count={rateChanges.length}>
+              <RateChangeTable rows={rateChanges} />
             </DiffSection>
           )}
           <div className="grid grid-cols-2 gap-3">
@@ -524,6 +534,71 @@ function CompactList({ rows }: { rows: ResidualDiffVehicle[] }) {
 function formatRate(rate: number | null): string {
   if (rate == null) return '—'
   return `${(rate * 100).toFixed(1)}%`
+}
+
+function RateChangeTable({ rows }: { rows: BrandRateDiff[] }) {
+  const half = Math.ceil(rows.length / 2)
+  const left = rows.slice(0, half)
+  const right = rows.slice(half)
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-0 max-h-[420px] overflow-y-auto px-1">
+      <div className="divide-y divide-border/60">
+        {left.map((row, i) => (
+          <RateChangeRow key={`L-${row.brand}-${row.ownershipType}-${i}`} row={row} />
+        ))}
+      </div>
+      <div className="divide-y divide-border/60">
+        {right.map((row, i) => (
+          <RateChangeRow key={`R-${row.brand}-${row.ownershipType}-${i}`} row={row} />
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function RateChangeRow({ row }: { row: BrandRateDiff }) {
+  const delta = row.deltaPct
+  const rising = delta != null && delta > 0
+  const falling = delta != null && delta < 0
+  const Arrow = rising ? ArrowUpRight : falling ? ArrowDownRight : Minus
+  const trendColor = rising ? 'text-red-600' : falling ? 'text-emerald-600' : 'text-muted-foreground'
+  const trendBg = rising ? 'bg-red-50' : falling ? 'bg-emerald-50' : 'bg-muted/40'
+  const deltaText =
+    delta == null
+      ? '—'
+      : `${delta >= 0 ? '+' : ''}${(delta * 100).toFixed(2)}%p`
+
+  return (
+    <div className="px-2.5 py-2 grid grid-cols-[1fr_auto_auto] items-center gap-3">
+      <div className="flex items-center gap-2 min-w-0">
+        <span className="text-[11px] font-semibold text-foreground whitespace-nowrap shrink-0">
+          {row.brandDisplay}
+        </span>
+        {row.dealerName ? (
+          <span className="text-[10px] text-muted-foreground truncate">
+            · {row.dealerName}
+          </span>
+        ) : (
+          <span className="text-[9px] text-muted-foreground/70 shrink-0 italic">
+            기본
+          </span>
+        )}
+        <span className="text-[9px] text-muted-foreground shrink-0 ml-auto pr-1">
+          {row.ownershipType === 'company' ? '법인' : '개인'}
+        </span>
+      </div>
+      <div className="flex items-center gap-1.5 font-mono text-[11px] tabular-nums shrink-0">
+        <span className="text-muted-foreground">{formatRate(row.previousRate)}</span>
+        <Arrow size={10} className={trendColor} strokeWidth={2} />
+        <span className="text-foreground font-semibold">{formatRate(row.currentRate)}</span>
+      </div>
+      <span
+        className={`${trendColor} ${trendBg} font-mono text-[10px] tabular-nums font-semibold px-1.5 py-0.5 rounded shrink-0 whitespace-nowrap`}
+      >
+        {deltaText}
+      </span>
+    </div>
+  )
 }
 
 function BaselineState({ lender }: { lender: LenderSnapshot }) {

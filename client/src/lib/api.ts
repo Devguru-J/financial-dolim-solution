@@ -76,6 +76,16 @@ export interface ResidualDiffImportMeta {
   importedAt: string
 }
 
+export interface BrandRateDiff {
+  brand: string
+  brandDisplay: string
+  ownershipType: string
+  dealerName: string | null
+  previousRate: number | null
+  currentRate: number | null
+  deltaPct: number | null
+}
+
 export interface ResidualDiffResponse {
   ok: boolean
   lenderCode: string
@@ -85,6 +95,7 @@ export interface ResidualDiffResponse {
   changed: ResidualDiffVehicle[]
   added: ResidualDiffVehicle[]
   removed: ResidualDiffVehicle[]
+  rateChanges: BrandRateDiff[]
 }
 
 export async function fetchResidualDiff(params: {

@@ -1,6 +1,7 @@
 import { and, desc, eq, inArray } from "drizzle-orm";
 
 import {
+  brandRatePolicies,
   brands as brandsTable,
   lenderVehicleOfferings,
   vehicleModels,
@@ -35,6 +36,16 @@ export interface ResidualDiffImportMeta {
   importedAt: string;
 }
 
+export interface BrandRateDiff {
+  brand: string;
+  brandDisplay: string;
+  ownershipType: string;
+  dealerName: string | null;
+  previousRate: number | null;
+  currentRate: number | null;
+  deltaPct: number | null;
+}
+
 export interface ResidualDiffResult {
   lenderCode: string;
   term: TermMonths;
@@ -43,6 +54,7 @@ export interface ResidualDiffResult {
   changed: ResidualDiffVehicle[];
   added: ResidualDiffVehicle[];
   removed: ResidualDiffVehicle[];
+  rateChanges: BrandRateDiff[];
 }
 
 interface OfferingRow {
@@ -50,6 +62,7 @@ interface OfferingRow {
   vehicleKey: string | null;
   brandCode: string;
   brandDisplay: string;
+  lenderBrand: string | null;
   displayName: string;
   rate: number | null;
 }
@@ -81,6 +94,7 @@ async function loadOfferings(
       vehicleKey: vehicleTrims.vehicleKey,
       brandCode: brandsTable.canonicalName,
       brandDisplay: brandsTable.displayName,
+      lenderBrand: lenderVehicleOfferings.lenderBrand,
       modelName: lenderVehicleOfferings.lenderModelName,
       rate: termCol,
     })
@@ -95,6 +109,7 @@ async function loadOfferings(
     vehicleKey: r.vehicleKey,
     brandCode: r.brandCode,
     brandDisplay: r.brandDisplay,
+    lenderBrand: r.lenderBrand,
     displayName: r.modelName,
     rate: parseRate(r.rate as string | null),
   }));
@@ -117,6 +132,7 @@ export async function computeResidualDiff(params: {
     changed: [],
     added: [],
     removed: [],
+    rateChanges: [],
   };
 
   if (!databaseUrl) return emptyBase;
@@ -170,16 +186,20 @@ async function runDiff(
     changed: [],
     added: [],
     removed: [],
+    rateChanges: [],
   };
 
   if (!activeImport || !previousImport) return emptyResult;
 
-  const [activeRows, previousRows] = await Promise.all([
+  const [activeRows, previousRows, activeRates, previousRates] = await Promise.all([
     loadOfferings(db, activeImport.id, term, brandFilter),
     loadOfferings(db, previousImport.id, term, brandFilter),
+    loadBrandRates(db, activeImport.id),
+    loadBrandRates(db, previousImport.id),
   ]);
 
-  const matchKey = (row: OfferingRow) => row.vehicleKey ?? `__trim_${row.trimId}`;
+  const matchKey = (row: OfferingRow) =>
+    `${row.lenderBrand ?? row.brandCode}|${row.displayName}`;
   const activeByKey = new Map<string, OfferingRow>();
   const previousByKey = new Map<string, OfferingRow>();
   for (const row of activeRows) activeByKey.set(matchKey(row), row);
@@ -246,5 +266,84 @@ async function runDiff(
   added.sort((a, b) => a.displayName.localeCompare(b.displayName, "ko"));
   removed.sort((a, b) => a.displayName.localeCompare(b.displayName, "ko"));
 
-  return { ...emptyResult, changed, added, removed };
+  const rateChanges = diffBrandRates(previousRates, activeRates);
+
+  return { ...emptyResult, changed, added, removed, rateChanges };
+}
+
+interface BrandRateRow {
+  brand: string;
+  ownershipType: string;
+  dealerName: string | null;
+  baseIrrRate: number | null;
+}
+
+async function loadBrandRates(db: AppDatabase, workbookImportId: string): Promise<BrandRateRow[]> {
+  const rows = await db
+    .select({
+      brand: brandRatePolicies.brand,
+      productType: brandRatePolicies.productType,
+      ownershipType: brandRatePolicies.ownershipType,
+      baseIrrRate: brandRatePolicies.baseIrrRate,
+      rawPolicy: brandRatePolicies.rawPolicy,
+    })
+    .from(brandRatePolicies)
+    .where(eq(brandRatePolicies.workbookImportId, workbookImportId));
+
+  return rows
+    .filter((r) => r.productType === "operating_lease" && r.ownershipType === "company")
+    .map((r) => {
+      const raw = (r.rawPolicy ?? {}) as Record<string, unknown>;
+      const dealerName =
+        typeof raw.dealerName === "string"
+          ? raw.dealerName
+          : typeof raw.bnkDealerName === "string"
+            ? (raw.bnkDealerName as string)
+            : null;
+      return {
+        brand: r.brand,
+        ownershipType: r.ownershipType,
+        dealerName,
+        baseIrrRate: parseRate(r.baseIrrRate as string | null),
+      };
+    });
+}
+
+function diffBrandRates(previous: BrandRateRow[], current: BrandRateRow[]): BrandRateDiff[] {
+  const key = (r: BrandRateRow) =>
+    `${r.brand}|${r.ownershipType}|${r.dealerName ?? "__default"}`;
+  const prevMap = new Map(previous.map((r) => [key(r), r]));
+  const changes: BrandRateDiff[] = [];
+
+  for (const curr of current) {
+    const prev = prevMap.get(key(curr));
+    if (!prev) continue;
+    if (prev.baseIrrRate == null && curr.baseIrrRate == null) continue;
+    const prevRate = prev.baseIrrRate;
+    const currRate = curr.baseIrrRate;
+    const delta =
+      prevRate != null && currRate != null ? currRate - prevRate : null;
+    if (delta != null && Math.abs(delta) < 0.00001) continue;
+    if (delta == null && prevRate === currRate) continue;
+    changes.push({
+      brand: curr.brand,
+      brandDisplay: curr.brand,
+      ownershipType: curr.ownershipType,
+      dealerName: curr.dealerName,
+      previousRate: prevRate,
+      currentRate: currRate,
+      deltaPct: delta,
+    });
+  }
+
+  changes.sort((a, b) => {
+    const da = Math.abs(a.deltaPct ?? 0);
+    const db = Math.abs(b.deltaPct ?? 0);
+    if (da !== db) return db - da;
+    const brandCmp = a.brand.localeCompare(b.brand, "ko");
+    if (brandCmp !== 0) return brandCmp;
+    return (a.dealerName ?? "").localeCompare(b.dealerName ?? "", "ko");
+  });
+
+  return changes;
 }
