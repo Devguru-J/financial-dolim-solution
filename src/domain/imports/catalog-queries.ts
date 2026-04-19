@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, inArray } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, isNull, ne, or } from "drizzle-orm";
 
 import {
   brandRatePolicies,
@@ -184,7 +184,12 @@ export async function getActiveWorkbookBrands(params: {
       .innerJoin(vehicleTrims, eq(vehicleTrims.id, lenderVehicleOfferings.trimId))
       .innerJoin(vehicleModels, eq(vehicleModels.id, vehicleTrims.modelId))
       .innerJoin(brands, eq(brands.id, vehicleModels.brandId))
-      .where(inArray(lenderVehicleOfferings.workbookImportId, importIds))
+      .where(
+        and(
+          inArray(lenderVehicleOfferings.workbookImportId, importIds),
+          or(isNull(brands.countryCode), ne(brands.countryCode, "KR")),
+        ),
+      )
       .orderBy(asc(brands.canonicalName));
 
     // Dedupe per canonical brand, count unique trims per brand.
